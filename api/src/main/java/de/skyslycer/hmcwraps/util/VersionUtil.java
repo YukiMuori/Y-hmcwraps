@@ -23,10 +23,10 @@ public class VersionUtil {
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
-    private static final String[] VERSION_SPLIT = Bukkit.getBukkitVersion().split("-")[0].split("\\.");
-    private static final int MAJOR_MINECRAFT_VERSION = Integer.parseInt(VERSION_SPLIT[0]);
-    private static final int MINOR_MINECRAFT_VERSION = Integer.parseInt(VERSION_SPLIT[1]);
-    private static final int PATCH_MINECRAFT_VERSION = Integer.parseInt(VERSION_SPLIT.length == 3 ? VERSION_SPLIT[2] : "0");
+    private static final int[] MINECRAFT_VERSION = VersionParser.parse(Bukkit.getBukkitVersion());
+    private static final int MAJOR_MINECRAFT_VERSION = MINECRAFT_VERSION[0];
+    private static final int MINOR_MINECRAFT_VERSION = MINECRAFT_VERSION[1];
+    private static final int PATCH_MINECRAFT_VERSION = MINECRAFT_VERSION[2];
 
     /**
      * Get the major Minecraft version.

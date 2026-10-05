@@ -11,6 +11,7 @@ Run with Java 21:
 
 Current unit coverage is intended to check:
 
+- `VersionParser` handling of legacy (`1.21.4-R0.1-SNAPSHOT`), new-scheme (`26.1.2`), non-numeric (`26.2.build.123-alpha`) and unparseable version strings.
 - `SkinPrice` provider normalization, custom currency IDs and invalid amounts.
 - Rarity identifier normalization/validation.
 - Ownership-cache read behavior, grants and purchase-audit unlock calls.

@@ -1,0 +1,25 @@
+enabled: true
+id: ruby_sword
+display-name: '<lang:skins.ruby_sword.name>'
+rarity: legendary
+categories: [swords]
+icon:
+  type: material
+  id: DIAMOND_SWORD
+  name: '<lang:skins.ruby_sword.name>'
+  lore:
+    - '<gray>A crimson cosmetic for your blade.'
+  item-model: 'minecraft:item/diamond_sword'
+  tooltip-style: 'minecraft:custom_tooltip'
+compatibility:
+  materials:
+    - DIAMOND_SWORD
+    - NETHERITE_SWORD
+  items: []
+preview: true
+cosmetic:
+  # Legacy Wrap fields intentionally remain the application payload.
+  id: '42'
+  wrap-name: '<lang:skins.ruby_sword.name>'
+  glint-override: false
+  wrap-tooltip-style: 'minecraft:custom_tooltip'

@@ -9,6 +9,9 @@ import de.skyslycer.hmcwraps.commands.CommandRegister;
 import de.skyslycer.hmcwraps.converter.FileConverter;
 import de.skyslycer.hmcwraps.integration.AllIntegrationsHandler;
 import de.skyslycer.hmcwraps.integration.IntegrationHandler;
+import de.skyslycer.hmcwraps.economy.EconomyManager;
+import de.skyslycer.hmcwraps.economy.ExcellentEconomyProvider;
+import de.skyslycer.hmcwraps.economy.VaultEconomyProvider;
 import de.skyslycer.hmcwraps.itemhook.*;
 import de.skyslycer.hmcwraps.listener.*;
 import de.skyslycer.hmcwraps.messages.MessageHandler;
@@ -23,7 +26,14 @@ import de.skyslycer.hmcwraps.serialization.Config;
 import de.skyslycer.hmcwraps.serialization.wrap.Wrap;
 import de.skyslycer.hmcwraps.storage.FavoriteWrapStorage;
 import de.skyslycer.hmcwraps.storage.PlayerFilterStorage;
+import de.skyslycer.hmcwraps.storage.SqliteOwnershipStorage;
 import de.skyslycer.hmcwraps.storage.Storage;
+import de.skyslycer.hmcwraps.lang.LanguageManager;
+import de.skyslycer.hmcwraps.skin.CompatibilityRegistry;
+import de.skyslycer.hmcwraps.skin.ItemIconFactory;
+import de.skyslycer.hmcwraps.skin.ItemSkinManagerImpl;
+import de.skyslycer.hmcwraps.skin.SkinCatalog;
+import de.skyslycer.hmcwraps.skin.SkinOwnershipService;
 import de.skyslycer.hmcwraps.transformation.ConfigFileTransformations;
 import de.skyslycer.hmcwraps.updater.ContinuousUpdateChecker;
 import de.skyslycer.hmcwraps.updater.version.PluginVersion;
@@ -65,6 +75,15 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
     private final ContinuousUpdateChecker updateChecker = new ContinuousUpdateChecker(this);
     private final WrapsLoader wrapsLoader = new WrapsLoaderImpl(this);
     private final IntegrationHandler integrationHandler = new AllIntegrationsHandler(this);
+    private final LanguageManager languageManager = new LanguageManager(this);
+    private final ItemIconFactory itemIconFactory = new ItemIconFactory(this);
+    private final SkinCatalog skinCatalog = new SkinCatalog(this, itemIconFactory);
+    private final CompatibilityRegistry compatibilityRegistry = new CompatibilityRegistry(this);
+    private final EconomyManager economyManager = new EconomyManager();
+    private final SqliteOwnershipStorage skinStorage = new SqliteOwnershipStorage(this);
+    private final SkinOwnershipService skinOwnership = new SkinOwnershipService(skinStorage);
+    private final ItemSkinManagerImpl itemSkinManager = new ItemSkinManagerImpl(this, skinCatalog, compatibilityRegistry, skinOwnership, economyManager);
+    private volatile java.util.concurrent.CompletableFuture<Boolean> skinStorageInitialization;
     private HookAccessor hookAccessor;
     private Config config;
     private MessageHandler messageHandler;
@@ -114,6 +133,8 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
             }
         }
         hookAccessor = new HookAccessor(hooks);
+        economyManager.register(new ExcellentEconomyProvider());
+        economyManager.register(new VaultEconomyProvider());
 
         if (!load()) {
             Bukkit.getPluginManager().disablePlugin(this);
@@ -132,6 +153,7 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
         Bukkit.getPluginManager().registerEvents(new ItemBurnListener(this), this);
         Bukkit.getPluginManager().registerEvents(new PlayerOffHandSwitchListener(this), this);
         Bukkit.getPluginManager().registerEvents(new DispenserArmorListener(this), this);
+        Bukkit.getPluginManager().registerEvents(itemSkinManager.menuManager(), this);
         Bukkit.getPluginManager().registerEvents(new PlayerItemBreakListener(this), this);
         Bukkit.getPluginManager().registerEvents(new PlayerDeathListener(this), this);
 
@@ -154,6 +176,7 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
     @Override
     public void onDisable() {
         unload();
+        skinStorage.close();
         hooks.clear();
     }
 
@@ -167,11 +190,21 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
                 return false;
             }
         }
+        initializeSkinStorage();
         if (!loadConfig()) {
             return false;
         }
+        if (!languageManager.load()) {
+            getLogger().warning("The v2 language catalog could not be loaded; legacy messages and wraps will remain available.");
+        }
         if (!loadMessages()) {
             return false;
+        }
+        if (!skinCatalog.load()) {
+            getLogger().warning("The v2 skin catalog could not be loaded; legacy wraps remain available.");
+        }
+        if (!itemSkinManager.load()) {
+            getLogger().warning("The v2 skin GUI configuration could not be loaded; legacy wraps remain available.");
         }
         integrationHandler.load();
         getPreviewManager().removeAll(true);
@@ -182,11 +215,24 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
 
     @Override
     public void unload() {
+        itemSkinManager.menuManager().closeAll();
         integrationHandler.unload();
         getWrapsLoader().unload();
         if (checkTask != null) {
             checkTask.cancel();
         }
+    }
+
+    private synchronized void initializeSkinStorage() {
+        if (skinStorageInitialization != null) return;
+        skinStorageInitialization = skinStorage.initialize().toCompletableFuture();
+        skinStorageInitialization.whenComplete((ready, error) -> {
+            if (error != null || !Boolean.TRUE.equals(ready)) {
+                getLogger().severe("SQLite ownership storage did not initialize; legacy wraps remain available, but paid v2 skins are disabled.");
+            } else {
+                getLogger().info("SQLite skin ownership storage is ready.");
+            }
+        });
     }
 
     private boolean loadMessages() {
@@ -354,6 +400,18 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
     public HookAccessor getHookAccessor() {
         return hookAccessor;
     }
+
+    @Override
+    public ItemSkinManagerImpl getItemSkinManager() {
+        return itemSkinManager;
+    }
+
+    public LanguageManager getLanguageManager() { return languageManager; }
+    @Override public LanguageManager getLanguageService() { return languageManager; }
+    public ItemIconFactory getItemIconFactory() { return itemIconFactory; }
+    public SkinCatalog getSkinCatalog() { return skinCatalog; }
+    public CompatibilityRegistry getCompatibilityRegistry() { return compatibilityRegistry; }
+    public EconomyManager getEconomyManager() { return economyManager; }
 
     public FileConverter getFileConverter() {
         return fileConverter;

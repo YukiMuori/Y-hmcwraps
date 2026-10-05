@@ -1,6 +1,6 @@
 allprojects {
     group = "de.skyslycer"
-    version = "1.8.2"
+    version = "2.0.0"
 
     repositories {
         mavenCentral()
@@ -43,5 +43,5 @@ tasks.register<Copy>("copyPluginJar") {
 }
 
 tasks.named("build") {
-    dependsOn("copyPluginJar")
+    dependsOn(":api:build", ":core:build", "copyPluginJar")
 }

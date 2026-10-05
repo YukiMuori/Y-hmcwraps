@@ -1,0 +1,29 @@
+# Copy this file when creating a skin, then replace the id (stable across reloads).
+enabled: false
+id: example_skin
+display-name: '<aqua>Example Skin'
+rarity: common
+categories: [swords]
+icon:
+  type: material # material, nexo, itemsadder, oraxen, craftengine, head
+  id: DIAMOND_SWORD
+  name: '<aqua>Example Skin'
+  lore: ['<gray>Example description']
+  model-id: 0
+  item-model: 'minecraft:item/diamond_sword'
+  tooltip-style: 'minecraft:custom_tooltip'
+  skull-texture: ''
+compatibility:
+  materials: [DIAMOND_SWORD, NETHERITE_SWORD]
+  items: ['nexo:custom_sword']
+price:
+  provider: excellent_economy
+  currency: coins
+  amount: 5000
+permission: ''
+preview: true
+cosmetic:
+  id: '0'
+  wrap-name: '<aqua>Example Skin'
+  wrap-tooltip-style: 'minecraft:custom_tooltip'
+  glint-override: false

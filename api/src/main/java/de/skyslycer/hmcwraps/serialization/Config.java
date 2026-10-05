@@ -33,6 +33,7 @@ public class Config {
     private Map<String, WrappableItem> items = new HashMap<>();
     private Map<String, List<String>> collections = new HashMap<>();
     private PluginIntegrations integrations;
+    private LanguageSettings language = new LanguageSettings();
     private Integer config = 1;
 
     public Config(UpdaterSettings updater, PermissionSettings permissions, PreviewSettings preview, Toggleable favorites,
@@ -104,6 +105,10 @@ public class Config {
 
     public PluginIntegrations getPluginIntegrations() {
         return integrations;
+    }
+
+    public LanguageSettings getLanguage() {
+        return language == null ? new LanguageSettings() : language;
     }
 
 }

@@ -26,8 +26,14 @@ public class CommandRegister {
                 })
                 .suggestionProviders(providers -> {
                     providers.addProviderForAnnotation(PhysicalWraps.class, physicalWraps ->
-                            executionContext -> plugin.getWrapsLoader().getWraps()
-                                    .values().stream().filter(wrap -> wrap.getPhysical() != null).map(Wrap::getUuid).toList());
+                            executionContext -> plugin.getWrapsLoader().getTypeWraps().values().stream()
+                                    .flatMap(List::stream)
+                                    .map(plugin.getWrapsLoader().getWraps()::get)
+                                    .filter(wrap -> wrap != null && wrap.getPhysical() != null)
+                                    .map(Wrap::getUuid).distinct().toList());
+                    providers.addProviderForAnnotation(SkinIds.class, skinIds ->
+                            executionContext -> plugin.getItemSkinManager().getSkins().stream()
+                                    .map(skin -> skin.id()).toList());
                     providers.addProviderForAnnotation(LogFiles.class, logFiles ->
                             executionContext -> suggestLogFiles(executionContext.input().peekString()));
                     providers.addProviderForAnnotation(PluginFiles.class, pluginFiles ->
@@ -36,7 +42,7 @@ public class CommandRegister {
                 .permissionFactory(new AnyPermissionFactory())
                 .exceptionHandler(new CustomExceptionHandler(plugin))
                 .build();
-        commandHandler.register(new WrapCommand(plugin), new WrapCreateCommand(plugin), new DebugCommand(plugin));
+        commandHandler.register(new WrapCommand(plugin), new WrapCreateCommand(plugin), new DebugCommand(plugin), new ItemSkinCommand(plugin));
         if (isTestModeEnabled()) {
             commandHandler.register(new TestCommand(plugin));
         }

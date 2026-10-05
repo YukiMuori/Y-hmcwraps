@@ -178,7 +178,10 @@ public class GuiBuilder {
             }
             wraps = plugin.getCollectionHelper().getItems(type);
         } else {
-            wraps = new ArrayList<>(plugin.getWrapsLoader().getWraps().values());
+            var v2SkinWrapIds = plugin.getSkinCatalog().skinMap().values().stream()
+                    .map(skin -> skin.cosmetic().getUuid()).collect(java.util.stream.Collectors.toSet());
+            wraps = plugin.getWrapsLoader().getWraps().values().stream()
+                    .filter(wrap -> !v2SkinWrapIds.contains(wrap.getUuid())).toList();
         }
 
         List<WrapItemCombination> wrapItemCombinations = new ArrayList<>();

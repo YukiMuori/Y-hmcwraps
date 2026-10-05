@@ -58,6 +58,26 @@ public class PreviewManager {
     }
 
 
+    /**
+     * Create a preview by applying a wrap to a copy of the provided item. Unlike the legacy
+     * overload, this preserves the target's model, enchantments, metadata and custom-item data.
+     *
+     * @param player the viewer
+     * @param onClose optional callback when the preview ends
+     * @param wrap the cosmetic payload
+     * @param baseItem the item to copy and wrap for display
+     */
+    public void create(Player player, Consumer<Player> onClose, Wrap wrap, ItemStack baseItem) {
+        if (baseItem == null || baseItem.getType().isAir()) return;
+        var item = plugin.getWrapper().setWrap(wrap, baseItem.clone(), false, player);
+        var applied = plugin.getWrapper().getWrap(item);
+        if (applied == null || !applied.getUuid().equals(wrap.getUuid())) return;
+        var event = new ItemPreviewEvent(player, item, onClose, wrap);
+        Bukkit.getPluginManager().callEvent(event);
+        if (event.isCancelled()) return;
+        createPrivate(event.getPlayer(), event.getItem(), wrap, event.getOnClose());
+    }
+
     private void createPrivate(Player player, ItemStack item, Wrap wrap, Consumer<Player> onClose) {
         this.remove(player.getUniqueId(), false);
         Preview preview;

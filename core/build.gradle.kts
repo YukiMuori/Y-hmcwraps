@@ -19,6 +19,7 @@ dependencies {
     implementation(libs.bstats)
     implementation(libs.particles)
     implementation(libs.gui)
+    implementation(libs.sqlite)
     implementation(libs.nbtapi)
     implementation(libs.folialib)
     implementation(libs.configurate) {
@@ -39,6 +40,9 @@ dependencies {
     compileOnly(depends.auctionguiplus)
     compileOnly(depends.axauctions)
     compileOnly(depends.axtrade)
+    testImplementation(libs.junit)
+    testImplementation(depends.spigot)
+    testRuntimeOnly(depends.annotations)
 }
 
 java {
@@ -76,6 +80,7 @@ tasks {
 
         minimize {
             exclude(dependency("com.tcoded:FoliaLib:.*"))
+            exclude(dependency("org.xerial:sqlite-jdbc:.*"))
         }
     }
 
@@ -90,6 +95,10 @@ tasks {
         options.release = 21
     }
 
+    test {
+        useJUnitPlatform()
+    }
+
     runServer {
         javaLauncher.set(serverLauncher)
         minecraftVersion("26.1.2")
@@ -101,8 +110,8 @@ bukkit {
     name = "HMCWraps"
     description = "The best choice to make your items prettier."
     author = "Skyslycer"
-    softDepend = listOf("PlaceholderAPI", "ItemsAdder", "Oraxen", "MythicMobs", "Crucible", "zAuctionHouseV3", "CraftEngine",
-        "AuctionGUIPlus", "Nexo", "AxAuctions", "AxTrade", "MMOItems")
+    softDepend = listOf("PlaceholderAPI", "ItemsAdder", "Oraxen", "MythicMobs", "MythicCrucible", "Crucible", "zAuctionHouseV3", "CraftEngine",
+        "AuctionGUIPlus", "Nexo", "AxAuctions", "AxTrade", "MMOItems", "ExcellentEconomy", "Vault")
     apiVersion = "1.17"
     foliaSupported = true
     permissions {

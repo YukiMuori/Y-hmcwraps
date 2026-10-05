@@ -1,0 +1,33 @@
+# Cosmetic categories are independent from legacy material collections.
+enabled: true
+categories:
+  swords:
+    priority: 10
+    display-name-key: categories.swords
+    icon:
+      type: material
+      id: DIAMOND_SWORD
+  pickaxes:
+    priority: 20
+    display-name-key: categories.pickaxes
+    icon:
+      type: material
+      id: DIAMOND_PICKAXE
+  axes:
+    priority: 30
+    display-name-key: categories.axes
+    icon:
+      type: material
+      id: DIAMOND_AXE
+  armor:
+    priority: 40
+    display-name-key: categories.armor
+    icon:
+      type: material
+      id: DIAMOND_CHESTPLATE
+  tools:
+    priority: 50
+    display-name-key: categories.tools
+    icon:
+      type: material
+      id: COMPASS

@@ -191,4 +191,10 @@ public class WrapsLoaderImpl implements WrapsLoader {
         return setToListMap(typeWraps);
     }
 
+    @Override
+    public synchronized boolean registerAdditionalWrap(Wrap wrap) {
+        if (wrap == null || wrap.getUuid() == null || wrap.getUuid().isBlank()) return false;
+        return wraps.putIfAbsent(wrap.getUuid(), wrap) == null;
+    }
+
 }

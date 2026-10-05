@@ -1,0 +1,58 @@
+# Rendered from configurable inventory slots and item definitions.
+# Use Nexo or another registered custom-item hook for resource-pack-ready filler/buttons.
+gui:
+  title: '<gradient:#8FEAF9:#CDA4F9><lang:gui.title>'
+  size: 54
+  content-slots: [10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34]
+  item-slot: 4
+  default-sort: rarity
+  default-sort-order: descending
+  show-locked: true
+  filler:
+    type: material
+    id: BLACK_STAINED_GLASS_PANE
+    name: ' '
+  previous:
+    slot: 45
+    item:
+      type: material
+      id: ARROW
+      name: '<green><lang:gui.previous>'
+  next:
+    slot: 53
+    item:
+      type: material
+      id: ARROW
+      name: '<green><lang:gui.next>'
+  close:
+    slot: 49
+    item:
+      type: material
+      id: BARRIER
+      name: '<red><lang:gui.close>'
+  sort:
+    slot: 51
+    item:
+      type: material
+      id: COMPARATOR
+      name: '<yellow><lang:gui.sort>'
+  filter:
+    slot: 52
+    item:
+      type: material
+      id: HOPPER
+      name: '<aqua><lang:gui.filter>'
+  category-slots:
+    swords: 46
+    pickaxes: 47
+    axes: 48
+    armor: 50
+  click-actions:
+    left: apply
+    right: preview
+    shift-left: buy
+    shift-right: buy
+sorting:
+  options: [rarity, name, price]
+filters:
+  options: [all, owned, unowned, purchasable, free]

@@ -113,7 +113,7 @@ public class WrapCommand {
                 }
             });
         }
-        plugin.getFoliaLib().getScheduler().runAsync((ignored) -> {
+        plugin.getFoliaLib().getScheduler().runNextTick((ignored) -> {
             plugin.unload();
             plugin.load();
             plugin.getMessageHandler().send(sender, Messages.COMMAND_RELOAD,

@@ -34,8 +34,10 @@ dependencyResolutionManagement {
             library("configupdater", "com.github.BG-Software-LLC:CommentedConfiguration:-SNAPSHOT")
             library("bstats", "org.bstats:bstats-bukkit:3.1.0")
             library("gui", "dev.triumphteam:triumph-gui:3.2.0-SNAPSHOT")
+            library("sqlite", "org.xerial:sqlite-jdbc:3.49.1.0")
             library("configurate", "org.spongepowered:configurate-yaml:4.2.0")
             library("mclogs", "gs.mclo:java:2.2.1")
+            library("junit", "org.junit.jupiter:junit-jupiter:5.11.4")
             library("nbtapi", "de.tr7zw:item-nbt-api:2.15.3")
             library("folialib", "com.tcoded:FoliaLib:0.5.2")
 

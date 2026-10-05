@@ -82,7 +82,7 @@ public class Wrap extends SerializableItem {
     }
 
     public void setUuid(String uuid) {
-        if (this.uuid != null) return;
+        if (this.uuid != null && !this.uuid.isBlank()) return;
         this.uuid = uuid;
     }
 

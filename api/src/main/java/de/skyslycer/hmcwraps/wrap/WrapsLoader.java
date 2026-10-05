@@ -39,7 +39,7 @@ public interface WrapsLoader {
     int getWrapFileCount();
 
     /**
-     * All wraps currently configured.
+     * All wraps currently registered, including runtime-only adapter wraps used to resolve item data.
      *
      * @return All wraps
      */
@@ -51,5 +51,17 @@ public interface WrapsLoader {
      * @return All wrap UUIDs mapped to a material or collection
      */
     Map<String, List<String>> getTypeWraps();
+
+    /**
+     * Register an additional runtime-only wrap so its UUID can resolve on wrapped items.
+     * Implementations predating this extension return false by default. Additional wraps are
+     * deliberately not inserted into legacy material collections or the legacy wrap menu.
+     *
+     * @param wrap the wrap payload
+     * @return true if the wrap was registered
+     */
+    default boolean registerAdditionalWrap(Wrap wrap) {
+        return false;
+    }
 
 }

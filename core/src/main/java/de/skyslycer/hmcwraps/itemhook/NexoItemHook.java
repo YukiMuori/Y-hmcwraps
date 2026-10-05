@@ -14,16 +14,24 @@ public class NexoItemHook extends ItemHook {
     @Nullable
     @Override
     public ItemStack get(String id) {
-        if (NexoItems.itemFromId(id) == null) {
+        try {
+            var item = NexoItems.itemFromId(id);
+            return item == null ? null : item.build();
+        } catch (LinkageError | RuntimeException ignored) {
             return null;
         }
-        return NexoItems.itemFromId(id).build();
     }
 
     @Nullable
     @Override
     public String get(ItemStack stack) {
-        return "";
+        if (stack == null) return null;
+        try {
+            String id = NexoItems.idFromItem(stack);
+            return id == null || id.isBlank() ? null : getPrefix() + id;
+        } catch (LinkageError | RuntimeException ignored) {
+            return null;
+        }
     }
 
 }

@@ -24,6 +24,8 @@ dependencies {
     compileOnly(libs.configurate)
     compileOnly(libs.nbtapi)
     compileOnly(libs.folialib)
+    testImplementation(libs.junit)
+    testRuntimeOnly(depends.annotations)
 }
 
 dokka {
@@ -35,6 +37,9 @@ tasks {
         options.compilerArgs.add("-parameters")
         options.encoding = "UTF-8"
         options.isFork = true
+    }
+    test {
+        useJUnitPlatform()
     }
 }
 

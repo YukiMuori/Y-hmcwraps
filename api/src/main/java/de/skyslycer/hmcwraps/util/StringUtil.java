@@ -1,6 +1,7 @@
 package de.skyslycer.hmcwraps.util;
 
 import de.skyslycer.hmcwraps.HMCWraps;
+import de.skyslycer.hmcwraps.lang.LanguageService;
 import de.skyslycer.hmcwraps.serialization.wrap.Wrap;
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.text.Component;
@@ -47,8 +48,10 @@ public class StringUtil {
      */
     public static Component parseComponent(String message, TagResolver... placeholders) {
         String string = legacyToMiniMessage(message);
-        return Component.text().decoration(TextDecoration.ITALIC, false).append(MINI_MESSAGE.deserialize(string, TagResolver.resolver(placeholders)))
-                .build();
+        LanguageService language = languageService();
+        Component parsed = language == null ? MINI_MESSAGE.deserialize(string, TagResolver.resolver(placeholders))
+                : language.parse(null, string, TagResolver.resolver(placeholders));
+        return Component.text().decoration(TextDecoration.ITALIC, false).append(parsed).build();
     }
 
     /**
@@ -62,8 +65,12 @@ public class StringUtil {
     public static Component parseComponent(CommandSender sender, String message, TagResolver... placeholders) {
         var list = new ArrayList<>(Arrays.asList(placeholders));
         list.add(papiTag(sender));
-        return Component.text().decoration(TextDecoration.ITALIC, false)
-                .append(MINI_MESSAGE.deserialize(replacePlaceholders(message), list.toArray(new TagResolver[0]))).build();
+        TagResolver[] resolvers = list.toArray(new TagResolver[0]);
+        String text = replacePlaceholders(message);
+        LanguageService language = languageService();
+        Component parsed = language == null ? MINI_MESSAGE.deserialize(text, TagResolver.resolver(resolvers))
+                : language.parse(sender instanceof Player player ? player : null, text, resolvers);
+        return Component.text().decoration(TextDecoration.ITALIC, false).append(parsed).build();
     }
 
     /**
@@ -189,6 +196,16 @@ public class StringUtil {
             case "s" -> Math.max(amount, minSeconds);
             default -> defaultSeconds;
         };
+    }
+
+    @Nullable
+    private static LanguageService languageService() {
+        try {
+            var plugin = Bukkit.getPluginManager().getPlugin("HMCWraps");
+            return plugin instanceof HMCWraps wraps ? wraps.getLanguageService() : null;
+        } catch (RuntimeException ignored) {
+            return null;
+        }
     }
 
     private static TagResolver papiTag(CommandSender sender) {

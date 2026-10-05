@@ -32,7 +32,8 @@ public class WrapParameterType implements ParameterType<BukkitCommandActor, Wrap
     }
 
     @Override public @NotNull SuggestionProvider<BukkitCommandActor> defaultSuggestions() {
-        return (context) -> List.copyOf(plugin.getWrapsLoader().getWraps().keySet());
+        return (context) -> plugin.getWrapsLoader().getTypeWraps().values().stream()
+                .flatMap(List::stream).distinct().toList();
     }
 
 }

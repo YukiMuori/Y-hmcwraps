@@ -1,0 +1,18 @@
+# Rarity ordering is numeric and fully server-configurable. Display text lives in lang/*.yml.
+enabled: true
+rarities:
+  common:
+    priority: 1
+    display-name-key: rarities.common
+  uncommon:
+    priority: 2
+    display-name-key: rarities.uncommon
+  rare:
+    priority: 3
+    display-name-key: rarities.rare
+  epic:
+    priority: 4
+    display-name-key: rarities.epic
+  legendary:
+    priority: 5
+    display-name-key: rarities.legendary

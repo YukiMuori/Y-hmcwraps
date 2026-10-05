@@ -3,10 +3,12 @@ package de.skyslycer.hmcwraps;
 import com.tcoded.folialib.FoliaLib;
 import de.skyslycer.hmcwraps.actions.ActionHandler;
 import de.skyslycer.hmcwraps.itemhook.HookAccessor;
+import de.skyslycer.hmcwraps.lang.LanguageService;
 import de.skyslycer.hmcwraps.messages.MessageHandler;
 import de.skyslycer.hmcwraps.pool.ObjectPool;
 import de.skyslycer.hmcwraps.preview.PreviewManager;
 import de.skyslycer.hmcwraps.serialization.Config;
+import de.skyslycer.hmcwraps.skin.ItemSkinManager;
 import de.skyslycer.hmcwraps.serialization.wrap.Wrap;
 import de.skyslycer.hmcwraps.storage.Storage;
 import de.skyslycer.hmcwraps.wrap.CollectionHelper;
@@ -15,6 +17,7 @@ import de.skyslycer.hmcwraps.wrap.WrapsLoader;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -29,6 +32,11 @@ public interface HMCWraps extends Plugin {
     Path CONVERT_PATH = PLUGIN_PATH.resolve("convert");
     Path COMMAND_PATH = WRAP_FILES_PATH.resolve("command");
     Path COLLECTION_FILES_PATH = PLUGIN_PATH.resolve("collections");
+    Path SKINS_PATH = PLUGIN_PATH.resolve("skins");
+    Path LANG_PATH = PLUGIN_PATH.resolve("lang");
+    Path RARITIES_PATH = PLUGIN_PATH.resolve("rarities.yml");
+    Path CATEGORIES_PATH = PLUGIN_PATH.resolve("categories.yml");
+    Path ITEMSKIN_GUI_PATH = PLUGIN_PATH.resolve("itemskin-gui.yml");
 
     /**
      * Load the plugin. Used for reload.
@@ -133,6 +141,26 @@ public interface HMCWraps extends Plugin {
      * @return The hook accessor
      */
     HookAccessor getHookAccessor();
+
+    /**
+     * Get the public v2 item-skin catalog, application and menu API.
+     *
+     * @return the item skin manager
+     */
+    @Nullable
+    default ItemSkinManager getItemSkinManager() {
+        return null;
+    }
+
+    /**
+     * Get the v2 translation service. Legacy implementations may return null.
+     *
+     * @return the language service, if provided
+     */
+    @Nullable
+    default LanguageService getLanguageService() {
+        return null;
+    }
 
     /**
      * Get the FoliaLib instance.

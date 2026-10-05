@@ -1,3 +1,9 @@
+# Language files are stored in plugins/HMCWraps/lang/.
+# Set player-locale to true to use a player's client locale when a matching file exists.
+language:
+  default: 'en'
+  player-locale: false
+
 # Settings on how permissions should be handled
 permissions:
   # If the wrap inventory open permission should be checked on wraps inventory open

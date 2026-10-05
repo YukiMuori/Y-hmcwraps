@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.0 — unreleased
+## 2.0.0 — 2026-10-05
 
 ### Added
 - A separate v2 skin catalog with configurable rarities, categories, material/custom-item compatibility and legacy-wrap cosmetic payloads.
@@ -19,5 +19,5 @@
 - Legacy `/wraps`, existing wrap configuration, PDC identifiers, preview APIs and wrap application remain available. V2 skins adapt through the existing wrapper/modifier pipeline rather than replacing it.
 - ExcellentEconomy, Vault and custom-item integrations are optional. SQLite is bundled in the core jar.
 
-### Verification note
-- This entry describes the implementation in the development branch. Build, full server integration and regression tests must pass before publishing a release. No release should be published until the pull request is merged to `master`.
+### Verification
+- Released from `master` (merge of pull request #3). Build, unit tests and distributable JAR verification run in CI on Java 21 via `./gradlew clean build`; the `Release` workflow re-runs the build for the `v2.0.0` tag and attaches `HMCWraps-2.0.0.jar`, `MIGRATION-2.0.md` and `SHA256SUMS` to the draft release.

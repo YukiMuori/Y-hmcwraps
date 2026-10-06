@@ -18,6 +18,7 @@ public class SkinMenuConfiguration {
     private boolean showLocked = true;
     private boolean fillerEnabled = true;
     private boolean itemEnabled = true;
+    private List<String> itemLore = new ArrayList<>(List.of("<item_lore>"));
     private List<String> skinLore = new ArrayList<>(List.of("<skin_lore>"));
     private SkinIconConfiguration filler = new SkinIconConfiguration();
     private Button previous = new Button();
@@ -44,6 +45,7 @@ public class SkinMenuConfiguration {
     public boolean isShowLocked() { return showLocked; }
     public boolean isFillerEnabled() { return fillerEnabled; }
     public boolean isItemEnabled() { return itemEnabled; }
+    public List<String> getItemLore() { return itemLore == null ? List.of() : itemLore; }
     public List<String> getSkinLore() { return skinLore == null ? List.of() : skinLore; }
     public SkinIconConfiguration getFiller() { return filler == null ? new SkinIconConfiguration() : filler; }
     public Button getPrevious() { return previous == null ? new Button() : previous; }

@@ -55,6 +55,8 @@
 - Floating previews default to automatic item-display/mannequin selection so modern item-model components render correctly.
 - Bundled wrap, skin, shop, and editor GUIs now use a consistent MiniMessage palette, typography, navigation, localized control lore, and explicitly non-italic item text.
 - Skin-icon lore is minimal by default and fully controlled by the `gui.skin-lore` template, including expansion of each skin file's own lore and optional dynamic placeholders.
+- The selected item in slot 4 is now the unified browser control: left click changes sorting, right click changes filters, and middle click toggles favorites; its lore is configurable through `gui.item-lore`.
+- Previous/next arrows are rendered only when their destination page exists, and catalog icons hide vanilla technical tooltip details so only configured presentation text remains.
 - `/wraps validate` now checks themed skin collection definitions/references and the expanded GUI controls.
 
 ## 2.0.1 — 2026-10-05

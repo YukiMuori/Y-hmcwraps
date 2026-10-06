@@ -25,6 +25,7 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.Nullable;
@@ -159,7 +160,7 @@ public final class SkinMenuManager implements Listener {
         }
 
         if (config.isItemEnabled() && isSlotValid(config.getItemSlot(), config.getSize())) {
-            session.inventory.setItem(config.getItemSlot(), session.target.clone());
+            session.inventory.setItem(config.getItemSlot(), itemControl(player, session, config));
         }
 
         List<ItemSkin> candidates = skinManager.getCompatibleSkins(session.target).stream()
@@ -175,6 +176,8 @@ public final class SkinMenuManager implements Listener {
         int pageSize = contentSlots.size();
         int maxPage = pageSize == 0 ? 0 : Math.max(0, (candidates.size() - 1) / pageSize);
         if (session.page > maxPage) session.page = maxPage;
+        session.hasPreviousPage = session.page > 0;
+        session.hasNextPage = session.page < maxPage;
         int start = session.page * pageSize;
         for (int index = 0; index < pageSize && start + index < candidates.size(); index++) {
             ItemSkin skin = candidates.get(start + index);
@@ -185,12 +188,16 @@ public final class SkinMenuManager implements Listener {
         }
 
         addButton(session, player, config.getShop(), plugin.getLanguageManager().get(player, "gui.shop"), List.of(), config.getSize());
-        addButton(session, player, config.getPrevious(), plugin.getLanguageManager().get(player, "gui.previous"),
-                List.of(localized(player, "gui.page", Placeholder.unparsed("page", String.valueOf(session.page + 1)),
-                        Placeholder.unparsed("pages", String.valueOf(maxPage + 1)))), config.getSize());
-        addButton(session, player, config.getNext(), plugin.getLanguageManager().get(player, "gui.next"),
-                List.of(localized(player, "gui.page", Placeholder.unparsed("page", String.valueOf(session.page + 1)),
-                        Placeholder.unparsed("pages", String.valueOf(maxPage + 1)))), config.getSize());
+        if (session.hasPreviousPage) {
+            addButton(session, player, config.getPrevious(), plugin.getLanguageManager().get(player, "gui.previous"),
+                    List.of(localized(player, "gui.page", Placeholder.unparsed("page", String.valueOf(session.page + 1)),
+                            Placeholder.unparsed("pages", String.valueOf(maxPage + 1)))), config.getSize());
+        }
+        if (session.hasNextPage) {
+            addButton(session, player, config.getNext(), plugin.getLanguageManager().get(player, "gui.next"),
+                    List.of(localized(player, "gui.page", Placeholder.unparsed("page", String.valueOf(session.page + 1)),
+                            Placeholder.unparsed("pages", String.valueOf(maxPage + 1)))), config.getSize());
+        }
         addButton(session, player, config.getClose(), plugin.getLanguageManager().get(player, "gui.close"), List.of(), config.getSize());
         addButton(session, player, config.getUnskin(), plugin.getLanguageManager().get(player, "gui.unskin"), List.of(), config.getSize());
         addButton(session, player, config.getSort(), plugin.getLanguageManager().get(player, "gui.sort"),
@@ -283,6 +290,29 @@ public final class SkinMenuManager implements Listener {
         session.inventory.setItem(button.getSlot(), icon);
     }
 
+    private ItemStack itemControl(Player player, MenuSession session, SkinMenuConfiguration config) {
+        ItemStack item = session.target.clone();
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return item;
+        List<Component> originalLore = componentLore(meta);
+        List<Component> lore = new ArrayList<>();
+        Component sort = optionLabel(player, "sorting", session.sort);
+        Component filter = optionLabel(player, "filters", session.filter);
+        Component favorites = localized(player, session.favoritesOnly
+                ? "gui.item-control-favorites-active" : "gui.item-control-favorites-inactive");
+        for (String line : config.getItemLore()) {
+            if (line != null && line.trim().equalsIgnoreCase("<item_lore>")) {
+                lore.addAll(originalLore);
+                continue;
+            }
+            lore.add(nonItalic(plugin.getLanguageManager().parse(player, line,
+                    Placeholder.component("sort", sort),
+                    Placeholder.component("filter", filter),
+                    Placeholder.component("favorites", favorites))));
+        }
+        return ItemBuilder.from(item).lore(lore).build();
+    }
+
     private ItemStack skinIcon(Player player, ItemSkin skin, Set<String> owned, Set<String> favorites) {
         SkinIconConfiguration iconConfiguration = plugin.getSkinCatalog().skinIconConfiguration(skin.id());
         ItemStack icon = iconConfiguration == null ? skin.icon()
@@ -318,7 +348,21 @@ public final class SkinMenuManager implements Listener {
                     Placeholder.unparsed("currency", currency),
                     Placeholder.component("favorite", favoriteLabel))));
         }
-        return builder.lore(lore).build();
+        ItemStack result = builder.lore(lore).build();
+        ItemMeta resultMeta = result.getItemMeta();
+        if (resultMeta != null) {
+            // Catalog entries should expose only their configured name and lore, never vanilla
+            // attributes, enchantments, trim, unbreakable state, or other technical tooltip data.
+            for (ItemFlag flag : ItemFlag.values()) {
+                String flagName = flag.name();
+                if (!flagName.contains("LORE") && !flagName.contains("NAME")
+                        && !flagName.equals("HIDE_TOOLTIP")) {
+                    resultMeta.addItemFlags(flag);
+                }
+            }
+            result.setItemMeta(resultMeta);
+        }
+        return result;
     }
 
     private List<Component> componentLore(ItemMeta meta) {
@@ -418,12 +462,27 @@ public final class SkinMenuManager implements Listener {
             }
             return;
         }
-        if (buttonAt(config.getPrevious(), slot)) {
+        if (config.isItemEnabled() && slot == config.getItemSlot()) {
+            if (event.getClick() == ClickType.MIDDLE) {
+                session.favoritesOnly = !session.favoritesOnly;
+                session.page = 0;
+            } else if (event.isRightClick()) {
+                session.filter = nextOption(session.filter, filterOptions);
+                session.page = 0;
+            } else if (event.isLeftClick()) {
+                session.sort = nextOption(session.sort, sortOptions);
+            } else {
+                return;
+            }
+            openSession(player, session);
+            return;
+        }
+        if (session.hasPreviousPage && buttonAt(config.getPrevious(), slot)) {
             session.page = Math.max(0, session.page - 1);
             openSession(player, session);
             return;
         }
-        if (buttonAt(config.getNext(), slot)) {
+        if (session.hasNextPage && buttonAt(config.getNext(), slot)) {
             session.page++;
             openSession(player, session);
             return;
@@ -768,6 +827,8 @@ public final class SkinMenuManager implements Listener {
         private String filter;
         private final boolean descending;
         private int page;
+        private boolean hasPreviousPage;
+        private boolean hasNextPage;
         private boolean favoritesOnly;
         private volatile boolean awaitingSearch;
         private boolean loading;

@@ -1,23 +1,33 @@
-// Re-reports Java compiler diagnostics as GitHub Actions check annotations.
+// Re-reports build problems as GitHub Actions check annotations.
 //
 // Why: the raw job log lives on a storage host that is not reachable from every network, while the
 // checks API always is. Workflow commands written to the console become annotations, so this script
-// runs the JDK compiler once before the real compile task and prints every error as
-// `::error file=...,line=...::message`.
+// reports two things:
 //
-// Applied from the root build script to every subproject and only in CI. Every step is wrapped in
+//   * every Java compile error (the JDK compiler runs once before the real compile task), and
+//   * any project whose configuration failed, with the failure message.
+//
+// Applied from the root build script to every subproject and only in CI. Everything is wrapped in
 // try/catch: diagnostics must never be able to break a build.
 
-println "::notice::ci-annotations applied to ${project.name}"
-
 try {
+    // A single hook reports configuration failures of every project (including the root).
+    if (!gradle.ext.has('ciAnnotationHookRegistered')) {
+        gradle.ext.ciAnnotationHookRegistered = true
+        gradle.afterProject { failedProject, state ->
+            if (state != null && state.failure != null) {
+                println '::error::Configuration of ' + failedProject.name + ' failed: ' +
+                        state.failure.toString().replace('%', '%25').replace('\n', ' | ')
+            }
+        }
+    }
+
     def javaExtension = project.extensions.getByType(org.gradle.api.plugins.JavaPluginExtension)
     def mainSourceSet = javaExtension.sourceSets.getByName('main')
     def compileTask = project.tasks.named('compileJava', org.gradle.api.tasks.compile.JavaCompile)
 
     // Resolved eagerly so the task action only closes over plain data.
     def sources = mainSourceSet.allJava.files.toList()
-    def classpath = mainSourceSet.compileClasspath.files.toList()
     def release = compileTask.get().options.release.orNull ?: 21
     def moduleName = project.name
 
@@ -25,27 +35,27 @@ try {
         group = 'verification'
         description = 'Re-reports compile errors as GitHub check annotations (CI only).'
         doLast {
-            println "::notice::preflightCompile ran for ${moduleName} (${sources.size()} sources)"
             try {
                 def compiler = javax.tools.ToolProvider.systemJavaCompiler
                 if (compiler == null) {
-                    println "::warning::no system java compiler available for ${moduleName}"
+                    println "::error::${moduleName}: no system java compiler available"
                     return
                 }
                 def diagnostics = new javax.tools.DiagnosticCollector()
+                def errorLogger = new java.io.StringWriter()
                 compiler.getStandardFileManager(diagnostics, null, java.nio.charset.StandardCharsets.UTF_8).withCloseable { fileManager ->
                     def units = fileManager.getJavaFileObjectsFromFiles(sources)
                     def options = ['--release', release.toString(), '-parameters', '-encoding', 'UTF-8', '-proc:none']
-                    def output = new java.io.StringWriter()
-                    compiler.getTask(output, fileManager, diagnostics, options, null, units).call()
+                    compiler.getTask(errorLogger, fileManager, diagnostics, options, null, units).call()
                 }
                 def errors = diagnostics.diagnostics.findAll { it.kind == javax.tools.Diagnostic.Kind.ERROR }
                 if (errors.isEmpty()) {
-                    println "::notice::preflightCompile found no errors in ${moduleName}"
+                    println "::notice::${moduleName}: no compile errors found by the preflight compiler"
                     return
                 }
-                println "::error::${errors.size()} compile error(s) in ${moduleName}."
-                errors.take(50).each { diagnostic ->
+                // One annotation with everything, because a check run only keeps a few annotations.
+                def digest = new StringBuilder()
+                errors.take(60).each { diagnostic ->
                     def absolute = diagnostic.source?.toUri()?.path ?: '<unknown>'
                     def relative = absolute
                     try {
@@ -53,18 +63,24 @@ try {
                     } catch (Throwable ignored) {
                         // Keep the absolute path when it is outside the repository.
                     }
-                    def message = (diagnostic.getMessage(null) ?: 'compile error')
-                            .replace('%', '%25').replace('\n', ' ').replace('\r', '')
                     def line = diagnostic.lineNumber > 0 ? diagnostic.lineNumber : 1
-                    println "::error file=${relative},line=${line},title=Compile error::${moduleName}: ${message}"
+                    digest.append(relative).append(':').append(line).append(': ')
+                            .append(diagnostic.getMessage(null) ?: 'compile error').append('\n')
                 }
+                def text = digest.toString().replace('%', '%25').replace('\r', '').replace('\n', '%0A')
+                if (text.length() > 6000) {
+                    text = text.substring(0, 6000) + '%0A(truncated)'
+                }
+                println "::error::${moduleName}: ${errors.size()} compile error(s):%0A${text}"
             } catch (Throwable throwable) {
-                println "::warning::preflight compile diagnostics failed for ${moduleName}: ${throwable}"
+                println "::error::preflight compile diagnostics failed for ${moduleName}: ${throwable}"
             }
         }
     }
 
+    // Attached to clean as well, so the diagnostics always run before anything can fail the build.
     compileTask.configure { dependsOn(preflight) }
+    project.tasks.matching { it.name == 'clean' }.configureEach { dependsOn(preflight) }
 } catch (Throwable throwable) {
     println "::error::Could not register the CI compile diagnostics for ${project.name}: ${throwable}"
 }

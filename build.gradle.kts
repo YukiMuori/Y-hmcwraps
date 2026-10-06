@@ -1,5 +1,3 @@
-println("::notice:::: root script start")
-
 allprojects {
     group = "de.skyslycer"
     version = "2.1.0"
@@ -42,7 +40,6 @@ allprojects {
 subprojects {
     val subproject = this
     pluginManager.withPlugin("java") {
-        println("::notice::java plugin applied in " + subproject.name)
         val diagnosticsScript = rootProject.file("gradle/ci-annotations.gradle")
         if (System.getenv("GITHUB_ACTIONS") == "true" && diagnosticsScript.exists()) {
             try {
@@ -52,14 +49,6 @@ subprojects {
             }
         }
     }
-}
-
-gradle.projectsEvaluated {
-    println("::notice::all projects configured: " + allprojects.joinToString(", ") { it.name })
-}
-
-gradle.taskGraph.whenReady {
-    println("::notice::task graph ready with " + allTasks.size + " tasks")
 }
 
 tasks.register("build") {

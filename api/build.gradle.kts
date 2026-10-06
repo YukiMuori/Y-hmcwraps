@@ -5,11 +5,6 @@ plugins {
     id("org.jetbrains.dokka") version ("2.2.0")
 }
 
-// Reports compile errors as GitHub check annotations when running in CI (see the script header).
-apply(from = rootProject.file("gradle/ci-annotations.gradle.kts"))
-
-println("::notice:::: api script start")
-
 group = "de.skyslycer.hmcwraps"
 version = rootProject.version
 
@@ -115,6 +110,3 @@ class PublishData(private val project: Project) {
             name.plus(append).plus(if (appendCommit && addCommit) "-".plus(commitHash) else "")
     }
 }
-
-// end of api build script
-println("::notice::api build script finished")

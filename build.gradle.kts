@@ -1,3 +1,5 @@
+println("::notice:::: root script start")
+
 allprojects {
     group = "de.skyslycer"
     version = "2.1.0"
@@ -50,6 +52,14 @@ subprojects {
             }
         }
     }
+}
+
+gradle.projectsEvaluated {
+    println("::notice::all projects configured: " + allprojects.joinToString(", ") { it.name })
+}
+
+gradle.taskGraph.whenReady {
+    println("::notice::task graph ready with " + allTasks.size + " tasks")
 }
 
 tasks.register("build") {

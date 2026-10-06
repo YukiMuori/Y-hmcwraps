@@ -26,6 +26,28 @@ allprojects {
     }
 }
 
+// ---------------------------------------------------------------------------
+// CI diagnostics
+//
+// The GitHub Actions job log is served from a storage host that is not reachable from every network,
+// so a failing build is hard to diagnose. This applies a small script to every subproject that
+// re-reports compiler diagnostics as check annotations, which are always readable:
+//
+//   gh api /repos/<owner>/<repo>/commits/<sha>/check-runs
+//
+// Everything is wrapped in try/catch: a problem in the diagnostics must never break a build.
+// ---------------------------------------------------------------------------
+subprojects {
+    val diagnosticsScript = rootProject.file("gradle/ci-annotations.gradle")
+    if (System.getenv("GITHUB_ACTIONS") == "true" && diagnosticsScript.exists()) {
+        try {
+            apply(from = diagnosticsScript)
+        } catch (throwable: Throwable) {
+            println("::error::Could not apply the CI diagnostics script to " + name + ": " + throwable.message)
+        }
+    }
+}
+
 tasks.register("build") {
     group = "build"
     description = "Aggregate task to build all modules"

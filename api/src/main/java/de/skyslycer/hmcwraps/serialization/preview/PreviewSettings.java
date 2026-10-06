@@ -6,6 +6,7 @@ import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 public class PreviewSettings {
 
     private PreviewType type;
+    private PreviewEntityType entityType;
     private int duration;
     private int rotation;
     private SneakCancel sneakCancel;
@@ -13,6 +14,10 @@ public class PreviewSettings {
 
     public PreviewType getType() {
         return type;
+    }
+
+    public PreviewEntityType getEntityType() {
+        return entityType == null ? PreviewEntityType.ARMOR_STAND : entityType;
     }
 
     public int getDuration() {

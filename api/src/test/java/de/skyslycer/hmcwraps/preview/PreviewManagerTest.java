@@ -1,9 +1,7 @@
 package de.skyslycer.hmcwraps.preview;
 
-import de.skyslycer.hmcwraps.HMCWraps;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +21,7 @@ class PreviewManagerTest {
 
     @Test
     void removeCancelsThePreviewAndUnregistersIt() throws Exception {
-        var manager = new PreviewManager(fakePlugin());
+        var manager = new PreviewManager(Logger.getLogger("PreviewManagerTest"));
         var preview = new FakePreview(null);
         var uuid = UUID.randomUUID();
         register(manager, uuid, preview);
@@ -36,14 +34,14 @@ class PreviewManagerTest {
 
     @Test
     void removeOfUnknownUuidDoesNothing() {
-        var manager = new PreviewManager(fakePlugin());
+        var manager = new PreviewManager(Logger.getLogger("PreviewManagerTest"));
 
         assertDoesNotThrow(() -> manager.remove(UUID.randomUUID(), false));
     }
 
     @Test
     void throwingCancelNeverStrandsThePreviewInTheManager() throws Exception {
-        var manager = new PreviewManager(fakePlugin());
+        var manager = new PreviewManager(Logger.getLogger("PreviewManagerTest"));
         var preview = new FakePreview(new NullPointerException("cancel failed"));
         var uuid = UUID.randomUUID();
         register(manager, uuid, preview);
@@ -58,7 +56,7 @@ class PreviewManagerTest {
 
     @Test
     void removeAllCancelsEveryPreviewEvenWhenOneThrows() throws Exception {
-        var manager = new PreviewManager(fakePlugin());
+        var manager = new PreviewManager(Logger.getLogger("PreviewManagerTest"));
         var first = new FakePreview(null);
         var broken = new FakePreview(new NullPointerException("cancel failed"));
         var last = new FakePreview(null);
@@ -88,19 +86,6 @@ class PreviewManagerTest {
         var field = PreviewManager.class.getDeclaredField("previews");
         field.setAccessible(true);
         return (Map<UUID, Preview>) field.get(manager);
-    }
-
-    private static HMCWraps fakePlugin() {
-        return (HMCWraps) Proxy.newProxyInstance(
-                HMCWraps.class.getClassLoader(),
-                new Class<?>[] { HMCWraps.class },
-                (proxy, method, args) -> switch (method.getName()) {
-                    case "getLogger" -> Logger.getLogger("PreviewManagerTest");
-                    case "toString" -> "FakeHMCWraps";
-                    case "hashCode" -> System.identityHashCode(proxy);
-                    case "equals" -> proxy == args[0];
-                    default -> null;
-                });
     }
 
     private static final class FakePreview implements Preview {

@@ -3,6 +3,7 @@ package de.skyslycer.hmcwraps.preview.floating;
 import com.tcoded.folialib.wrapper.task.WrappedTask;
 import de.skyslycer.hmcwraps.HMCWraps;
 import de.skyslycer.hmcwraps.preview.Preview;
+import de.skyslycer.hmcwraps.serialization.preview.PreviewEntityType;
 import de.skyslycer.hmcwraps.util.VersionUtil;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -19,6 +20,7 @@ public class FloatingPreview implements Preview {
     private final Consumer<Player> onClose;
     private final HMCWraps plugin;
     private final boolean upsideDown;
+    private final PreviewEntityType entityType;
     private WrappedTask task;
     private WrappedTask cancelTask;
 
@@ -29,20 +31,61 @@ public class FloatingPreview implements Preview {
         this.upsideDown = item.getType().toString().contains("_HELMET") ? !upsideDown : upsideDown;
         this.onClose = onClose;
         this.plugin = plugin;
+        this.entityType = resolveEntityType(plugin.getConfiguration().getPreview().getEntityType(), item);
     }
 
     public void preview() {
         player.closeInventory();
 
-        VersionUtil.sendSpawnPacket(player, entityId, upsideDown);
-        VersionUtil.sendMetadataPacket(player, entityId, upsideDown);
+        VersionUtil.sendSpawnPacket(player, entityId, upsideDown, entityType.name());
+        if (entityType == PreviewEntityType.ARMOR_STAND) {
+            VersionUtil.sendMetadataPacket(player, entityId, upsideDown);
+            VersionUtil.sendEquipPacket(player, entityId, item);
+        } else if (entityType == PreviewEntityType.ITEM_DISPLAY) {
+            VersionUtil.sendItemDisplayMetadataPacket(player, entityId, item);
+        } else {
+            VersionUtil.sendEquipPacket(player, entityId, item, equipmentSlot(item));
+        }
         VersionUtil.sendTeleportPacket(player, entityId, upsideDown);
-        VersionUtil.sendEquipPacket(player, entityId, item);
 
         task = plugin.getFoliaLib().getScheduler().runTimerAsync(new RotateRunnable(player, entityId, plugin), 0, 1);
 
         cancelTask = plugin.getFoliaLib().getScheduler().runAtEntityLater(player, () -> plugin.getPreviewManager().remove(player.getUniqueId(), true),
                         plugin.getConfiguration().getPreview().getDuration() * 20L);
+    }
+
+    private static PreviewEntityType resolveEntityType(PreviewEntityType configured, ItemStack item) {
+        if (configured != PreviewEntityType.AUTO) {
+            return configured;
+        }
+        if (isArmor(item) && mannequinSupported()) {
+            return PreviewEntityType.MANNEQUIN;
+        }
+        return VersionUtil.hasDataComponents() ? PreviewEntityType.ITEM_DISPLAY : PreviewEntityType.ARMOR_STAND;
+    }
+
+    private static boolean mannequinSupported() {
+        try {
+            org.bukkit.entity.EntityType.valueOf("MANNEQUIN");
+            return true;
+        } catch (IllegalArgumentException ignored) {
+            return false;
+        }
+    }
+
+    private static boolean isArmor(ItemStack item) {
+        var type = item.getType().toString();
+        return type.endsWith("_HELMET") || type.endsWith("_CHESTPLATE") || type.endsWith("_LEGGINGS")
+                || type.endsWith("_BOOTS") || type.equals("ELYTRA");
+    }
+
+    private static String equipmentSlot(ItemStack item) {
+        var type = item.getType().toString();
+        if (type.endsWith("_HELMET")) return "HEAD";
+        if (type.endsWith("_CHESTPLATE") || type.equals("ELYTRA")) return "CHEST";
+        if (type.endsWith("_LEGGINGS")) return "LEGS";
+        if (type.endsWith("_BOOTS")) return "FEET";
+        return "MAINHAND";
     }
 
     public void cancel(boolean open) {

@@ -20,11 +20,18 @@ import java.util.logging.Level;
 public class PreviewManager {
 
     private final HMCWraps plugin;
+    private final java.util.logging.Logger logger;
 
     private final Map<UUID, Preview> previews = new ConcurrentHashMap<>();
 
     public PreviewManager(HMCWraps plugin) {
         this.plugin = plugin;
+        this.logger = plugin.getLogger();
+    }
+
+    PreviewManager(java.util.logging.Logger logger) {
+        this.plugin = null;
+        this.logger = logger;
     }
 
     /**
@@ -41,7 +48,7 @@ public class PreviewManager {
         try {
             preview.cancel(open);
         } catch (Exception exception) {
-            plugin.getLogger().log(Level.WARNING, "The preview of " + uuid + " could not be cancelled cleanly!", exception);
+            logger.log(Level.WARNING, "The preview of " + uuid + " could not be cancelled cleanly!", exception);
         }
     }
 

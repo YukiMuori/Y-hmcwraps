@@ -455,6 +455,18 @@ public class VersionUtil {
      * @param upsideDown If the displayed item should be upside down
      */
     public static void sendSpawnPacket(Player player, int entityId, boolean upsideDown) {
+        sendSpawnPacket(player, entityId, upsideDown, "ARMOR_STAND");
+    }
+
+    /**
+     * Send a spawn packet for the requested vanilla entity type.
+     *
+     * @param player The player to send the packet to
+     * @param entityId The client-side entity ID
+     * @param upsideDown Whether the preview position should be lowered
+     * @param bukkitEntityType The Bukkit entity type enum name
+     */
+    public static void sendSpawnPacket(Player player, int entityId, boolean upsideDown, String bukkitEntityType) {
         var packetClassName = VersionUtil.hasDataComponents() ? "net.minecraft.network.protocol.game.ClientboundAddEntityPacket"
                 : "net.minecraft.network.protocol.game.PacketPlayOutSpawnEntity";
         var entityTypeClassName = VersionUtil.hasDataComponents() ? "net.minecraft.world.entity.EntityType"
@@ -462,13 +474,12 @@ public class VersionUtil {
         var vec3ClassName = VersionUtil.hasDataComponents() ? "net.minecraft.world.phys.Vec3"
                 : "net.minecraft.world.phys.Vec3D";
         var vec3ZeroName = VersionUtil.hasDataComponents() ? "ZERO" : "b";
-        var entityTypeName = VersionUtil.hasDataComponents() ? "ARMOR_STAND" : "d";
         try {
             var position = Vec3d.fromLocation(PlayerUtil.getLookBlock(player)).lowerY(upsideDown);
             var packetClass = Class.forName(packetClassName);
             var entityTypeClass = Class.forName(entityTypeClassName);
             var vec3Class = Class.forName(vec3ClassName);
-            var armorStandType = entityTypeClass.getField(entityTypeName).get(null);
+            var nmsEntityType = resolveEntityType(entityTypeClass, bukkitEntityType);
             var zeroVec3 = vec3Class.getField(vec3ZeroName).get(null);
             var constructor = packetClass.getConstructor(
                     int.class,            // entity ID
@@ -484,11 +495,30 @@ public class VersionUtil {
                     double.class          // headYaw
             );
             var packet = constructor.newInstance(entityId, UUID.randomUUID(), position.x(), position.y(), position.z(),
-                    0f, 0f, armorStandType, 0, zeroVec3, 0d);
+                    0f, 0f, nmsEntityType, 0, zeroVec3, 0d);
             sendPacket(player, packet);
         } catch (Exception exception) {
-            throw new RuntimeException("Failed to send armor stand spawn packet", exception);
+            throw new RuntimeException("Failed to send " + bukkitEntityType + " spawn packet", exception);
         }
+    }
+
+    private static Object resolveEntityType(Class<?> entityTypeClass, String bukkitEntityType) throws Exception {
+        if (VersionUtil.hasDataComponents()) {
+            try {
+                var craftEntityType = Class.forName("org.bukkit.craftbukkit.entity.CraftEntityType");
+                var converter = craftEntityType.getDeclaredMethod("bukkitToMinecraft", org.bukkit.entity.EntityType.class);
+                converter.setAccessible(true);
+                var type = org.bukkit.entity.EntityType.valueOf(bukkitEntityType);
+                return converter.invoke(null, type);
+            } catch (ClassNotFoundException | NoSuchMethodException ignored) {
+                // Older Mojang-mapped implementations still expose static EntityType fields.
+            }
+            return entityTypeClass.getField(bukkitEntityType).get(null);
+        }
+        if (!bukkitEntityType.equals("ARMOR_STAND")) {
+            throw new IllegalArgumentException(bukkitEntityType + " previews need a modern server");
+        }
+        return entityTypeClass.getField("d").get(null);
     }
 
     /**
@@ -536,6 +566,40 @@ public class VersionUtil {
             sendPacket(player, packet);
         } catch (Exception exception) {
             throw new RuntimeException("Failed to send armor stand metadata packet", exception);
+        }
+    }
+
+    /**
+     * Send the displayed item metadata for an item display preview.
+     *
+     * @param player The player to send the packet to
+     * @param entityId The client-side item display ID
+     * @param item The displayed item
+     */
+    public static void sendItemDisplayMetadataPacket(Player player, int entityId, ItemStack item) {
+        if (!VersionUtil.hasDataComponents()) {
+            throw new IllegalStateException("Item display previews need a data-component server version");
+        }
+        try {
+            var packetClass = Class.forName("net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket");
+            var dataValueClass = Class.forName("net.minecraft.network.syncher.SynchedEntityData$DataValue");
+            var serializerClass = Class.forName("net.minecraft.network.syncher.EntityDataSerializer");
+            var serializersClass = Class.forName("net.minecraft.network.syncher.EntityDataSerializers");
+            var nmsItem = Class.forName("org.bukkit.craftbukkit.inventory.CraftItemStack")
+                    .getMethod("asNMSCopy", ItemStack.class)
+                    .invoke(null, item);
+
+            var dataValueConstructor = dataValueClass.getConstructor(int.class, serializerClass, Object.class);
+            var itemSerializer = serializersClass.getField("ITEM_STACK").get(null);
+            var byteSerializer = serializersClass.getField("BYTE").get(null);
+            var displayedItem = dataValueConstructor.newInstance(23, itemSerializer, nmsItem);
+            // FIXED is the raw protocol value 8; it follows entity yaw and renders like a normal item.
+            var displayTransform = dataValueConstructor.newInstance(24, byteSerializer, (byte) 8);
+            var packet = packetClass.getConstructor(int.class, List.class)
+                    .newInstance(entityId, List.of(displayedItem, displayTransform));
+            sendPacket(player, packet);
+        } catch (Exception exception) {
+            throw new RuntimeException("Failed to send item display metadata packet", exception);
         }
     }
 
@@ -635,11 +699,23 @@ public class VersionUtil {
      * @param item The item to equip
      */
     public static void sendEquipPacket(Player player, int entityId, ItemStack item) {
+        sendEquipPacket(player, entityId, item, "HEAD");
+    }
+
+    /**
+     * Send an equipment packet using a named Bukkit/NMS equipment slot.
+     *
+     * @param player The viewer
+     * @param entityId The client-side entity ID
+     * @param item The item to equip
+     * @param slotName MAINHAND, OFFHAND, FEET, LEGS, CHEST or HEAD
+     */
+    public static void sendEquipPacket(Player player, int entityId, ItemStack item, String slotName) {
         var craftItemStackClassName = VersionUtil.hasDataComponents() ? "org.bukkit.craftbukkit.inventory.CraftItemStack"
                 : "org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemStack";
         var equipmentSlotClassName = VersionUtil.hasDataComponents() ? "net.minecraft.world.entity.EquipmentSlot"
                 : "net.minecraft.world.entity.EnumItemSlot";
-        var headSlotName = VersionUtil.hasDataComponents() ? "HEAD" : "f";
+        var resolvedSlotName = VersionUtil.hasDataComponents() ? slotName : "f";
         var packetName = VersionUtil.hasDataComponents() ? "net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket"
                 : "net.minecraft.network.protocol.game.PacketPlayOutEntityEquipment";
         try {
@@ -651,9 +727,9 @@ public class VersionUtil {
             Class<?> equipmentSlotClass = Class.forName(equipmentSlotClassName);
             Class<?> clientboundEquipPacketClass = Class.forName(packetName);
 
-            Object headSlot = equipmentSlotClass.getField(headSlotName).get(null);
+            Object equipmentSlot = equipmentSlotClass.getField(resolvedSlotName).get(null);
             Method pairOfMethod = pairClass.getMethod("of", Object.class, Object.class);
-            Object pair = pairOfMethod.invoke(null, headSlot, nmsItem);
+            Object pair = pairOfMethod.invoke(null, equipmentSlot, nmsItem);
             List<Object> pairList = List.of(pair);
 
             Constructor<?> packetConstructor = clientboundEquipPacketClass.getConstructor(int.class, List.class);
@@ -661,7 +737,7 @@ public class VersionUtil {
 
             sendPacket(player, packet);
         } catch (Exception exception) {
-            throw new RuntimeException("Failed to send armor stand equip packet", exception);
+            throw new RuntimeException("Failed to send " + slotName + " equipment packet", exception);
         }
     }
 

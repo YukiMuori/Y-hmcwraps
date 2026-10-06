@@ -12,6 +12,7 @@ Run with Java 21:
 Current unit coverage is intended to check:
 
 - `VersionParser` handling of legacy (`1.21.4-R0.1-SNAPSHOT`), new-scheme (`26.1.2`), non-numeric (`26.2.build.123-alpha`) and unparseable version strings.
+- Preview cancellation before tasks are scheduled, including cleanup that prevents failed cancellation from stranding previews.
 - `SkinPrice` provider normalization, custom currency IDs and invalid amounts.
 - Rarity identifier normalization/validation.
 - Ownership-cache read behavior, favorite-cache invalidation, grants and purchase-audit unlock calls.
@@ -55,6 +56,7 @@ For each case, compare a saved pre-operation item and test both applying a skin 
 - [ ] Custom model data, item model, tooltip style, glint override, armor trim, color, equippable components and other server-supported item data.
 - [ ] Nexo data and original custom-item identity if Nexo is installed; repeat equivalent checks for ItemsAdder, Oraxen, CraftEngine and MythicCrucible when available.
 - [ ] Preview uses a copy of the selected target item, does not mutate the held item, and restores/reopens the configured menu after timeout/cancel.
+- [ ] Floating preview modes (`ARMOR_STAND`, `ITEM_DISPLAY`, `MANNEQUIN`, `AUTO`) render on supported servers; mannequins equip armor in the matching slot and hold other items in their main hand.
 - [ ] Cancel `ItemWrapEvent` from a test plugin: the GUI must not report a successful apply or alter the item.
 - [ ] `/itemskin remove` does not unwrap a legacy wrap; `/wraps` and the legacy preview path still behave as before.
 
@@ -93,4 +95,4 @@ For each case, compare a saved pre-operation item and test both applying a skin 
 
 ## Release gate
 
-Do not mark the preservation round-trip, optional-provider integration, full compatibility matrix or release as verified until the matching automated/server tests have been run and their results recorded. Publish `v2.1.0` only after merge to `master`.
+Do not mark the preservation round-trip, optional-provider integration, full compatibility matrix or release as verified until the matching automated/server tests have been run and their results recorded. Publish `v2.1.1` only after merge to `master`.

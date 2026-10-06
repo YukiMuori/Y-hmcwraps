@@ -139,7 +139,7 @@ public final class ShopServiceImpl implements ShopService {
         }
         String message = plugin.getLanguageManager().get(null, key);
         if (message == null || message.equals(key)) {
-            debug("Event shop '" + event.id() + "' " + phase + " but the message " + key + " is missing.");
+            debug.accept("Event shop '" + event.id() + "' " + phase + " but the message " + key + " is missing.");
             return;
         }
         TagResolver values = TagResolver.resolver(
@@ -153,7 +153,7 @@ public final class ShopServiceImpl implements ShopService {
                 }
             }
         });
-        debug("Event shop '" + event.id() + "' " + phase + "; announced to the server.");
+        debug.accept("Event shop '" + event.id() + "' " + phase + "; announced to the server.");
     }
 
     /** The daily rotation service, used by the countdown placeholder and the scheduler. */

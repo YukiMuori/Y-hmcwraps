@@ -588,6 +588,30 @@ public final class ConfigurationValidator {
         }
     }
 
+    /** Validates a {@code shops.yml} price: provider, currency and a positive finite amount. */
+    private void validatePrice(Context context, Path path, String ownerId,
+                               de.skyslycer.hmcwraps.shop.config.ShopPriceConfiguration price) {
+        if (price == null || price.getAmount() == null) return;
+        Double amount = price.getAmount();
+        String provider = price.getProvider();
+        String currency = price.getCurrency();
+        if (!Double.isFinite(amount) || amount <= 0 || provider == null || provider.isBlank()
+                || currency == null || currency.isBlank()) {
+            context.error(path, "invalid-price", Map.of("id", ownerId));
+            return;
+        }
+        if (normalize(provider).equals("auto")) return;
+        EconomyProvider economyProvider = economyProviders.get(normalize(provider));
+        if (economyProvider == null) {
+            context.warning(path, "provider-unavailable", Map.of("id", ownerId, "provider", provider));
+            return;
+        }
+        if (!economyProvider.supportsCurrency(currency)) {
+            context.warning(path, "unsupported-currency",
+                    Map.of("id", ownerId, "provider", provider, "currency", currency));
+        }
+    }
+
     private void validatePrice(Context context, Path path, String skinId, SkinPriceConfiguration price) {
         if (price == null || !price.isConfigured()) return;
         Double amount = price.getAmount();

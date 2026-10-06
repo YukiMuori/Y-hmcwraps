@@ -23,21 +23,61 @@ public class ModelDataModifier implements WrapModifier {
 
     @Override
     public void wrap(@Nullable Wrap wrap, @Nullable Wrap currentWrap, ItemStack item, Player player) {
-        var originalModleId = getOriginalModelId(item);
-        Integer currentModelId = null;
-        var meta = item.getItemMeta();
-        if (meta.hasCustomModelData()) {
-            currentModelId = meta.getCustomModelData();
+        boolean itemModelWrap = usesItemModel(wrap);
+        boolean currentItemModelWrap = usesItemModel(currentWrap);
+
+        // Modern item-model wraps are independent from CustomModelData. In particular, applying
+        // a Nexo skin must only set minecraft:item_model and must leave the target's existing
+        // CustomModelData component exactly as it was.
+        if (itemModelWrap) {
+            // When replacing a legacy model-data wrap, first put back the target's original data.
+            if (currentWrap != null && !currentItemModelWrap) {
+                restoreOriginalModelData(item);
+            }
+            return;
         }
-        var newModelId = wrap == null ? originalModleId : wrap.getModelId();
+
+        // Removing an item-model wrap also leaves CustomModelData alone: it was never changed.
+        if (wrap == null && currentItemModelWrap) {
+            var meta = item.getItemMeta();
+            meta.getPersistentDataContainer().remove(originalModelIdKey);
+            item.setItemMeta(meta);
+            return;
+        }
+
+        var originalModelId = getOriginalModelId(item);
+        Integer currentModelId = currentModelData(item);
+        var meta = item.getItemMeta();
+        var newModelId = wrap == null ? originalModelId : wrap.getModelId();
         meta.setCustomModelData(newModelId == -1 ? null : newModelId);
         if (wrap == null) {
             meta.getPersistentDataContainer().remove(originalModelIdKey);
         }
         item.setItemMeta(meta);
-        if (wrap != null && currentWrap == null) {
+
+        // A model-data wrap applied after an item-model wrap starts preserving here because the
+        // item-model path intentionally did not create model-data preservation state.
+        if (wrap != null && (currentWrap == null || currentItemModelWrap)) {
             setOriginalModelId(item, currentModelId);
         }
+    }
+
+    private boolean usesItemModel(@Nullable Wrap wrap) {
+        return wrap != null && de.skyslycer.hmcwraps.util.VersionUtil.itemModelSupported()
+                && wrap.getItemModel() != null;
+    }
+
+    private Integer currentModelData(ItemStack item) {
+        var meta = item.getItemMeta();
+        return meta.hasCustomModelData() ? meta.getCustomModelData() : null;
+    }
+
+    private void restoreOriginalModelData(ItemStack item) {
+        var meta = item.getItemMeta();
+        int original = getOriginalModelId(item);
+        meta.setCustomModelData(original == -1 ? null : original);
+        meta.getPersistentDataContainer().remove(originalModelIdKey);
+        item.setItemMeta(meta);
     }
 
     private void setOriginalModelId(ItemStack item, Integer modelData) {

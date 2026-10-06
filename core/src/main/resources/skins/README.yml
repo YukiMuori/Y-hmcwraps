@@ -24,7 +24,9 @@ price:
 permission: ''
 preview: true
 cosmetic:
-  id: '0'
+  # A Nexo id applies minecraft:item_model="nexo:amethyst_greatblade" on modern servers.
+  # CustomModelData is not changed when an item-model skin is applied or removed.
+  id: 'nexo:amethyst_greatblade'
   wrap-name: '<aqua>Example Skin'
   wrap-tooltip-style: 'minecraft:custom_tooltip'
   glint-override: false

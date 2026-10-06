@@ -86,11 +86,11 @@ public class NameModifier implements WrapModifier {
         } else if (nameSettings.isDefaultEnabled()) {
             var map = nameSettings.getDefaults();
             if (map.containsKey(item.getType().toString())) {
-                name = StringUtil.LEGACY_SERIALIZER_AMPERSAND.serialize(StringUtil.parseComponent(map.get(item.getType().toString())));
+                name = StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(map.get(item.getType().toString())));
             }
             for (String key : map.keySet()) {
                 if (plugin.getCollectionHelper().getMaterials(key).contains(item.getType())) {
-                    name = StringUtil.LEGACY_SERIALIZER_AMPERSAND.serialize(StringUtil.parseComponent(map.get(key)));
+                    name = StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(map.get(key)));
                 }
             }
             return name;

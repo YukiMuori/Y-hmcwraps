@@ -48,10 +48,11 @@ public class NexoItemHook extends ItemHook {
     public NamespacedKey getItemModel(String id) {
         if (!VersionUtil.itemModelSupported() || id == null || id.isBlank()) return null;
 
-        // Prefer the component explicitly configured by Nexo. When Nexo is still configured
-        // to generate legacy CustomModelData, its canonical modern model remains nexo:<id>.
-        var configured = super.getItemModel(id);
-        return configured != null ? configured : new NamespacedKey("nexo", id);
+        // Nexo's public item id is also the canonical model component id. Do not copy a model
+        // found on the built stack: installations migrated from an old pack can still expose a
+        // generated/legacy value there. A wrap configured as `id: nexo:amethyst_greatblade`
+        // must always produce minecraft:item_model="nexo:amethyst_greatblade".
+        return new NamespacedKey("nexo", id);
     }
 
 }

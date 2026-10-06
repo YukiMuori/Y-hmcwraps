@@ -148,16 +148,20 @@ public class LoreModifier implements WrapModifier {
         } else if (loreSettings.isDefaultEnabled()) {
             var map = loreSettings.getDefaults();
             if (map.containsKey(item.getType().toString())) {
-                map.get(item.getType().toString()).stream().map(entry -> ChatColor.translateAlternateColorCodes('&', entry)).forEach(lore::add);
+                map.get(item.getType().toString()).stream().map(this::parseConfiguredLine).forEach(lore::add);
             }
             for (String key : map.keySet()) {
                 if (plugin.getCollectionHelper().getMaterials(key).contains(item.getType())) {
-                    map.get(key).stream().map(entry -> ChatColor.translateAlternateColorCodes('&', entry)).forEach(lore::add);
+                    map.get(key).stream().map(this::parseConfiguredLine).forEach(lore::add);
                 }
             }
             return lore;
         }
         return item.getItemMeta().getLore();
+    }
+
+    private String parseConfiguredLine(String line) {
+        return StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(line));
     }
 
     public enum Type {

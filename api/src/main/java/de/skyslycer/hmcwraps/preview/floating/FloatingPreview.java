@@ -10,6 +10,7 @@ import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 public class FloatingPreview implements Preview {
@@ -23,6 +24,7 @@ public class FloatingPreview implements Preview {
     private final PreviewEntityType entityType;
     private WrappedTask task;
     private WrappedTask cancelTask;
+    private final AtomicBoolean cancelled = new AtomicBoolean();
 
     public FloatingPreview(Player player, ItemStack item, boolean upsideDown, Consumer<Player> onClose, HMCWraps plugin) {
         this.player = player;
@@ -49,9 +51,11 @@ public class FloatingPreview implements Preview {
         VersionUtil.sendTeleportPacket(player, entityId, upsideDown);
 
         task = plugin.getFoliaLib().getScheduler().runTimerAsync(new RotateRunnable(player, entityId, plugin), 0, 1);
+        if (cancelled.get()) task.cancel();
 
         cancelTask = plugin.getFoliaLib().getScheduler().runAtEntityLater(player, () -> plugin.getPreviewManager().remove(player.getUniqueId(), true),
                         plugin.getConfiguration().getPreview().getDuration() * 20L);
+        if (cancelled.get()) cancelTask.cancel();
     }
 
     private static PreviewEntityType resolveEntityType(PreviewEntityType configured, ItemStack item) {
@@ -89,6 +93,9 @@ public class FloatingPreview implements Preview {
     }
 
     public void cancel(boolean open) {
+        // Reload, timeout and sneak can race each other. Cancellation must be null-safe and run
+        // once, including when preview() only managed to create one of its scheduled tasks.
+        if (!cancelled.compareAndSet(false, true)) return;
         if (task != null) {
             task.cancel();
         }

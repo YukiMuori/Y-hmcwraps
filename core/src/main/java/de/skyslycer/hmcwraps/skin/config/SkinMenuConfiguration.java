@@ -9,7 +9,7 @@ import java.util.Map;
 
 @ConfigSerializable
 public class SkinMenuConfiguration {
-    private String title = "<gradient:#8FEAF9:#CDA4F9>Item Skins";
+    private String title = "<gradient:#8FEAF9:#CDA4F9>ɪᴛᴇᴍ sᴋɪɴs</gradient>";
     private int size = 54;
     private List<Integer> contentSlots = new ArrayList<>();
     private int itemSlot = 49;

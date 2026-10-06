@@ -1,7 +1,7 @@
 # Every visible control can be disabled, moved and given a custom material or hooked item.
-# Skin icons and controls accept MiniMessage, model data, item-model and tooltip-style settings.
+# All titles, names and lore use MiniMessage. Skin icons and controls also accept item-model and tooltip-style.
 gui:
-  title: '<gradient:#8FEAF9:#CDA4F9><lang:gui.title>'
+  title: '<gradient:#8FEAF9:#CDA4F9>ɪᴛᴇᴍ sᴋɪɴs</gradient>'
   size: 54
   content-slots: [10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34]
   item-enabled: true
@@ -14,62 +14,101 @@ gui:
     type: material
     id: BLACK_STAINED_GLASS_PANE
     name: ' '
+    hide-tooltip: true
   previous:
     enabled: true
     slot: 45
     item:
       type: material
       id: ARROW
-      name: '<green><lang:gui.previous>'
+      name: '<gray>← <lang:gui.previous></gray>'
+      lore:
+        - ''
+        - '<#F0FAFF><lang:gui.previous-description></#F0FAFF>'
+        - ''
+        - '<#FFE89A>➜ <lang:gui.click-navigate></#FFE89A>'
   search:
     enabled: true
     slot: 46
     item:
       type: material
       id: SPYGLASS
-      name: '<aqua><lang:gui.search>'
+      name: '<gradient:#8FEAF9:#CDA4F9><lang:gui.search></gradient>'
+      lore:
+        - ''
+        - '<#F0FAFF><lang:gui.search-description></#F0FAFF>'
+        - ''
+        - '<#FFE89A>➜ <lang:gui.click-search></#FFE89A>'
   favorites:
     enabled: true
     slot: 47
     item:
       type: material
       id: NETHER_STAR
-      name: '<gold><lang:gui.favorites>'
+      name: '<#CDA4F9>★ <lang:gui.favorites></#CDA4F9>'
+      lore:
+        - ''
+        - '<#F0FAFF><lang:gui.favorites-description></#F0FAFF>'
+        - ''
+        - '<#FFE89A>➜ <lang:gui.click-filter></#FFE89A>'
   collection:
     enabled: true
     slot: 48
     item:
       type: material
       id: BOOK
-      name: '<light_purple><lang:gui.collection>'
+      name: '<#CDA4F9><lang:gui.collection></#CDA4F9>'
+      lore:
+        - ''
+        - '<#F0FAFF><lang:gui.collection-description></#F0FAFF>'
+        - ''
+        - '<#FFE89A>➜ <lang:gui.click-change></#FFE89A>'
   close:
     enabled: true
     slot: 49
     item:
       type: material
       id: BARRIER
-      name: '<red><lang:gui.close>'
+      name: '<#FF6B6B>✕ <lang:gui.close></#FF6B6B>'
+      lore:
+        - ''
+        - '<gray><lang:gui.close-description></gray>'
   sort:
     enabled: true
     slot: 51
     item:
       type: material
       id: COMPARATOR
-      name: '<yellow><lang:gui.sort>'
+      name: '<#FFE89A><lang:gui.sort></#FFE89A>'
+      lore:
+        - ''
+        - '<#F0FAFF><lang:gui.sort-description></#F0FAFF>'
+        - ''
+        - '<#FFE89A>➜ <lang:gui.click-change></#FFE89A>'
   filter:
     enabled: true
     slot: 52
     item:
       type: material
       id: HOPPER
-      name: '<aqua><lang:gui.filter>'
+      name: '<#8FEAF9><lang:gui.filter></#8FEAF9>'
+      lore:
+        - ''
+        - '<#F0FAFF><lang:gui.filter-description></#F0FAFF>'
+        - ''
+        - '<#FFE89A>➜ <lang:gui.click-change></#FFE89A>'
   next:
     enabled: true
     slot: 53
     item:
       type: material
       id: ARROW
-      name: '<green><lang:gui.next>'
+      name: '<#8FEAF9><lang:gui.next> →</#8FEAF9>'
+      lore:
+        - ''
+        - '<#F0FAFF><lang:gui.next-description></#F0FAFF>'
+        - ''
+        - '<#FFE89A>➜ <lang:gui.click-navigate></#FFE89A>'
   category-slots:
     swords: 0
     pickaxes: 1

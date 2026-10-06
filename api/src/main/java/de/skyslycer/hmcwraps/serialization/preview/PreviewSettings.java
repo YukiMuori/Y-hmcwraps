@@ -17,7 +17,9 @@ public class PreviewSettings {
     }
 
     public PreviewEntityType getEntityType() {
-        return entityType == null ? PreviewEntityType.ARMOR_STAND : entityType;
+        // Item displays retain modern data components such as minecraft:item_model. AUTO keeps
+        // mannequins for wearable armor and uses an item display for every other modern item.
+        return entityType == null ? PreviewEntityType.AUTO : entityType;
     }
 
     public int getDuration() {

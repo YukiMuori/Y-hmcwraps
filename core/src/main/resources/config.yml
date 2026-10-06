@@ -31,9 +31,9 @@ preview:
   # When using 'HAND', rotation and bobbing will be ignored. (The preview item is client-side only)
   type: 'FLOATING'
   # Entity used by FLOATING previews: ARMOR_STAND, ITEM_DISPLAY, MANNEQUIN or AUTO.
-  # AUTO uses a mannequin for armor (when supported by the server) and an item display otherwise.
-  # MANNEQUIN equips armor in its matching slot and holds all other items in its main hand.
-  entity-type: 'ARMOR_STAND'
+  # AUTO preserves minecraft:item_model by using an item display; wearable armor uses a mannequin
+  # when the server supports it. MANNEQUIN equips armor and holds other items in its main hand.
+  entity-type: 'AUTO'
   # Duration of the preview in seconds
   duration: 5
   # Rotation per tick (50ms)
@@ -293,7 +293,7 @@ inventory:
   # Leave empty to disable
   favorite-prefix: ''
   # The title
-  title: '<red><bold>Wraps'
+  title: '<gradient:#8FEAF9:#CDA4F9>ᴡʀᴀᴘs</gradient>'
   # Type of inventory, SCROLLING or PAGINATED
   type: 'PAGINATED'
   # How many rows the inventory should have
@@ -318,10 +318,12 @@ inventory:
     # Slots start from 0
     45:
       id: 'HOPPER'
-      name: '%hmcwraps_filter%'
+      name: '<#8FEAF9>ғɪʟᴛʀᴏ</#8FEAF9> <gray>•</gray> %hmcwraps_filter%'
       lore:
-        - '<gray>Toggle to see all'
-        - '<gray>or only owned wraps.'
+        - '<#F0FAFF>Mostra tutte le skin o solo</#F0FAFF>'
+        - '<#F0FAFF>quelle che possiedi.</#F0FAFF>'
+        - ''
+        - '<#FFE89A>➜ ᴄʟɪᴄᴄᴀ ᴘᴇʀ ᴄᴀᴍʙɪᴀʀᴇ</#FFE89A>'
       actions:
         any:
           TOGGLE_FILTER:
@@ -338,7 +340,7 @@ inventory:
         - 52
     47:
       id: 'ARROW'
-      name: '<green>Previous'
+      name: '<gray>← ᴘᴀɢɪɴᴀ ᴘʀᴇᴄᴇᴅᴇɴᴛᴇ</gray>'
       # Actions, you can use all the above and more. It's the same format as the actions in the wraps.
       # The action: Either 'SCROLL_BACK', 'SCROLL_FORTH', 'PREVIOUS_PAGE', 'NEXT_PAGE', 'UNWRAP' to unwrap the current item, 'CLOSE' to close the inventory
       actions:
@@ -350,17 +352,20 @@ inventory:
             - ''
     51:
       id: 'ARROW'
-      name: '<green>Next'
+      name: '<#8FEAF9>ᴘᴀɢɪɴᴀ sᴜᴄᴄᴇssɪᴠᴀ →</#8FEAF9>'
       actions:
         any:
           SCROLL_FORTH:
             - ''
     53:
       id: 'RED_CONCRETE'
-      name: '<red>Unwrap'
+      name: '<#FF6B6B>✕ ʀɪᴍᴜᴏᴠɪ sᴋɪɴ</#FF6B6B>'
       # The lore displayed
       lore:
-        - '<gray>Unwrap your current item'
+        - ''
+        - '<#F0FAFF>Ripristina l’aspetto originale.</#F0FAFF>'
+        - ''
+        - '<#FFE89A>➜ ᴄʟɪᴄᴄᴀ ᴘᴇʀ ʀɪᴍᴜᴏᴠᴇʀᴇ</#FFE89A>'
       actions:
         any:
           UNWRAP:

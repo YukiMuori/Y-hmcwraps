@@ -1,6 +1,6 @@
-# Y-HMCWraps 2.0
+# Y-HMCWraps 2.1
 
-Y-HMCWraps is a Paper/Spigot item-cosmetics plugin. It keeps the established **wrap** system and adds a separate, catalog-driven **item-skin** system with rarities, categories, translations, ownership, optional economy providers, previews and a configurable inventory UI.
+Y-HMCWraps is a Paper/Spigot item-cosmetics plugin. It keeps the established **wrap** system and adds a separate, catalog-driven **item-skin** system with rarities, categories, translations, ownership, optional economy providers, previews and a configurable inventory UI. On top of it, 2.1 ships an integrated **skin shop** with daily rotations, featured entries, timed event shops, bundles, coupons, gifting, collection rewards and player profiles.
 
 The new catalog uses the existing wrap engine as its application adapter. This keeps previously applied wraps, legacy configuration, permissions, commands, preview behavior and item PDC data readable instead of replacing them with a new item format.
 
@@ -30,6 +30,14 @@ The repository's build artifact is produced by `./gradlew clean build`; the dist
 | `/itemskin trade <player> <skin-id>` | Offer an owned skin to an online player. Both players must confirm with `/itemskin trade confirm`; either can cancel with `/itemskin trade cancel`. Offers expire after five minutes. |
 | `/itemskin trade confirm` | Confirm your side of the active trade. Ownership transfers only after both confirmations. |
 | `/itemskin trade cancel` | Cancel an active trade before its atomic transfer begins. |
+| `/itemskin shop` | Open the shop: featured entries, the daily rotation, bundles, event shops, coupons, gifts and your profile. |
+| `/itemskin bundles`, `/itemskin events` | Jump straight to the bundle list or the event shops. |
+| `/itemskin coupons` | List the configured coupons and select the one used at checkout (right-click clears it). |
+| `/itemskin profile` | Show owned/favorite/collection/purchase/gift/coupon statistics and recent purchases. |
+| `/itemskin gifts` | Show gifts that were paid for while you were offline. |
+| `/itemskin gift <player> <skin-id>` | Gift a skin to an online or (if enabled) offline player. You pay the price; the recipient receives the ownership. |
+| `/itemskin coupon <code>` | Apply a coupon code to your next purchase. |
+| `/itemskin editor` | *(Permission `hmcwraps.commands.itemskin.editor`)* edit `shops.yml`/`coupons.yml` in game. |
 | `/wraps` | Existing legacy wrap inventory. |
 
 In the browser, left click applies a free/owned skin, right click previews it, middle click toggles a persistent favorite, and Shift-click buys a configured paid skin. Search opens chat input (`clear` resets it; `cancel` returns without changing the search), the favorites button filters to favorited skins, and the collection button cycles through themed series. Sorting defaults to rarity priority descending. Buttons have independent `enabled`, `slot` and `item` settings; target-item and filler display can also be toggled. Configure content slots, category controls, icons, item models, tooltip styles and MiniMessage titles in `itemskin-gui.yml`.
@@ -38,7 +46,63 @@ In the browser, left click applies a free/owned skin, right click previews it, m
 
 Define themed series in `skin-collections.yml`, with a translated `display-name-key`, optional icon/priority and category list. Assign a skin with `collection: angelico`; the collection button narrows compatible skins to that series, while the configured category buttons act as its subcategories (for example swords, tools and armor). A skin without `collection` remains in the all-collections view. Persistent favorites and ownership live in `skins.db` (SQLite by default). Player trades require both players to confirm, check ownership again in storage and use a single SQLite transaction to move—not duplicate—the skin. Trades are in-memory, online-only offers and are cancelled on disconnect or after five minutes.
 
-Administrators can run `/wraps validate` for a read-only check of YAML files, skin/wrap IDs and references, translations, materials, economy settings and GUI slots. It does not reload or edit files.
+Administrators can run `/wraps validate` for a read-only check of YAML files, skin/wrap IDs and references, translations, materials, economy settings, GUI slots and the shop definitions (`shops.yml`, `coupons.yml`): bundle contents and discounts, purchase modes, the daily pool and reset time, event time windows, featured/event entries, and coupon types, values, limits, expiries and every skin/bundle/category reference. It does not reload or edit files.
+
+## Skin shop
+
+The shop is defined by two files that are copied into `plugins/HMCWraps/` on first start: `shops.yml` (daily rotation, featured selection, bundles, event shops) and `coupons.yml` (discount codes). `config.yml` carries the `economy`, `shop`, `gifts`, `discord` and `debug` sections. Every price is recalculated on the server before anything is charged, and GUI state is never trusted.
+
+```yaml
+# shops.yml (excerpt)
+daily-shop:
+  enabled: true
+  slots: 6
+  reset-time: '00:00'
+  zone: UTC
+  pool: [skin:ruby_sword]      # or plain ids; 'bundle:<id>' is allowed too
+  price: { provider: auto, currency: coins, amount: 5000 }
+  discount: 10
+featured:
+  automatic: false
+  entries: [skin:ruby_sword, bundle:starter]
+bundles:
+  starter:
+    name: '<lang:skins.starter.name>'
+    skins: [ruby_sword, ruby_pickaxe]
+    price: { provider: auto, currency: coins, amount: 12000 }
+    discount: 15
+    purchase-mode: both          # full, missing-only or both
+events:
+  halloween_2026:
+    name: 'Halloween 2026'
+    start: '2026-10-24T00:00:00Z'
+    end: '2026-11-03T00:00:00Z'
+    entries: [skin:ruby_sword]
+    discount: 20
+```
+
+```yaml
+# coupons.yml (excerpt)
+coupons:
+  WELCOME10:
+    type: percentage             # percentage or fixed
+    value: 10
+    max-uses: 500
+    max-uses-per-player: 1
+    min-spend: 1000
+    expires: '2026-12-31T23:59:59Z'
+    skins: [ruby_sword]          # optional targeting, together with bundles/categories/channels
+    channels: [daily, featured, 'event:halloween_2026']
+```
+
+- **Bundles** support full, missing-only or both purchase modes. Missing-only charges a dynamic price for the skins the player does not own yet, capped at the bundle price, and never grants an ownership twice.
+- **Coupons** are checked atomically: the usage limit check and the redemption insert happen in one database transaction, so two concurrent purchases can never exceed `max-uses` or `max-uses-per-player`. Purchases are scoped by skin, bundle, category or shop channel.
+- **Paid flows are transactional.** Every purchase, bundle purchase and gift writes a journal row before money leaves the account, then grants ownership in one batch. On any failure the payment is refunded and already granted ownerships are revoked; if the refund itself fails the transaction is logged for an administrator. Interrupted transactions are reconciled on the next start.
+- **Gifting** supports online and optionally offline recipients, a cooldown, an optional message and a join notification. Gifts are stored before the sender is charged, so a crash cannot lose a paid gift.
+- **Collections** derive progress from live ownership. Milestone rewards (money, skins, bundles, collection XP, permission, command, item, message) are claimed journal-first and can never be duplicated.
+- **Discord webhooks** (`discord.events.*` in `config.yml`) can announce purchases, bundle purchases, gifts, collection completions and rewards, coupon redemptions, shop refreshes and event shop openings/closings, with custom message templates and per-event throttled error reporting.
+- **Event shops** open and close automatically: the plugin announces a newly active or expired window exactly once (the state is seeded on start, so a restart does not repeat an announcement).
+- Administrators edit the definition files with `/itemskin editor`: left-click toggles a boolean, right-click asks for a new value in chat (`cancel` aborts). Files are written atomically and the shop reloads right afterwards.
 
 ## Skin configuration
 
@@ -92,7 +156,7 @@ if (wraps != null && wraps.getItemSkinManager() != null) {
 }
 ```
 
-`ItemSkinManager` also provides collection/catalog lookup, compatibility lookup, async owned/favorite skin ID access, favorite updates, access/ownership, async purchases, grants, apply/remove and preview operations. `HMCWraps#getLanguageService()` exposes locale-aware lookup and MiniMessage parsing with `<lang:...>` and `<glyph:...>` tags; the legacy MiniMessage parser delegates these tags to it when available. `registerEconomyProvider(...)` and `registerCompatibilityProvider(...)` let other plugins extend the optional provider boundaries. Bukkit item/player methods should be called on the appropriate server/entity thread; storage and economy results are represented as `CompletionStage`s.
+`ItemSkinManager` also provides collection/catalog lookup, compatibility lookup, async owned/favorite skin ID access, favorite updates, access/ownership, async purchases, grants, apply/remove and preview operations. The shop is exposed through `ShopService` (daily/featured/event listings, quotes, purchases, bundle modes, collections), `CouponService`, `GiftService`, `ProfileService`, `CollectionService` and `PurchaseTransactionService`, together with the cancellable `SkinPurchaseEvent`, `BundlePurchaseEvent`, `SkinGiftEvent`, `CouponRedeemEvent`, `ShopRefreshEvent`, `CollectionCompleteEvent` and `CollectionRewardClaimEvent`. Other plugins can register economy providers (`EconomyService#register`) and read live progress through the same interfaces the GUIs use. `HMCWraps#getLanguageService()` exposes locale-aware lookup and MiniMessage parsing with `<lang:...>` and `<glyph:...>` tags; the legacy MiniMessage parser delegates these tags to it when available. `registerEconomyProvider(...)` and `registerCompatibilityProvider(...)` let other plugins extend the optional provider boundaries. Bukkit item/player methods should be called on the appropriate server/entity thread; storage and economy results are represented as `CompletionStage`s.
 
 ### PlaceholderAPI
 
@@ -114,6 +178,7 @@ When PlaceholderAPI is installed, HMCWraps exposes these skin statistics (owners
 - Existing `config.yml`, wrap files, collections, permissions, `/wraps`, wrap APIs and item PDC identifiers are not renamed or replaced.
 - New skins are registered as legacy `Wrap` payloads, so the current modifier system continues to apply/remove them and already wrapped items remain readable.
 - Ownership is new in 2.0 and is stored in `plugins/HMCWraps/skins.db` using SQLite. It is not inferred from old wrap permissions: legacy wraps remain governed by their existing rules.
+- The shop adds tables for favorites, transactions, coupon redemptions, the shop rotation, collection rewards, gifts and player settings (schema v6). They are created automatically through dialect-neutral migrations; `shop.reconcile-interrupted-transactions` only controls whether interrupted rows are reported at startup.
 - Optional providers are discovered at runtime. Missing integrations do not disable the plugin or prevent free/legacy wraps from loading.
 - Back up the complete `plugins/HMCWraps/` folder before upgrading or rolling back. See [Migration notes](docs/MIGRATION-2.0.md).
 

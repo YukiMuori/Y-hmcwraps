@@ -86,6 +86,17 @@ public final class ItemSkinCommand {
         plugin.getSkinTradeManager().cancel(player);
     }
 
+    @Subcommand("editor")
+    @Description("Edit the shop definition files (shops.yml and coupons.yml) in game.")
+    @revxrsal.commands.annotation.CommandPermission("hmcwraps.commands.itemskin.editor")
+    public void onEditor(Player player) {
+        if (plugin.getShopEditorManager() == null) {
+            send(player, "shop.purchase.unavailable");
+            return;
+        }
+        plugin.getShopEditorManager().open(player);
+    }
+
     @Subcommand("shop")
     @Description("Open the skin shop with the daily offers, bundles and events.")
     public void onShop(Player player) {

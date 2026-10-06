@@ -67,6 +67,7 @@ import de.skyslycer.hmcwraps.shop.ProfileServiceImpl;
 import de.skyslycer.hmcwraps.shop.ShopListener;
 import de.skyslycer.hmcwraps.shop.ShopRegistry;
 import de.skyslycer.hmcwraps.shop.ShopServiceImpl;
+import de.skyslycer.hmcwraps.shop.menu.ShopEditorManager;
 import de.skyslycer.hmcwraps.shop.menu.ShopMenuManager;
 import de.skyslycer.hmcwraps.storage.SqlStorageProvider;
 import de.skyslycer.hmcwraps.transformation.ConfigFileTransformations;
@@ -139,6 +140,7 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
     private ProfileServiceImpl profileService;
     private ShopServiceImpl shopService;
     private ShopMenuManager shopMenuManager;
+    private ShopEditorManager shopEditorManager;
     private GiftServiceImpl giftService;
     private EconomyService economyService;
     private PurchaseTransactionService transactionService;
@@ -296,6 +298,9 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
         itemSkinManager.menuManager().closeAll();
         if (shopMenuManager != null) {
             shopMenuManager.closeAll();
+        }
+        if (shopEditorManager != null) {
+            shopEditorManager.closeAll();
         }
         skinTradeManager.cancelAll();
         integrationHandler.unload();
@@ -562,6 +567,8 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
                     message -> getLogger().warning(message));
             shopMenuManager = new ShopMenuManager(this);
             Bukkit.getPluginManager().registerEvents(shopMenuManager, this);
+            shopEditorManager = new ShopEditorManager(this);
+            Bukkit.getPluginManager().registerEvents(shopEditorManager, this);
             Bukkit.getPluginManager().registerEvents(new ShopListener(this), this);
             startShopTasks();
             getLogger().info("The shop system is ready (" + shopRegistry.bundles().size() + " bundles, "
@@ -651,6 +658,11 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
 
     public ShopMenuManager getShopMenuManager() {
         return shopMenuManager;
+    }
+
+    /** The chat driven shop definition editor, available to administrators. */
+    public ShopEditorManager getShopEditorManager() {
+        return shopEditorManager;
     }
 
     public GiftServiceImpl getGiftService() {

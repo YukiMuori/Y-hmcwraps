@@ -175,6 +175,10 @@ bukkit {
             description = "Gives access to the wraps inventory (has to be enabled in config)."
             children = listOf("hmcwraps.management", "hmcwraps.admin")
         }
+        register("hmcwraps.commands.itemskin.editor") {
+            description = "Gives access to the in-game editor for shops.yml and coupons.yml."
+            children = listOf("hmcwraps.admin")
+        }
         register("hmcwraps.debug") {
             description = "Gives access to debug commands."
             children = listOf("hmcwraps.admin")

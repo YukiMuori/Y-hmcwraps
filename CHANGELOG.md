@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.1.1 — 2026-10-06
+
+### Fixed
+- Preview cancellation no longer throws when its scheduled tasks have not been created; previews are unregistered before cancellation so a failed cancel cannot strand them or break later previews and reloads.
+- Floating preview entity types are resolved through CraftBukkit, avoiding removed static entity fields on current Paper/Leaf builds.
+
+### Added
+- Configurable floating preview entities: armor stand, item display, mannequin, or automatic selection. Mannequins equip armor in the matching slot and hold other items in their main hand.
+
+### Changed
+- Nexo `nexo:<id>` references use the modern `item_model` component on supported servers without also applying legacy CustomModelData.
+
 ## 2.1.0 — 2026-10-06
 
 ### Added

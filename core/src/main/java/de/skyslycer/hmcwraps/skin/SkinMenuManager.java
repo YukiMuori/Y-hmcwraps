@@ -303,7 +303,7 @@ public final class SkinMenuManager implements Listener {
         Component filter = optionLabel(player, "filters", session.filter);
         Component originalName = meta.hasDisplayName()
                 ? StringUtil.LEGACY_SERIALIZER.deserialize(meta.getDisplayName())
-                : Component.translatable(item.getType().translationKey());
+                : Component.translatable(item.getType().getTranslationKey());
         for (String line : config.getItemLore()) {
             if (line != null && line.trim().equalsIgnoreCase("<item_lore>")) {
                 lore.addAll(originalLore);

@@ -40,6 +40,7 @@
 - Nexo skins now always apply their canonical `minecraft:item_model` (`nexo:<id>`) while leaving the target item's CustomModelData untouched; transitions to and from legacy model-data wraps preserve the original component.
 - Floating preview cancellation is idempotent and safe when reload, timeout, and sneak cancellation happen concurrently.
 - Item-display sword previews now rotate the model plane vertically, with the blade pointing upward instead of lying horizontally.
+- Hand previews temporarily hide and then restore the client-side off-hand item, preventing a sword held there from appearing duplicated.
 
 ### Added
 - Compact Nexo/DeluxeMenus-style skin files using top-level `material`, `item-model`, `lore`, `compatible-materials` and `compatible-items`, while retaining the advanced schema.
@@ -53,6 +54,7 @@
 ### Changed
 - Floating previews default to automatic item-display/mannequin selection so modern item-model components render correctly.
 - Bundled wrap, skin, shop, and editor GUIs now use a consistent MiniMessage palette, typography, navigation, localized control lore, and explicitly non-italic item text.
+- Skin-icon lore is minimal by default and fully controlled by the `gui.skin-lore` template, including expansion of each skin file's own lore and optional dynamic placeholders.
 - `/wraps validate` now checks themed skin collection definitions/references and the expanded GUI controls.
 
 ## 2.0.1 — 2026-10-05

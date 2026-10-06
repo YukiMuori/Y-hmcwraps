@@ -294,27 +294,30 @@ public final class SkinMenuManager implements Listener {
         if (iconConfiguration == null || iconConfiguration.getName() == null || iconConfiguration.getName().isBlank()) {
             builder.name(nonItalic(plugin.getLanguageManager().parse(player, skin.displayName())));
         }
-        List<Component> lore = componentLore(meta);
-        ItemSkinRarity rarity = skinManager.rarity(skin.rarityId());
-        if (rarity != null) {
-            Component label = plugin.getLanguageManager().parse(player,
-                    plugin.getLanguageManager().get(player, rarity.displayNameKey()));
-            lore.add(nonItalic(localized(player, "gui.rarity", Placeholder.component("value", label))));
-        }
+        List<Component> configuredSkinLore = componentLore(meta);
         SkinAccess access = skinManager.accessNow(player, skin, owned);
-        lore.add(nonItalic(accessLine(player, access)));
-        if (skin.price() != null) {
-            lore.add(nonItalic(localized(player, "gui.cost",
-                    Placeholder.unparsed("amount", formatAmount(skin.price().amount())),
-                    Placeholder.unparsed("currency", skin.price().currency()))));
+        ItemSkinRarity rarity = skinManager.rarity(skin.rarityId());
+        Component rarityLabel = rarity == null ? Component.empty() : plugin.getLanguageManager().parse(player,
+                plugin.getLanguageManager().get(player, rarity.displayNameKey()));
+        Component favoriteLabel = localized(player,
+                favorites.contains(normalize(skin.id())) ? "gui.favorite-on" : "gui.favorite-off");
+        String amount = skin.price() == null ? "" : formatAmount(skin.price().amount());
+        String currency = skin.price() == null ? "" : skin.price().currency();
+
+        List<Component> lore = new ArrayList<>();
+        for (String line : configuration.getSkinLore()) {
+            if (line != null && line.trim().equalsIgnoreCase("<skin_lore>")) {
+                lore.addAll(configuredSkinLore);
+                continue;
+            }
+            lore.add(nonItalic(plugin.getLanguageManager().parse(player, line,
+                    Placeholder.component("skin", plugin.getLanguageManager().parse(player, skin.displayName())),
+                    Placeholder.component("rarity", rarityLabel),
+                    Placeholder.component("status", accessLine(player, access)),
+                    Placeholder.unparsed("price", amount),
+                    Placeholder.unparsed("currency", currency),
+                    Placeholder.component("favorite", favoriteLabel))));
         }
-        lore.add(Component.empty());
-        lore.add(nonItalic(localized(player, "gui.click-apply")));
-        lore.add(nonItalic(localized(player, "gui.click-preview")));
-        if (access.state() == SkinAccess.State.PURCHASABLE) lore.add(nonItalic(localized(player, "gui.click-buy")));
-        lore.add(nonItalic(localized(player,
-                favorites.contains(normalize(skin.id())) ? "gui.favorite-on" : "gui.favorite-off")));
-        lore.add(nonItalic(localized(player, "gui.click-favorite")));
         return builder.lore(lore).build();
     }
 

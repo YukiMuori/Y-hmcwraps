@@ -23,6 +23,7 @@ public class HandPreview implements Preview {
     private WrappedTask task;
     private WrappedTask cancelTask;
     private ItemStack oldItem;
+    private ItemStack oldOffHandItem;
 
     public HandPreview(Player player, ItemStack item, Consumer<Player> onClose, HMCWraps plugin) {
         this.player = player;
@@ -34,8 +35,14 @@ public class HandPreview implements Preview {
     public void preview() {
         player.closeInventory();
 
-        oldItem = player.getInventory().getItemInMainHand();
-        plugin.getFoliaLib().getScheduler().runAtEntityLater(player, () -> sendFakeItem(item), 1L);
+        oldItem = player.getInventory().getItemInMainHand().clone();
+        oldOffHandItem = player.getInventory().getItemInOffHand().clone();
+        plugin.getFoliaLib().getScheduler().runAtEntityLater(player, () -> {
+            // HAND previews are purely client-side. Hide the real off-hand item while the
+            // preview model occupies the main hand, otherwise an off-hand sword appears twice.
+            sendFakeItem(EquipmentSlot.OFF_HAND, new ItemStack(org.bukkit.Material.AIR));
+            sendFakeItem(EquipmentSlot.HAND, item);
+        }, 1L);
 
         task = plugin.getFoliaLib().getScheduler().runTimerAsync(() -> {
             if (plugin.getConfiguration().getPreview().getSneakCancel().isActionBar() && plugin.getConfiguration().getPreview().getSneakCancel().isEnabled()) {
@@ -57,15 +64,16 @@ public class HandPreview implements Preview {
             onClose.accept(player);
         }
         plugin.getFoliaLib().getScheduler().runAtEntityLater(player, () -> {
-            sendFakeItem(oldItem);
+            sendFakeItem(EquipmentSlot.HAND, oldItem);
+            sendFakeItem(EquipmentSlot.OFF_HAND, oldOffHandItem);
             if (plugin.getConfiguration().getPreview().getSneakCancel().isActionBar()) {
                 player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacy(" "));
             }
         }, 1L);
     }
 
-    private void sendFakeItem(ItemStack item) {
-        player.sendEquipmentChange(player, EquipmentSlot.HAND, item);
+    private void sendFakeItem(EquipmentSlot slot, ItemStack item) {
+        player.sendEquipmentChange(player, slot, item);
     }
 
 }

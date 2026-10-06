@@ -6,6 +6,8 @@ id: amethyst_greatblade
 display-name: '<gradient:#8FEAF9:#CDA4F9>Amethyst Greatblade</gradient>'
 material: DIAMOND_SWORD
 item-model: 'nexo:amethyst_greatblade'
+# Questa lore viene mostrata esattamente nel menu perché itemskin-gui.yml usa <skin_lore>.
+# Puoi aggiungere, rimuovere e ordinare liberamente tutte le righe MiniMessage.
 lore:
   - '<gray>Una lama forgiata nell’ametista.</gray>'
 rarity: legendary

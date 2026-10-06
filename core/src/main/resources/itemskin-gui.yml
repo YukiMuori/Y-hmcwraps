@@ -9,6 +9,12 @@ gui:
   default-sort: rarity
   default-sort-order: descending
   show-locked: true
+  # Lore shown on every skin icon. The default is intentionally minimal and uses exactly the
+  # lore from that skin's file. Add, remove or reorder any line here as desired.
+  # Available placeholders: <skin_lore> (standalone, expands to all skin lore lines), <skin>,
+  # <rarity>, <status>, <price>, <currency> and <favorite>. MiniMessage and <lang:...> work too.
+  skin-lore:
+    - '<skin_lore>'
   filler-enabled: true
   filler:
     type: material

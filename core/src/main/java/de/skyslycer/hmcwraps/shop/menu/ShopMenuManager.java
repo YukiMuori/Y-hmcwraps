@@ -21,6 +21,7 @@ import de.skyslycer.hmcwraps.skin.SkinOwnershipService;
 import de.skyslycer.hmcwraps.skin.config.SkinIconConfiguration;
 import de.skyslycer.hmcwraps.util.AsyncUtil;
 import de.skyslycer.hmcwraps.util.StringUtil;
+import dev.triumphteam.gui.builder.item.ItemBuilder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
@@ -38,7 +39,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -595,14 +595,10 @@ public final class ShopMenuManager implements Listener {
     }
 
     private ItemStack named(ItemStack stack, String name, List<String> lore) {
-        ItemMeta meta = stack.getItemMeta();
-        if (meta != null) {
-            meta.setDisplayName(StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.MINI_MESSAGE.deserialize(renderable(name))));
-            meta.setLore(lore.stream().map(line -> StringUtil.LEGACY_SERIALIZER.serialize(
-                    StringUtil.MINI_MESSAGE.deserialize(renderable(line)))).toList());
-            stack.setItemMeta(meta);
-        }
-        return stack;
+        return ItemBuilder.from(stack)
+                .name(StringUtil.parseComponent(renderable(name)))
+                .lore(lore.stream().map(line -> StringUtil.parseComponent(renderable(line))).toList())
+                .build();
     }
 
     /** Converts configured legacy colour codes, but leaves plain MiniMessage text alone. */

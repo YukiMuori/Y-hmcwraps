@@ -1,32 +1,25 @@
-# Copy this file when creating a skin, then replace the id (stable across reloads).
+# Copia questo file, rinominalo e modifica i valori.
+# I campi avanzati icon/compatibility/cosmetic restano supportati, ma normalmente non servono.
+
 enabled: false
-id: example_skin
-display-name: '<aqua>Example Skin'
-rarity: common
-collection: angelico # optional ID from skin-collections.yml
+id: amethyst_greatblade
+display-name: '<gradient:#8FEAF9:#CDA4F9>Amethyst Greatblade</gradient>'
+material: DIAMOND_SWORD
+item-model: 'nexo:amethyst_greatblade'
+lore:
+  - '<gray>Una lama forgiata nell’ametista.</gray>'
+rarity: legendary
 categories: [swords]
-icon:
-  type: material # material, nexo, itemsadder, oraxen, craftengine, head
-  id: DIAMOND_SWORD
-  name: '<aqua>Example Skin'
-  lore: ['<gray>Example description']
-  model-id: 0
-  item-model: 'minecraft:item/diamond_sword'
-  tooltip-style: 'minecraft:custom_tooltip'
-  skull-texture: ''
-compatibility:
-  materials: [DIAMOND_SWORD, NETHERITE_SWORD]
-  items: ['nexo:custom_sword']
-price:
-  provider: excellent_economy
-  currency: coins
-  amount: 5000
-permission: ''
+compatible-materials: [DIAMOND_SWORD, NETHERITE_SWORD]
 preview: true
-cosmetic:
-  # A Nexo id applies minecraft:item_model="nexo:amethyst_greatblade" on modern servers.
-  # CustomModelData is not changed when an item-model skin is applied or removed.
-  id: 'nexo:amethyst_greatblade'
-  wrap-name: '<aqua>Example Skin'
-  wrap-tooltip-style: 'minecraft:custom_tooltip'
-  glint-override: false
+
+# Tutto qui. Per renderla acquistabile aggiungi semplicemente:
+# price:
+#   provider: excellent_economy
+#   currency: coins
+#   amount: 5000
+#
+# Campi opzionali utili:
+# permission: 'hmcwraps.skin.amethyst_greatblade'
+# collection: angelico
+# compatible-items: ['nexo:altra_spada']

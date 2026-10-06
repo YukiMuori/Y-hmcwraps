@@ -4,6 +4,7 @@ import com.bgsoftware.common.config.CommentedConfiguration;
 import de.skyslycer.hmcwraps.HMCWraps;
 import de.skyslycer.hmcwraps.HMCWrapsPlugin;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.Tag;
 import net.kyori.adventure.text.minimessage.tag.resolver.ArgumentQueue;
@@ -149,7 +150,9 @@ public final class LanguageManager implements LanguageService {
         TagResolver[] combined = new TagResolver[extraResolvers.length + 1];
         combined[0] = languageTags;
         System.arraycopy(extraResolvers, 0, combined, 1, extraResolvers.length);
-        return MINI_MESSAGE.deserialize(text, TagResolver.resolver(combined));
+        return Component.text().decoration(TextDecoration.ITALIC, false)
+                .append(MINI_MESSAGE.deserialize(text, TagResolver.resolver(combined)))
+                .build();
     }
 
     private Tag referenceTag(Player player, ArgumentQueue queue,

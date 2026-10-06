@@ -93,6 +93,25 @@ class ConfigurationValidatorTest {
     }
 
     @Test
+    void acceptsCompactItemModelSkinFiles() throws IOException {
+        write("skins/sample.yml", """
+                enabled: true
+                id: amethyst_greatblade
+                display-name: '<gradient:#8FEAF9:#CDA4F9>Amethyst Greatblade</gradient>'
+                material: DIAMOND_SWORD
+                item-model: nexo:amethyst_greatblade
+                lore: ['<gray>Example skin']
+                rarity: common
+                categories: [swords]
+                compatible-materials: [DIAMOND_SWORD, NETHERITE_SWORD]
+                """);
+
+        ConfigurationValidator.Report report = new ConfigurationValidator(dataFolder).validate();
+
+        assertTrue(report.isValid(), () -> report.issues().toString());
+    }
+
+    @Test
     void acceptsThemedCollectionsAndSkinReferences() throws IOException {
         write("skin-collections.yml", """
                 enabled: true

@@ -40,13 +40,15 @@
 - Floating preview cancellation is idempotent and safe when reload, timeout, and sneak cancellation happen concurrently.
 
 ### Added
+- Compact Nexo/DeluxeMenus-style skin files using top-level `material`, `item-model`, `lore`, `compatible-materials` and `compatible-items`, while retaining the advanced schema.
+- A configurable Unskin button in the skin browser restores the selected item’s original appearance.
 - Themed skin collections with category subcategories, persistent SQLite favorites, catalog search, and configurable Search/Favorites/Collection GUI controls.
 - Online player skin gifts/trades with ownership checks, two-party confirmation, expiration/cancel handling, and a single atomic storage transfer.
 - PlaceholderAPI skin totals, ownership/favorite counts, per-skin status, main-hand skin ID, and compatible-skin counts.
 
 ### Changed
 - Floating previews default to automatic item-display/mannequin selection so modern item-model components render correctly.
-- Bundled wrap, skin, shop, and editor GUIs now use a consistent MiniMessage palette, typography, navigation, and localized control lore.
+- Bundled wrap, skin, shop, and editor GUIs now use a consistent MiniMessage palette, typography, navigation, localized control lore, and explicitly non-italic item text.
 - `/wraps validate` now checks themed skin collection definitions/references and the expanded GUI controls.
 
 ## 2.0.1 — 2026-10-05

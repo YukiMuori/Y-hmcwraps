@@ -106,7 +106,7 @@ coupons:
 
 ## Skin configuration
 
-Each YAML file under `plugins/HMCWraps/skins/` describes one skin. See `core/src/main/resources/skins/README.yml` for a copyable schema and `ruby_sword.yml` for a loaded example. A skin has a stable `id`, translated display name, rarity, categories, icon, material/custom-item compatibility, optional permission and a legacy `cosmetic` payload.
+Each YAML file under `plugins/HMCWraps/skins/` describes one skin. The default compact format is intentionally similar to Nexo/DeluxeMenus: `id`, `display-name`, `material`, `item-model`, `lore`, `rarity`, `categories` and `compatible-materials`. See `core/src/main/resources/skins/README.yml` for a copyable example. Optional prices, permissions, collections and `compatible-items` can be added directly; the advanced `icon`, `compatibility` and `cosmetic` sections remain backward compatible.
 
 Example paid-skin fragment:
 

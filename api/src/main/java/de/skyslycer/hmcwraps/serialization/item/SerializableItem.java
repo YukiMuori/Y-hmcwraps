@@ -189,6 +189,16 @@ public class SerializableItem {
         return id;
     }
 
+    /** Sets the backing material/hook id when constructing a compact skin definition. */
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    /** Sets the modern minecraft:item_model key when constructing a compact skin definition. */
+    public void setItemModel(String itemModel) {
+        this.itemModel = itemModel;
+    }
+
     public String getName() {
         if (name == null) {
             return ((HMCWraps) Bukkit.getPluginManager().getPlugin("HMCWraps")).getHookAccessor().getNameFromHook(getId());

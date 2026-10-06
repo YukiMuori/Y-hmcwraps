@@ -26,10 +26,16 @@ public class SkinIconConfiguration {
 
     /** Builds an icon description programmatically, for example for collection item rewards. */
     public SkinIconConfiguration(String type, String id, String name, List<String> lore) {
+        this(type, id, name, lore, null);
+    }
+
+    /** Builds the compact skin-file icon, including the modern item-model component. */
+    public SkinIconConfiguration(String type, String id, String name, List<String> lore, String itemModel) {
         this.type = type;
         this.id = id;
         this.name = name;
         this.lore = lore == null ? new ArrayList<>() : new ArrayList<>(lore);
+        this.itemModel = itemModel;
     }
 
     public String getType() { return type == null ? "material" : type; }

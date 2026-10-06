@@ -3,6 +3,7 @@ package de.skyslycer.hmcwraps.shop.menu;
 import de.skyslycer.hmcwraps.HMCWrapsPlugin;
 import de.skyslycer.hmcwraps.lang.LanguageManager;
 import de.skyslycer.hmcwraps.util.StringUtil;
+import dev.triumphteam.gui.builder.item.ItemBuilder;
 import de.skyslycer.hmcwraps.util.YamlFileStore;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
@@ -20,7 +21,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.configurate.ConfigurationNode;
@@ -397,15 +397,10 @@ public final class ShopEditorManager implements Listener {
     // ------------------------------------------------------------------ helpers
 
     private ItemStack simple(Material material, String name, List<String> lore) {
-        ItemStack stack = new ItemStack(material);
-        ItemMeta meta = stack.getItemMeta();
-        if (meta != null) {
-            meta.setDisplayName(StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.MINI_MESSAGE.deserialize(name)));
-            meta.setLore(lore.stream().map(line -> StringUtil.LEGACY_SERIALIZER.serialize(
-                    StringUtil.MINI_MESSAGE.deserialize(line))).toList());
-            stack.setItemMeta(meta);
-        }
-        return stack;
+        return ItemBuilder.from(new ItemStack(material))
+                .name(StringUtil.parseComponent(name))
+                .lore(lore.stream().map(StringUtil::parseComponent).toList())
+                .build();
     }
 
     private String localized(Player player, String key) {

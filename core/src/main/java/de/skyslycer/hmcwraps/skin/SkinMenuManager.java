@@ -6,7 +6,9 @@ import de.skyslycer.hmcwraps.lang.LanguageManager;
 import de.skyslycer.hmcwraps.skin.config.SkinIconConfiguration;
 import de.skyslycer.hmcwraps.skin.config.SkinMenuConfiguration;
 import de.skyslycer.hmcwraps.util.StringUtil;
+import dev.triumphteam.gui.builder.item.ItemBuilder;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
@@ -189,6 +191,7 @@ public final class SkinMenuManager implements Listener {
                 List.of(localized(player, "gui.page", Placeholder.unparsed("page", String.valueOf(session.page + 1)),
                         Placeholder.unparsed("pages", String.valueOf(maxPage + 1)))), config.getSize());
         addButton(session, player, config.getClose(), plugin.getLanguageManager().get(player, "gui.close"), List.of(), config.getSize());
+        addButton(session, player, config.getUnskin(), plugin.getLanguageManager().get(player, "gui.unskin"), List.of(), config.getSize());
         addButton(session, player, config.getSort(), plugin.getLanguageManager().get(player, "gui.sort"),
                 List.of(localized(player, "gui.selected-sort", Placeholder.component("value", optionLabel(player, "sorting", session.sort)))), config.getSize());
         addButton(session, player, config.getFilter(), plugin.getLanguageManager().get(player, "gui.filter"),
@@ -248,14 +251,14 @@ public final class SkinMenuManager implements Listener {
             ItemMeta meta = icon.getItemMeta();
             if (meta != null) {
                 String label = plugin.getLanguageManager().get(player, category.displayNameKey());
+                ItemBuilder builder = ItemBuilder.from(icon);
                 if (iconConfiguration == null || iconConfiguration.getName() == null || iconConfiguration.getName().isBlank()) {
-                    meta.setDisplayName(StringUtil.LEGACY_SERIALIZER.serialize(plugin.getLanguageManager().parse(player, label)));
+                    builder.name(nonItalic(plugin.getLanguageManager().parse(player, label)));
                 }
-                List<String> lore = meta.getLore() == null ? new ArrayList<>() : new ArrayList<>(meta.getLore());
-                lore.add(StringUtil.LEGACY_SERIALIZER.serialize(localized(player, "gui.category", Placeholder.component("value",
+                List<Component> lore = componentLore(meta);
+                lore.add(nonItalic(localized(player, "gui.category", Placeholder.component("value",
                         plugin.getLanguageManager().parse(player, label)))));
-                meta.setLore(lore);
-                icon.setItemMeta(meta);
+                icon = builder.lore(lore).build();
             }
             if (!usedSlots.add(slot)) {
                 plugin.getLogger().warning("Skipping duplicate category GUI slot " + slot + ".");
@@ -272,10 +275,9 @@ public final class SkinMenuManager implements Listener {
         ItemStack icon = plugin.getItemIconFactory().create(button.getItem(), fallbackName, player);
         ItemMeta meta = icon.getItemMeta();
         if (meta != null && !dynamicLore.isEmpty()) {
-            List<String> lore = meta.getLore() == null ? new ArrayList<>() : new ArrayList<>(meta.getLore());
-            dynamicLore.stream().map(StringUtil.LEGACY_SERIALIZER::serialize).forEach(lore::add);
-            meta.setLore(lore);
-            icon.setItemMeta(meta);
+            List<Component> lore = componentLore(meta);
+            dynamicLore.stream().map(this::nonItalic).forEach(lore::add);
+            icon = ItemBuilder.from(icon).lore(lore).build();
         }
         session.inventory.setItem(button.getSlot(), icon);
     }
@@ -287,33 +289,44 @@ public final class SkinMenuManager implements Listener {
         if (icon == null) icon = new ItemStack(Material.PAPER);
         ItemMeta meta = icon.getItemMeta();
         if (meta == null) return icon;
+        ItemBuilder builder = ItemBuilder.from(icon);
         if (iconConfiguration == null || iconConfiguration.getName() == null || iconConfiguration.getName().isBlank()) {
-            meta.setDisplayName(StringUtil.LEGACY_SERIALIZER.serialize(plugin.getLanguageManager().parse(player, skin.displayName())));
+            builder.name(nonItalic(plugin.getLanguageManager().parse(player, skin.displayName())));
         }
-        List<String> lore = meta.getLore() == null ? new ArrayList<>() : new ArrayList<>(meta.getLore());
+        List<Component> lore = componentLore(meta);
         ItemSkinRarity rarity = skinManager.rarity(skin.rarityId());
         if (rarity != null) {
             Component label = plugin.getLanguageManager().parse(player,
                     plugin.getLanguageManager().get(player, rarity.displayNameKey()));
-            lore.add(StringUtil.LEGACY_SERIALIZER.serialize(localized(player, "gui.rarity", Placeholder.component("value", label))));
+            lore.add(nonItalic(localized(player, "gui.rarity", Placeholder.component("value", label))));
         }
         SkinAccess access = skinManager.accessNow(player, skin, owned);
-        lore.add(StringUtil.LEGACY_SERIALIZER.serialize(accessLine(player, access)));
+        lore.add(nonItalic(accessLine(player, access)));
         if (skin.price() != null) {
-            lore.add(StringUtil.LEGACY_SERIALIZER.serialize(localized(player, "gui.cost",
+            lore.add(nonItalic(localized(player, "gui.cost",
                     Placeholder.unparsed("amount", formatAmount(skin.price().amount())),
                     Placeholder.unparsed("currency", skin.price().currency()))));
         }
-        lore.add(" ");
-        lore.add(StringUtil.LEGACY_SERIALIZER.serialize(localized(player, "gui.click-apply")));
-        lore.add(StringUtil.LEGACY_SERIALIZER.serialize(localized(player, "gui.click-preview")));
-        if (access.state() == SkinAccess.State.PURCHASABLE) lore.add(StringUtil.LEGACY_SERIALIZER.serialize(localized(player, "gui.click-buy")));
-        lore.add(StringUtil.LEGACY_SERIALIZER.serialize(localized(player,
+        lore.add(Component.empty());
+        lore.add(nonItalic(localized(player, "gui.click-apply")));
+        lore.add(nonItalic(localized(player, "gui.click-preview")));
+        if (access.state() == SkinAccess.State.PURCHASABLE) lore.add(nonItalic(localized(player, "gui.click-buy")));
+        lore.add(nonItalic(localized(player,
                 favorites.contains(normalize(skin.id())) ? "gui.favorite-on" : "gui.favorite-off")));
-        lore.add(StringUtil.LEGACY_SERIALIZER.serialize(localized(player, "gui.click-favorite")));
-        meta.setLore(lore);
-        icon.setItemMeta(meta);
-        return icon;
+        lore.add(nonItalic(localized(player, "gui.click-favorite")));
+        return builder.lore(lore).build();
+    }
+
+    private List<Component> componentLore(ItemMeta meta) {
+        if (meta.getLore() == null) return new ArrayList<>();
+        return meta.getLore().stream()
+                .map(StringUtil.LEGACY_SERIALIZER::deserialize)
+                .map(this::nonItalic)
+                .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
+    }
+
+    private Component nonItalic(Component component) {
+        return component.decoration(TextDecoration.ITALIC, false);
     }
 
     private Component accessLine(Player player, SkinAccess access) {
@@ -386,6 +399,10 @@ public final class SkinMenuManager implements Listener {
         SkinMenuConfiguration config = configuration;
         if (buttonAt(config.getClose(), slot)) {
             player.closeInventory();
+            return;
+        }
+        if (buttonAt(config.getUnskin(), slot)) {
+            unskin(player, session);
             return;
         }
         if (buttonAt(config.getPrevious(), slot)) {
@@ -555,6 +572,24 @@ public final class SkinMenuManager implements Listener {
         openSession(player, session);
     }
 
+    private void unskin(Player player, MenuSession session) {
+        ItemStack current = getCurrentItem(player, session);
+        if (current == null) {
+            send(player, "messages.item-changed");
+            player.closeInventory();
+            return;
+        }
+        ItemStack updated = skinManager.removeSkin(player, current);
+        if (updated.isSimilar(current)) {
+            send(player, "messages.no-skin-to-remove");
+            return;
+        }
+        player.getInventory().setItem(session.sourceSlot, updated);
+        session.target = updated.clone();
+        send(player, "messages.removed");
+        openSession(player, session);
+    }
+
     private void preview(Player player, MenuSession session, ItemSkin skin) {
         if (!skin.previewEnabled()) {
             send(player, "messages.preview-disabled");
@@ -646,7 +681,8 @@ public final class SkinMenuManager implements Listener {
         return buttonAt(config.getPrevious(), slot) || buttonAt(config.getNext(), slot)
                 || buttonAt(config.getClose(), slot) || buttonAt(config.getSort(), slot)
                 || buttonAt(config.getFilter(), slot) || buttonAt(config.getSearch(), slot)
-                || buttonAt(config.getFavorites(), slot) || buttonAt(config.getCollection(), slot);
+                || buttonAt(config.getFavorites(), slot) || buttonAt(config.getCollection(), slot)
+                || buttonAt(config.getUnskin(), slot);
     }
 
     private boolean buttonAt(SkinMenuConfiguration.Button button, int slot) {

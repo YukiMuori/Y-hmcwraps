@@ -63,6 +63,18 @@ gui:
         - '<#F0FAFF><lang:gui.collection-description></#F0FAFF>'
         - ''
         - '<#FFE89A>➜ <lang:gui.click-change></#FFE89A>'
+  unskin:
+    enabled: true
+    slot: 50
+    item:
+      type: material
+      id: SHEARS
+      name: '<#FF6B6B>✕ <lang:gui.unskin></#FF6B6B>'
+      lore:
+        - ''
+        - '<#F0FAFF><lang:gui.unskin-description></#F0FAFF>'
+        - ''
+        - '<#FFE89A>➜ <lang:gui.click-unskin></#FFE89A>'
   close:
     enabled: true
     slot: 49

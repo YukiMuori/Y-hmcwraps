@@ -687,6 +687,7 @@ public final class ConfigurationValidator {
         validateIcon(context, path, "GUI search button", menu.getSearch().getItem());
         validateIcon(context, path, "GUI favorites button", menu.getFavorites().getItem());
         validateIcon(context, path, "GUI collection button", menu.getCollection().getItem());
+        validateIcon(context, path, "GUI unskin button", menu.getUnskin().getItem());
 
         Map<Integer, String> occupied = new HashMap<>();
         if (menu.isItemEnabled()) addGuiSlot(context, path, occupied, "target item", menu.getItemSlot(), size, validSize, true);
@@ -698,6 +699,7 @@ public final class ConfigurationValidator {
         if (menu.getSearch().isEnabled()) addGuiSlot(context, path, occupied, "search button", menu.getSearch().getSlot(), size, validSize, true);
         if (menu.getFavorites().isEnabled()) addGuiSlot(context, path, occupied, "favorites button", menu.getFavorites().getSlot(), size, validSize, true);
         if (menu.getCollection().isEnabled()) addGuiSlot(context, path, occupied, "collection button", menu.getCollection().getSlot(), size, validSize, true);
+        if (menu.getUnskin().isEnabled()) addGuiSlot(context, path, occupied, "unskin button", menu.getUnskin().getSlot(), size, validSize, true);
         Set<Integer> contentSlots = new HashSet<>();
         for (Integer slot : menu.getContentSlots()) {
             if (slot == null) continue;

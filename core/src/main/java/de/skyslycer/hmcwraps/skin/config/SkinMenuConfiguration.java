@@ -27,6 +27,7 @@ public class SkinMenuConfiguration {
     private Button search = new Button();
     private Button favorites = new Button();
     private Button collection = new Button();
+    private Button unskin = new Button(false);
     private Map<String, Integer> categorySlots = new HashMap<>();
     private Map<String, String> clickActions = new HashMap<>();
     private List<String> sortOptions = new ArrayList<>();
@@ -50,6 +51,7 @@ public class SkinMenuConfiguration {
     public Button getSearch() { return search == null ? new Button() : search; }
     public Button getFavorites() { return favorites == null ? new Button() : favorites; }
     public Button getCollection() { return collection == null ? new Button() : collection; }
+    public Button getUnskin() { return unskin == null ? new Button(false) : unskin; }
     public Map<String, Integer> getCategorySlots() { return categorySlots == null ? Map.of() : categorySlots; }
     public Map<String, String> getClickActions() { return clickActions == null ? Map.of() : clickActions; }
     public List<String> getSortOptions() { return sortOptions == null ? List.of() : sortOptions; }
@@ -60,6 +62,11 @@ public class SkinMenuConfiguration {
         private boolean enabled = true;
         private int slot = -1;
         private SkinIconConfiguration item = new SkinIconConfiguration();
+        public Button() {
+        }
+        public Button(boolean enabled) {
+            this.enabled = enabled;
+        }
         public boolean isEnabled() { return enabled; }
         public int getSlot() { return slot; }
         public SkinIconConfiguration getItem() { return item == null ? new SkinIconConfiguration() : item; }

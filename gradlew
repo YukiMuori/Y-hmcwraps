@@ -249,17 +249,4 @@ eval "set -- $(
         tr '\n' ' '
     )" '"$@"'
 
-if [ "${GITHUB_ACTIONS:-}" = "true" ]; then
-    log_file="${RUNNER_TEMP:-.}/hmcwraps-gradle.log"
-    "$JAVACMD" "$@" >"$log_file" 2>&1
-    status=$?
-    cat "$log_file"
-    if [ "$status" -ne 0 ]; then
-        summary=$(grep -E '(^|[[:space:]])(error:|FAILURE:|Caused by:|> Task .* FAILED)|There were failing tests' "$log_file" | head -n 25 | tr '\n' ' ')
-        printf '::error title=Gradle build failed::%s\n' "${summary:-See the Build and test log for details.}"
-    fi
-    rm -f "$log_file"
-    exit "$status"
-fi
-
 exec "$JAVACMD" "$@"

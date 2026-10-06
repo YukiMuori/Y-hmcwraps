@@ -30,6 +30,10 @@ preview:
   # item being the players item in hand turning into the wrap temporarily.
   # When using 'HAND', rotation and bobbing will be ignored. (The preview item is client-side only)
   type: 'FLOATING'
+  # Entity used by FLOATING previews: ARMOR_STAND, ITEM_DISPLAY, MANNEQUIN or AUTO.
+  # AUTO uses a mannequin for armor (when supported by the server) and an item display otherwise.
+  # MANNEQUIN equips armor in its matching slot and holds all other items in its main hand.
+  entity-type: 'ARMOR_STAND'
   # Duration of the preview in seconds
   duration: 5
   # Rotation per tick (50ms)

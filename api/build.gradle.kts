@@ -25,6 +25,7 @@ dependencies {
     compileOnly(libs.nbtapi)
     compileOnly(libs.folialib)
     testImplementation(libs.junit)
+    testImplementation(depends.spigot)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.11.4")
     testRuntimeOnly(depends.annotations)
 }

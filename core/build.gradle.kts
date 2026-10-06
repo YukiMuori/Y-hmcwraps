@@ -133,6 +133,10 @@ bukkit {
             description = "Gives access to the reload command."
             children = listOf("hmcwraps.admin")
         }
+        register("hmcwraps.commands.validate") {
+            description = "Gives access to read-only configuration validation."
+            children = listOf("hmcwraps.admin")
+        }
         register("hmcwraps.commands.convert") {
             description = "Gives access to the convert command."
             children = listOf("hmcwraps.admin")

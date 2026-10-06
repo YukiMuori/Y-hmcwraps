@@ -49,6 +49,11 @@ class LanguageFilesTest {
                         "debug.file-upload-failed",
                         "debug.test.passed",
                         "command-descriptions.wraps.reload",
+                        "command-descriptions.wraps.validate",
+                        "validation.summary-success",
+                        "validation.summary-failed",
+                        "validation.messages.invalid-yaml",
+                        "validation.messages.unknown-rarity",
                         "updates.available"
                 }) {
                     String value = language.getString(key);

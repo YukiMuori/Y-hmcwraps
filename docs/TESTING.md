@@ -17,6 +17,7 @@ Current unit coverage is intended to check:
 - Ownership-cache read behavior, grants and purchase-audit unlock calls.
 - Custom economy provider registration/replacement.
 - Purchase success, custom currency forwarding, insufficient balance, failed withdrawal, persistence failure/refund compensation and repeated-click rejection.
+- Read-only configuration validation for duplicate skin IDs, invalid compatibility materials, malformed YAML and out-of-range GUI slots.
 
 These tests do not replace a Paper server regression run. The implementation environment may lack Java 21 and a downloadable JDK; in that case record the task as not run rather than treating it as a pass.
 
@@ -28,6 +29,7 @@ Use a disposable Paper 1.21.4+ server, fresh player UUIDs and a backup of the da
 
 - [ ] First start copies examples; reload does not overwrite edited skin/lang/rarity/category/GUI files, and missing built-in language keys are added safely.
 - [ ] Invalid YAML, unknown rarity/category, duplicate skin ID/UUID, bad material and empty compatibility entries are skipped/logged without breaking legacy startup.
+- [ ] `/wraps validate` reports malformed YAML, broken references, translation gaps, invalid materials/prices and GUI slot conflicts in the sender's language; verify that it neither reloads nor modifies any file.
 - [ ] English and Italian translations cover every legacy `Messages` key plus item-skin UI, debug replies, update notices and command-help descriptions; client-locale and configured-default fallback work; `<lang:key>` and `<glyph:key>` resolve safely.
 - [ ] Custom values in a pre-existing `messages.properties` are migrated into missing English `legacy.*` keys, while any language YAML values already edited remain unchanged.
 - [ ] Rare/legendary priorities sort descending by default. Configure ascending, name/price/owned sorting and verify ties remain stable.

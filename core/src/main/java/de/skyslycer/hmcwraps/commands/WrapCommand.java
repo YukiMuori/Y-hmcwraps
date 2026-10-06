@@ -10,9 +10,11 @@ import de.skyslycer.hmcwraps.serialization.wrap.Wrap;
 import de.skyslycer.hmcwraps.util.PlayerUtil;
 import de.skyslycer.hmcwraps.util.StringUtil;
 import de.skyslycer.hmcwraps.util.VersionUtil;
+import de.skyslycer.hmcwraps.validation.ConfigurationValidator;
 import dev.triumphteam.gui.guis.BaseGui;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver.Single;
 import net.kyori.adventure.text.serializer.bungeecord.BungeeComponentSerializer;
 import org.bukkit.Location;
@@ -36,6 +38,7 @@ import java.util.Set;
 public class WrapCommand {
 
     private static final String RELOAD_PERMISSION = "hmcwraps.commands.reload";
+    private static final String VALIDATE_PERMISSION = "hmcwraps.commands.validate";
     private static final String CONVERT_PERMISSION = "hmcwraps.commands.convert";
     private static final String WRAP_PERMISSION = "hmcwraps.commands.wrap";
     private static final String WRAP_SELF_PERMISSION = "hmcwraps.commands.wrap.self";
@@ -122,6 +125,46 @@ public class WrapCommand {
                     Placeholder.parsed("wraps", String.valueOf(plugin.getWrapsLoader().getWraps().size())),
                     Placeholder.parsed("collections", String.valueOf(plugin.getWrapsLoader().getCollections().size())));
         });
+    }
+
+    @Subcommand("validate")
+    @CommandPermission(VALIDATE_PERMISSION)
+    @Description("Validate plugin configuration without changing or reloading files.")
+    public void onValidate(CommandSender sender) {
+        ConfigurationValidator.Report report = new ConfigurationValidator(
+                plugin.getDataFolder().toPath(), plugin.getEconomyManager().providers()).validate();
+        Player player = sender instanceof Player target ? target : null;
+        var language = plugin.getLanguageManager();
+        int displayLimit = 10;
+
+        for (ConfigurationValidator.Issue issue : report.issues()) {
+            var level = issue.severity() == ConfigurationValidator.Severity.ERROR
+                    ? java.util.logging.Level.SEVERE : java.util.logging.Level.WARNING;
+            plugin.getLogger().log(level, "[Config validation] " + issue.path() + ": " + issue.key() + " " + issue.arguments());
+        }
+        for (ConfigurationValidator.Issue issue : report.issues().stream().limit(displayLimit).toList()) {
+            String detailKey = "validation.messages." + issue.key();
+            String detail = language.get(player, detailKey);
+            if (detail.equals(detailKey)) detail = issue.key() + " " + issue.arguments();
+            TagResolver[] details = issue.arguments().entrySet().stream()
+                    .map(entry -> Placeholder.unparsed(entry.getKey(), entry.getValue()))
+                    .toArray(TagResolver[]::new);
+            Component message = language.parse(player, detail, details);
+            String lineKey = issue.severity() == ConfigurationValidator.Severity.ERROR
+                    ? "validation.issue-error" : "validation.issue-warning";
+            Component line = language.parse(player, language.get(player, lineKey),
+                    Placeholder.unparsed("file", issue.path()), Placeholder.component("message", message));
+            StringUtil.sendComponent(sender, line);
+        }
+        if (report.issues().size() > displayLimit) {
+            StringUtil.sendComponent(sender, language.parse(player, language.get(player, "validation.more-issues"),
+                    Placeholder.unparsed("count", String.valueOf(report.issues().size() - displayLimit))));
+        }
+        String summaryKey = report.isValid() ? "validation.summary-success" : "validation.summary-failed";
+        StringUtil.sendComponent(sender, language.parse(player, language.get(player, summaryKey),
+                Placeholder.unparsed("files", String.valueOf(report.filesChecked())),
+                Placeholder.unparsed("errors", String.valueOf(report.errorCount())),
+                Placeholder.unparsed("warnings", String.valueOf(report.warningCount()))));
     }
 
     @Subcommand("convert")

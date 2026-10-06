@@ -31,6 +31,8 @@ The repository's build artifact is produced by `./gradlew clean build`; the dist
 
 In the browser, left click applies a free/owned skin, right click previews it, and Shift-click buys a configured paid skin. Sorting defaults to rarity priority descending. Categories, filters, content slots, buttons, filler items, icons, item models, tooltip styles and MiniMessage titles are configured in `itemskin-gui.yml` and the catalog files.
 
+Administrators can run `/wraps validate` for a read-only check of YAML files, skin/wrap IDs and references, translations, materials, economy settings and GUI slots. It does not reload or edit files.
+
 ## Skin configuration
 
 Each YAML file under `plugins/HMCWraps/skins/` describes one skin. See `core/src/main/resources/skins/README.yml` for a copyable schema and `ruby_sword.yml` for a loaded example. A skin has a stable `id`, translated display name, rarity, categories, icon, material/custom-item compatibility, optional permission and a legacy `cosmetic` payload.

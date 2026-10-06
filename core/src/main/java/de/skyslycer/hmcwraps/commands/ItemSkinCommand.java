@@ -131,7 +131,7 @@ public final class ItemSkinCommand {
     @Subcommand("coupons")
     @Description("Open the coupon overview and pick the coupon used for your next purchase.")
     public void onCoupons(Player player) {
-        if (plugin.getCouponService() == null) {
+        if (plugin.getCouponService() == null || plugin.getShopMenuManager() == null) {
             send(player, "shop.purchase.unavailable");
             return;
         }
@@ -141,7 +141,7 @@ public final class ItemSkinCommand {
     @Subcommand("profile")
     @Description("Show your skin statistics, gifts and recent purchases.")
     public void onProfile(Player player) {
-        if (plugin.getProfileService() == null) {
+        if (plugin.getProfileService() == null || plugin.getShopMenuManager() == null) {
             send(player, "shop.purchase.unavailable");
             return;
         }
@@ -151,7 +151,7 @@ public final class ItemSkinCommand {
     @Subcommand("gifts")
     @Description("Show the gifts you have not been notified about yet.")
     public void onGifts(Player player) {
-        if (plugin.getGiftService() == null) {
+        if (plugin.getGiftService() == null || plugin.getShopMenuManager() == null) {
             send(player, "shop.purchase.unavailable");
             return;
         }
@@ -161,7 +161,11 @@ public final class ItemSkinCommand {
     @Subcommand("gift")
     @Description("Gift an owned or purchasable skin to another player; you pay the price.")
     public void onGift(Player sender, String recipientName, @SkinIds String skinId) {
-        if (plugin.getGiftService() == null || !plugin.getGiftService().isEnabled()) {
+        if (plugin.getGiftService() == null || plugin.getShopMenuManager() == null) {
+            send(sender, "shop.purchase.unavailable");
+            return;
+        }
+        if (!plugin.getGiftService().isEnabled()) {
             send(sender, "shop.gift.disabled");
             return;
         }

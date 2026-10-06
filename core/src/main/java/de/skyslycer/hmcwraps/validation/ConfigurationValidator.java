@@ -5,6 +5,11 @@ import de.skyslycer.hmcwraps.serialization.files.CollectionFile;
 import de.skyslycer.hmcwraps.serialization.files.WrapFile;
 import de.skyslycer.hmcwraps.serialization.wrap.Wrap;
 import de.skyslycer.hmcwraps.serialization.wrap.WrappableItem;
+import de.skyslycer.hmcwraps.shop.config.BundleConfiguration;
+import de.skyslycer.hmcwraps.shop.config.CouponConfiguration;
+import de.skyslycer.hmcwraps.shop.config.CouponFile;
+import de.skyslycer.hmcwraps.shop.config.EventShopConfiguration;
+import de.skyslycer.hmcwraps.shop.config.ShopFile;
 import de.skyslycer.hmcwraps.skin.EconomyProvider;
 import de.skyslycer.hmcwraps.skin.config.CategoryConfiguration;
 import de.skyslycer.hmcwraps.skin.config.RarityConfiguration;
@@ -23,6 +28,10 @@ import org.spongepowered.configurate.ConfigurationOptions;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -99,8 +108,9 @@ public final class ConfigurationValidator {
         Set<String> rarityIds = loadRarities(context);
         Set<String> categoryIds = loadCategories(context);
         Set<String> skinCollectionIds = loadSkinCollections(context, categoryIds);
-        validateSkinFiles(context, rarityIds, categoryIds, skinCollectionIds, wrapIds);
+        Set<String> skinIds = validateSkinFiles(context, rarityIds, categoryIds, skinCollectionIds, wrapIds);
         validateItemSkinMenu(context, categoryIds);
+        validateShopFiles(context, skinIds, categoryIds);
         Map<String, Set<String>> languageKeys = loadLanguages(context);
         validateLanguageReferences(context, languageKeys, config);
 
@@ -321,8 +331,8 @@ public final class ConfigurationValidator {
         return Set.copyOf(ids);
     }
 
-    private void validateSkinFiles(Context context, Set<String> rarityIds, Set<String> categoryIds,
-                                   Set<String> skinCollectionIds, Map<String, Path> wrapIds) {
+    private Set<String> validateSkinFiles(Context context, Set<String> rarityIds, Set<String> categoryIds,
+                                          Set<String> skinCollectionIds, Map<String, Path> wrapIds) {
         Path directory = dataFolder.resolve("skins");
         Map<String, Path> skinIds = new HashMap<>();
         Map<String, Path> cosmeticIds = new HashMap<>(wrapIds);
@@ -382,6 +392,199 @@ public final class ConfigurationValidator {
                 context.error(path, "duplicate-cosmetic-id", Map.of("id", id, "uuid", cosmeticId,
                         "first", relative(previousCosmetic)));
             }
+        }
+        return Set.copyOf(skinIds.keySet());
+    }
+
+    /** Validates {@code shops.yml} and {@code coupons.yml} against the catalog and each other. */
+    private void validateShopFiles(Context context, Set<String> skinIds, Set<String> categoryIds) {
+        Path shopsPath = dataFolder.resolve("shops.yml");
+        ConfigurationNode shopsNode = readYaml(context, shopsPath, false);
+        Set<String> bundleIds = new LinkedHashSet<>();
+        if (shopsNode != null) {
+            ShopFile shops = deserialize(context, shopsPath, shopsNode, ShopFile.class);
+            if (shops != null) {
+                Map<String, BundleConfiguration> bundles = shops.getBundles();
+                for (Map.Entry<String, BundleConfiguration> entry : bundles == null ? Map.<String, BundleConfiguration>of().entrySet() : bundles.entrySet()) {
+                    BundleConfiguration bundle = entry.getValue();
+                    String id = normalize(entry.getKey());
+                    if (bundle == null || !bundle.isEnabled()) continue;
+                    if (id.isBlank()) {
+                        context.error(shopsPath, "empty-bundle-id", Map.of());
+                        continue;
+                    }
+                    bundleIds.add(id);
+                    if (bundle.getSkins().isEmpty()) {
+                        context.error(shopsPath, "empty-bundle", Map.of("id", id));
+                    }
+                    for (String skinId : bundle.getSkins()) {
+                        if (!skinIds.contains(normalize(skinId))) {
+                            context.error(shopsPath, "unknown-bundle-skin",
+                                    Map.of("id", id, "skin", String.valueOf(skinId)));
+                        }
+                    }
+                    if (bundle.getDiscount() < 0 || bundle.getDiscount() > 100) {
+                        context.error(shopsPath, "invalid-bundle-discount", Map.of("id", id));
+                    }
+                    validatePrice(context, shopsPath, "bundle:" + id, bundle.getPrice());
+                    String mode = normalize(bundle.getPurchaseMode());
+                    if (!Set.of("full", "missing-only", "both").contains(mode)) {
+                        context.warning(shopsPath, "unknown-purchase-mode",
+                                Map.of("id", id, "mode", String.valueOf(bundle.getPurchaseMode())));
+                    }
+                }
+                if (shops.getDailyShop() != null && shops.getDailyShop().isEnabled()) {
+                    validateEntries(context, shopsPath, "daily shop pool", shops.getDailyShop().getPool(), skinIds,
+                            bundleIds);
+                    validatePrice(context, shopsPath, "daily-shop", shops.getDailyShop().getPrice());
+                    String resetTime = shops.getDailyShop().getResetTime();
+                    if (resetTime != null && !resetTime.isBlank() && !resetTime.trim().matches("\d{1,2}:\d{2}")) {
+                        context.warning(shopsPath, "invalid-reset-time", Map.of("value", resetTime));
+                    }
+                }
+                if (shops.getFeatured() != null && shops.getFeatured().isEnabled()) {
+                    validateEntries(context, shopsPath, "featured entries", shops.getFeatured().getEntries(), skinIds,
+                            bundleIds);
+                    validateEntries(context, shopsPath, "featured pool", shops.getFeatured().getAutomaticPool(), skinIds,
+                            bundleIds);
+                    validatePrice(context, shopsPath, "featured", shops.getFeatured().getPrice());
+                }
+                Map<String, EventShopConfiguration> events = shops.getEvents();
+                Map<String, Path> eventIds = new LinkedHashMap<>();
+                for (Map.Entry<String, EventShopConfiguration> entry : events == null ? Map.<String, EventShopConfiguration>of().entrySet() : events.entrySet()) {
+                    EventShopConfiguration event = entry.getValue();
+                    String id = normalize(entry.getKey());
+                    if (event == null || !event.isEnabled()) continue;
+                    if (id.isBlank()) {
+                        context.error(shopsPath, "empty-event-id", Map.of());
+                        continue;
+                    }
+                    Path previous = eventIds.putIfAbsent(id, shopsPath);
+                    if (previous != null) {
+                        context.error(shopsPath, "duplicate-event-id", Map.of("id", id));
+                    }
+                    if (event.getName() == null || event.getName().isBlank()) {
+                        context.warning(shopsPath, "missing-event-name", Map.of("id", id));
+                    }
+                    Instant start = parseInstant(event.getStart());
+                    Instant end = parseInstant(event.getEnd());
+                    if (start == null || end == null) {
+                        context.error(shopsPath, "invalid-event-window",
+                                Map.of("id", id, "start", String.valueOf(event.getStart()), "end", String.valueOf(event.getEnd())));
+                    } else if (!end.isAfter(start)) {
+                        context.error(shopsPath, "invalid-event-window",
+                                Map.of("id", id, "start", String.valueOf(event.getStart()), "end", String.valueOf(event.getEnd())));
+                    }
+                    if (event.getEntries().isEmpty()) {
+                        context.warning(shopsPath, "empty-event", Map.of("id", id));
+                    }
+                    validateEntries(context, shopsPath, "event " + id, event.getEntries(), skinIds, bundleIds);
+                    validatePrice(context, shopsPath, "event:" + id, event.getPrice());
+                }
+            }
+        }
+
+        Path couponsPath = dataFolder.resolve("coupons.yml");
+        ConfigurationNode couponsNode = readYaml(context, couponsPath, false);
+        if (couponsNode == null) return;
+        CouponFile coupons = deserialize(context, couponsPath, couponsNode, CouponFile.class);
+        if (coupons == null) return;
+        Set<String> codes = new LinkedHashSet<>();
+        Map<String, CouponConfiguration> configured = coupons.getCoupons();
+        for (Map.Entry<String, CouponConfiguration> entry : configured == null ? Map.<String, CouponConfiguration>of().entrySet() : configured.entrySet()) {
+            CouponConfiguration coupon = entry.getValue();
+            String code = entry.getKey() == null ? "" : entry.getKey().trim().toUpperCase(Locale.ROOT);
+            if (coupon == null) continue;
+            if (code.isBlank()) {
+                context.error(couponsPath, "empty-coupon-code", Map.of());
+                continue;
+            }
+            if (!codes.add(code)) {
+                context.error(couponsPath, "duplicate-coupon-code", Map.of("code", code));
+            }
+            String type = normalize(coupon.getType());
+            Double value = coupon.getValue();
+            if (!type.equals("percentage") && !type.equals("fixed")) {
+                context.error(couponsPath, "unknown-coupon-type", Map.of("code", code, "type", String.valueOf(coupon.getType())));
+            } else if (value == null || !Double.isFinite(value) || value <= 0
+                    || (type.equals("percentage") && value > 100)) {
+                context.error(couponsPath, "invalid-coupon-value", Map.of("code", code));
+            }
+            if (coupon.getMinSpend() != null && (!Double.isFinite(coupon.getMinSpend()) || coupon.getMinSpend() < 0)) {
+                context.error(couponsPath, "invalid-coupon-limit", Map.of("code", code, "field", "min-spend"));
+            }
+            if (coupon.getMaxUses() != null && coupon.getMaxUses() != -1 && coupon.getMaxUses() < 1) {
+                context.error(couponsPath, "invalid-coupon-limit", Map.of("code", code, "field", "max-uses"));
+            }
+            if (coupon.getMaxUsesPerPlayer() != null && coupon.getMaxUsesPerPlayer() != -1 && coupon.getMaxUsesPerPlayer() < 1) {
+                context.error(couponsPath, "invalid-coupon-limit", Map.of("code", code, "field", "max-uses-per-player"));
+            }
+            if (coupon.getExpires() != null && !coupon.getExpires().isBlank() && parseInstant(coupon.getExpires()) == null) {
+                context.error(couponsPath, "invalid-coupon-expiry",
+                        Map.of("code", code, "date", coupon.getExpires()));
+            }
+            for (String skinId : coupon.getSkins()) {
+                if (!skinIds.contains(normalize(skinId))) {
+                    context.error(couponsPath, "unknown-coupon-skin", Map.of("code", code, "skin", String.valueOf(skinId)));
+                }
+            }
+            for (String bundleId : coupon.getBundles()) {
+                if (!bundleIds.contains(normalize(bundleId))) {
+                    context.error(couponsPath, "unknown-coupon-bundle", Map.of("code", code, "bundle", String.valueOf(bundleId)));
+                }
+            }
+            for (String categoryId : coupon.getCategories()) {
+                if (!categoryIds.contains(normalize(categoryId))) {
+                    context.error(couponsPath, "unknown-coupon-category",
+                            Map.of("code", code, "category", String.valueOf(categoryId)));
+                }
+            }
+        }
+    }
+
+    private void validateEntries(Context context, Path path, String section, List<String> entries,
+                                 Set<String> skinIds, Set<String> bundleIds) {
+        for (String raw : entries) {
+            if (raw == null || raw.isBlank()) continue;
+            String value = raw.trim();
+            String type = "skin";
+            if (value.contains(":")) {
+                String[] parts = value.split(":", 2);
+                type = normalize(parts[0]);
+                value = parts[1];
+            }
+            String id = normalize(value);
+            if (type.equals("bundle")) {
+                if (!bundleIds.contains(id)) {
+                    context.error(path, "unknown-shop-bundle", Map.of("section", section, "bundle", id));
+                }
+            } else if (type.equals("skin")) {
+                if (!skinIds.contains(id)) {
+                    context.error(path, "unknown-shop-skin", Map.of("section", section, "skin", id));
+                }
+            } else {
+                context.warning(path, "unknown-shop-entry-type", Map.of("section", section, "type", type));
+            }
+        }
+    }
+
+    private static Instant parseInstant(String value) {
+        if (value == null || value.isBlank()) return null;
+        String trimmed = value.trim();
+        try {
+            return Instant.parse(trimmed);
+        } catch (DateTimeParseException ignored) {
+            // Fall through to the other supported formats.
+        }
+        try {
+            return ZonedDateTime.parse(trimmed).toInstant();
+        } catch (DateTimeParseException ignored) {
+            // Fall through to the date-only format.
+        }
+        try {
+            return LocalDate.parse(trimmed).atStartOfDay(java.time.ZoneOffset.UTC).toInstant();
+        } catch (DateTimeParseException ignored) {
+            return null;
         }
     }
 

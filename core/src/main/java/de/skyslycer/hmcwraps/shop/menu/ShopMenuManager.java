@@ -205,7 +205,8 @@ public final class ShopMenuManager implements Listener {
         }
         session.actions.clear();
         int size = session.screen.detail() ? 27 : 54;
-        Inventory inventory = Bukkit.createInventory(session, size, title(player, session));
+        Inventory inventory = Bukkit.createInventory(session, size,
+                StringUtil.LEGACY_SERIALIZER.serialize(title(player, session)));
         session.inventory = inventory;
         switch (session.screen) {
             case HOME -> renderHome(player, session);
@@ -918,18 +919,17 @@ public final class ShopMenuManager implements Listener {
     }
 
     private void send(Player player, String key, TagResolver... resolvers) {
-        StringUtil.sendComponent(player, localized(player, key, TagResolver.resolver(resolvers, baseResolvers())));
+        StringUtil.sendComponent(player, localized(player, key, resolvers));
     }
 
     private Component localized(Player player, String key, TagResolver... resolvers) {
         LanguageManager language = plugin.getLanguageManager();
-        return language.parse(player, language.get(player, key), TagResolver.resolver(resolvers, baseResolvers()));
+        return language.parse(player, language.get(player, key), merge(resolvers));
     }
 
     private String localizedText(Player player, String key, TagResolver resolvers) {
         LanguageManager language = plugin.getLanguageManager();
-        return StringUtil.MINI_MESSAGE.serialize(Component.empty()
-                .append(language.parse(player, language.get(player, key), TagResolver.resolver(resolvers, baseResolvers()))));
+        return StringUtil.MINI_MESSAGE.serialize(language.parse(player, language.get(player, key), merge(resolvers)));
     }
 
     private static TagResolver baseResolvers() {
@@ -947,11 +947,19 @@ public final class ShopMenuManager implements Listener {
     }
 
     private static TagResolver resolvers(TagResolver... resolvers) {
-        return TagResolver.resolver(resolvers, baseResolvers());
+        return merge(resolvers);
     }
 
     private static TagResolver with(String key, String value) {
-        return TagResolver.resolver(Placeholder.unparsed(key, value), baseResolvers());
+        return merge(Placeholder.unparsed(key, value));
+    }
+
+    /** Combines the screen specific placeholders with the defaults every message may reference. */
+    private static TagResolver merge(TagResolver... resolvers) {
+        List<TagResolver> all = new ArrayList<>(resolvers.length + 1);
+        all.addAll(List.of(resolvers));
+        all.add(baseResolvers());
+        return TagResolver.resolver(all);
     }
 
     private void runAtEntity(Player player, Runnable action) {

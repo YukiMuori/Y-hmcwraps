@@ -2,6 +2,7 @@ package de.skyslycer.hmcwraps.shop;
 
 import de.skyslycer.hmcwraps.HMCWrapsPlugin;
 import de.skyslycer.hmcwraps.economy.PurchaseTransactionService;
+import de.skyslycer.hmcwraps.economy.PurchaseTransactionService.CouponReservation.Status;
 import de.skyslycer.hmcwraps.repository.CouponRepository;
 import de.skyslycer.hmcwraps.repository.PlayerRepository;
 import de.skyslycer.hmcwraps.util.AsyncUtil;
@@ -134,22 +135,22 @@ public final class CouponServiceImpl implements CouponService, PurchaseTransacti
     }
 
     @Override
-    public @NotNull CompletionStage<Reservation> reserve(@NotNull String code, @NotNull UUID playerId,
-                                                        @NotNull String transactionId, double amount, double discount) {
+    public @NotNull CompletionStage<Status> reserve(@NotNull String code, @NotNull UUID playerId,
+                                                    @NotNull String transactionId, double amount, double discount) {
         Coupon coupon = registry.coupon(code).orElse(null);
         if (coupon == null) {
-            return AsyncUtil.completed(Reservation.UNKNOWN);
+            return AsyncUtil.completed(Status.UNKNOWN);
         }
         return AsyncUtil.safe(() -> repository.reserve(coupon.code(), playerId, transactionId, amount, discount,
                         coupon.maxUses(), coupon.maxUsesPerPlayer()))
                 .thenApply(reservation -> switch (reservation) {
-                    case RESERVED -> Reservation.RESERVED;
-                    case EXHAUSTED -> Reservation.EXHAUSTED;
-                    case ALREADY_USED -> Reservation.ALREADY_USED;
+                    case RESERVED -> Status.RESERVED;
+                    case EXHAUSTED -> Status.EXHAUSTED;
+                    case ALREADY_USED -> Status.ALREADY_USED;
                 })
                 .exceptionally(error -> {
                     report("Could not reserve a redemption of coupon " + coupon.code() + ": " + AsyncUtil.describe(error));
-                    return Reservation.ERROR;
+                    return Status.ERROR;
                 });
     }
 

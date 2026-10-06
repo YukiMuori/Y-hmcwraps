@@ -94,7 +94,7 @@ public final class ProfileServiceImpl implements ProfileService {
                     join(received, 0),
                     join(redeemed, 0),
                     join(experience, 0D),
-                    join(firstPurchase, OptionalLong.empty()).orElse(null));
+                    firstPurchaseAt(firstPurchase));
             cache.put(playerId, profile);
             return profile;
         });
@@ -105,6 +105,11 @@ public final class ProfileServiceImpl implements ProfileService {
             return 0;
         }
         return (int) owned.stream().filter(knownSkin).count();
+    }
+
+    private static @Nullable Long firstPurchaseAt(CompletionStage<OptionalLong> stage) {
+        OptionalLong value = join(stage, OptionalLong.empty());
+        return value.isPresent() ? value.getAsLong() : null;
     }
 
     private static <T> T join(CompletionStage<T> stage, T fallback) {

@@ -227,8 +227,8 @@ public final class GiftServiceImpl implements GiftService {
     @Override
     public @NotNull CompletionStage<List<GiftRecord>> pendingNotifications(@NotNull UUID recipientId) {
         return AsyncUtil.safe(() -> gifts.pendingNotifications(recipientId))
-                .thenApply(records -> records == null ? List.of() : records)
-                .exceptionally(error -> List.of());
+                .thenApply(records -> records == null ? List.<GiftRecord>of() : records)
+                .exceptionally(error -> List.<GiftRecord>of());
     }
 
     @Override
@@ -270,7 +270,8 @@ public final class GiftServiceImpl implements GiftService {
             try {
                 SkinGiftEvent event = new SkinGiftEvent(sender, recipientId, recipientName, kind, targetId,
                         price.amount(), price.currency(), message);
-                result.complete(!Bukkit.getPluginManager().callEvent(event).isCancelled());
+                Bukkit.getPluginManager().callEvent(event);
+                result.complete(!event.isCancelled());
             } catch (Throwable throwable) {
                 plugin.getLogger().warning("A gift event handler failed: " + AsyncUtil.describe(throwable));
                 result.complete(true);
@@ -287,14 +288,14 @@ public final class GiftServiceImpl implements GiftService {
     private CompletionStage<Set<String>> recipientOwned(UUID recipientId) {
         return AsyncUtil.safe(() -> ownership.getOwnedSkinIds(recipientId))
                 .thenApply(owned -> owned == null ? Set.<String>of() : owned)
-                .exceptionally(error -> Set.of());
+                .exceptionally(error -> Set.<String>of());
     }
 
     /** The newest gifts a player received, for the profile screen. */
     public @NotNull CompletionStage<List<GiftRecord>> history(@NotNull UUID recipientId, int limit) {
         return AsyncUtil.safe(() -> gifts.history(recipientId, limit))
-                .thenApply(records -> records == null ? List.of() : records)
-                .exceptionally(error -> List.of());
+                .thenApply(records -> records == null ? List.<GiftRecord>of() : records)
+                .exceptionally(error -> List.<GiftRecord>of());
     }
 
     /** Gifts a player still has to be notified about, oldest first. */

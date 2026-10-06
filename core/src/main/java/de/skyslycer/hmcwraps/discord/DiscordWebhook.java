@@ -166,13 +166,19 @@ public final class DiscordWebhook {
         if (!settings.isEnabled() || !enabled.test(settings)) {
             return;
         }
-        String template = settings.getMessages().getOrDefault(event, DEFAULTS.getOrDefault(event, event));
+        String webhookUrl = settings.getWebhookUrl();
+        if (webhookUrl == null || webhookUrl.isBlank()) {
+            return;
+        }
+        String override = settings.message(event);
+        String template = override == null || override.isBlank() ? DEFAULTS.getOrDefault(event, event) : override;
         String content = apply(template, placeholders);
-        if (!settings.getServerName().isBlank() && template.equals(DEFAULTS.get(event))) {
-            content = "[" + settings.getServerName() + "] " + content;
+        String serverName = settings.getServerName();
+        if (serverName != null && !serverName.isBlank() && template.equals(DEFAULTS.get(event))) {
+            content = "[" + serverName + "] " + content;
         }
         String payload = payload(settings, content);
-        HttpRequest request = HttpRequest.newBuilder(URI.create(settings.getWebhookUrl()))
+        HttpRequest request = HttpRequest.newBuilder(URI.create(webhookUrl))
                 .timeout(Duration.ofSeconds(10))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(payload))

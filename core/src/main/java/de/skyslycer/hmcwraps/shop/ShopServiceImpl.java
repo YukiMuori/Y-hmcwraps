@@ -181,16 +181,16 @@ public final class ShopServiceImpl implements ShopService {
     @Override
     public @NotNull CompletionStage<Boolean> refreshDailyShop(boolean force) {
         return daily.ensureCurrent(registry.dailyConfiguration(), registry.dailyPool(), force)
-                .thenApply(rotation -> {
+                .thenCompose(rotation -> {
                     if (rotation == null) {
                         activeCycleKey = null;
-                        return false;
+                        return AsyncUtil.completed(false);
                     }
                     DailyShopService.Rotation active = rotation;
                     boolean changed = force || !active.cycleKey().equals(activeCycleKey);
                     activeCycleKey = active.cycleKey();
                     if (!changed) {
-                        return false;
+                        return AsyncUtil.completed(false);
                     }
                     // A new cycle also re-reads the definition files, so automatic featured entries and
                     // manual edits take effect without a restart.
@@ -296,7 +296,7 @@ public final class ShopServiceImpl implements ShopService {
                 return AsyncUtil.completed(new PurchaseQuote(entry.referenceId(), entry.type(), price, original, 0, 0,
                         null, alreadyOwned, List.of(), true));
             }
-            return evaluateCoupon(player, effectiveCoupon, channel, sectionId, entry, bundle, base, missing)
+            return evaluateCoupon(player, effectiveCoupon, channel, sectionId, entry, bundle, base)
                     .thenApply(discount -> {
                         double finalAmount = Math.max(0, PricingService.round(base - discount));
                         return new PurchaseQuote(entry.referenceId(), entry.type(), price, original,
@@ -589,7 +589,9 @@ public final class ShopServiceImpl implements ShopService {
 
     private <E extends Event & Cancellable> boolean callEvent(Supplier<E> supplier) {
         try {
-            return !Bukkit.getPluginManager().callEvent(supplier.get()).isCancelled();
+            E event = supplier.get();
+            Bukkit.getPluginManager().callEvent(event);
+            return !event.isCancelled();
         } catch (Throwable throwable) {
             plugin.getLogger().warning("A purchase event handler failed: " + AsyncUtil.describe(throwable));
             return true;

@@ -99,7 +99,7 @@ public final class CollectionServiceImpl implements CollectionService {
         return ownedSkins(playerId).thenCompose(owned ->
                 AsyncUtil.safe(() -> repository.claimedMilestones(playerId)).thenApply(claimed -> {
                     Map<String, CollectionProgress> result = new LinkedHashMap<>();
-                    for (ItemSkinCollection collection : catalog.getCollections()) {
+                    for (ItemSkinCollection collection : catalog.collectionMap().values()) {
                         Set<String> collectionClaims = new LinkedHashSet<>();
                         for (String entry : claimed) {
                             int separator = entry.indexOf(':');
@@ -424,7 +424,9 @@ public final class CollectionServiceImpl implements CollectionService {
         CompletableFuture<Boolean> result = new CompletableFuture<>();
         scheduler.runOnEntity(player, () -> {
             try {
-                result.complete(!Bukkit.getPluginManager().callEvent(supplier.get()).isCancelled());
+                E event = supplier.get();
+                Bukkit.getPluginManager().callEvent(event);
+                result.complete(!event.isCancelled());
             } catch (Throwable throwable) {
                 plugin.getLogger().warning("A collection claim event handler failed: " + AsyncUtil.describe(throwable));
                 result.complete(true);
@@ -435,14 +437,14 @@ public final class CollectionServiceImpl implements CollectionService {
 
     private CompletionStage<Set<String>> ownedSkins(UUID playerId) {
         return AsyncUtil.safe(() -> ownership.getOwnedSkinIds(playerId))
-                .thenApply(owned -> owned == null ? Set.of() : owned)
-                .exceptionally(error -> Set.of());
+                .thenApply(owned -> owned == null ? Set.<String>of() : owned)
+                .exceptionally(error -> Set.<String>of());
     }
 
     private CompletionStage<Set<String>> claimed(UUID playerId, String collectionId) {
         return AsyncUtil.safe(() -> repository.claimed(playerId, collectionId))
-                .thenApply(claimed -> claimed == null ? Set.of() : claimed)
-                .exceptionally(error -> Set.of());
+                .thenApply(claimed -> claimed == null ? Set.<String>of() : claimed)
+                .exceptionally(error -> Set.<String>of());
     }
 
     private List<ItemSkin> skinsOf(String collectionId) {

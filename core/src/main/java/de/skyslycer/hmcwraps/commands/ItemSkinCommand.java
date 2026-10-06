@@ -10,6 +10,7 @@ import org.bukkit.inventory.ItemStack;
 import revxrsal.commands.annotation.Command;
 import revxrsal.commands.annotation.Description;
 import revxrsal.commands.annotation.Subcommand;
+import revxrsal.commands.bukkit.annotation.CommandPermission;
 
 /** Player-facing entry point for the independent v2 item-skin browser. */
 @Command("itemskin")
@@ -88,7 +89,7 @@ public final class ItemSkinCommand {
 
     @Subcommand("editor")
     @Description("Edit the shop definition files (shops.yml and coupons.yml) in game.")
-    @revxrsal.commands.annotation.CommandPermission("hmcwraps.commands.itemskin.editor")
+    @CommandPermission("hmcwraps.commands.itemskin.editor")
     public void onEditor(Player player) {
         if (plugin.getShopEditorManager() == null) {
             send(player, "shop.purchase.unavailable");

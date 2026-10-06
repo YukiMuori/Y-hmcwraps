@@ -90,7 +90,7 @@ public final class ShopEditorManager implements Listener {
         session.actions.clear();
         session.fields = fields();
         Inventory inventory = Bukkit.createInventory(session, 54,
-                StringUtil.LEGACY_SERIALIZER.serialize(localized(player, "shop.editor.title")));
+                StringUtil.LEGACY_SERIALIZER.serialize(component(player, "shop.editor.title", Map.of())));
         session.inventory = inventory;
 
         int pages = Math.max(1, (session.fields.size() + CONTENT_SLOTS - 1) / CONTENT_SLOTS);
@@ -196,7 +196,7 @@ public final class ShopEditorManager implements Listener {
             fields.add(bool(shops, append(base, "featured"), Material.NETHER_STAR, "shop.editor.bundle-featured", args));
             fields.add(number(shops, append(base, "discount"), Material.GOLD_INGOT, "shop.editor.bundle-discount", true, args));
             fields.add(text(shops, append(base, "purchase-mode"), Material.LEVER, "shop.editor.bundle-mode", args));
-            fields.add(number(shops, append(base, "price", "amount"), Material.SUNFLOWER, "shop.editor.bundle-price", true, args));
+            fields.add(number(shops, append(base, "price.amount"), Material.SUNFLOWER, "shop.editor.bundle-price", true, args));
         }
         // Event shops.
         for (String eventId : sectionIds(shops, "events")) {
@@ -206,7 +206,7 @@ public final class ShopEditorManager implements Listener {
             fields.add(text(shops, append(base, "start"), Material.CLOCK, "shop.editor.event-start", args));
             fields.add(text(shops, append(base, "end"), Material.CLOCK, "shop.editor.event-end", args));
             fields.add(number(shops, append(base, "discount"), Material.GOLD_INGOT, "shop.editor.event-discount", true, args));
-            fields.add(number(shops, append(base, "price", "amount"), Material.SUNFLOWER, "shop.editor.event-price", true, args));
+            fields.add(number(shops, append(base, "price.amount"), Material.SUNFLOWER, "shop.editor.event-price", true, args));
         }
         // Coupons.
         for (String code : sectionIds(coupons, "coupons")) {
@@ -413,8 +413,12 @@ public final class ShopEditorManager implements Listener {
     }
 
     private String localized(Player player, String key, Map<String, String> values) {
+        return StringUtil.MINI_MESSAGE.serialize(component(player, key, values));
+    }
+
+    private net.kyori.adventure.text.Component component(Player player, String key, Map<String, String> values) {
         LanguageManager language = plugin.getLanguageManager();
-        return StringUtil.MINI_MESSAGE.serialize(language.parse(player, language.get(player, key), placeholders(values)));
+        return language.parse(player, language.get(player, key), placeholders(values));
     }
 
     private void send(Player player, String key) {

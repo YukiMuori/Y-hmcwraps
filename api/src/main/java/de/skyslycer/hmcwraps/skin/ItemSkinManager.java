@@ -34,15 +34,6 @@ public interface ItemSkinManager {
     default @NotNull CompletionStage<Set<String>> getOwnedSkinIds(@NotNull UUID playerId) {
         return getStorageProvider().getOwnedSkinIds(playerId);
     }
-    /** Loads the player's persistent skin favorites; older storage providers may return an empty set. */
-    default @NotNull CompletionStage<Set<String>> getFavoriteSkinIds(@NotNull UUID playerId) {
-        return getStorageProvider().getFavoriteSkinIds(playerId);
-    }
-    /** Adds or removes a persistent skin favorite. */
-    default @NotNull CompletionStage<Boolean> setSkinFavorite(@NotNull UUID playerId,
-                                                               @NotNull String skinId, boolean favorite) {
-        return getStorageProvider().setSkinFavorite(playerId, skinId, favorite);
-    }
     @NotNull ItemStack applySkin(@NotNull Player player, @NotNull ItemStack item, @NotNull ItemSkin skin);
     @NotNull ItemStack removeSkin(@NotNull Player player, @NotNull ItemStack item);
     void preview(@NotNull Player player, @NotNull ItemStack item, @NotNull ItemSkin skin);

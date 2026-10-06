@@ -12,7 +12,6 @@ public class Inventory {
 
     private List<String> sortOrder;
     private ShortcutSettings shortcut;
-    private String favoritePrefix;
     private boolean itemChangeEnabled;
     private boolean openWithoutItemEnabled;
     private boolean showAllWithoutItem;
@@ -78,10 +77,6 @@ public class Inventory {
 
     public List<String> getSortOrder() {
         return sortOrder;
-    }
-
-    public String getFavoritePrefix() {
-        return favoritePrefix;
     }
 
     public enum Type {

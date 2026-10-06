@@ -47,19 +47,6 @@ class SkinOwnershipServiceTest {
     }
 
     @Test
-    void favoriteUpdatesRefreshTheirPlayerCache() {
-        InMemoryProvider storage = new InMemoryProvider();
-        SkinOwnershipService ownership = new SkinOwnershipService(storage);
-        UUID player = UUID.randomUUID();
-
-        assertTrue(ownership.getFavoriteSkinIds(player).toCompletableFuture().join().isEmpty());
-        assertTrue(ownership.setFavorite(player, "ruby_sword", true).toCompletableFuture().join());
-        assertTrue(ownership.cachedFavoriteSkinIds(player).contains("ruby_sword"));
-        assertTrue(ownership.setFavorite(player, "ruby_sword", false).toCompletableFuture().join());
-        assertTrue(ownership.cachedFavoriteSkinIds(player).isEmpty());
-    }
-
-    @Test
     void purchasedUnlockUsesPurchaseAuditPath() {
         InMemoryProvider storage = new InMemoryProvider();
         SkinOwnershipService ownership = new SkinOwnershipService(storage);
@@ -72,7 +59,6 @@ class SkinOwnershipServiceTest {
 
     private static final class InMemoryProvider implements StorageProvider {
         private final ConcurrentHashMap<UUID, Set<String>> values = new ConcurrentHashMap<>();
-        private final ConcurrentHashMap<UUID, Set<String>> favorites = new ConcurrentHashMap<>();
         private final AtomicInteger reads = new AtomicInteger();
         private final AtomicInteger purchases = new AtomicInteger();
         private volatile boolean failReads;
@@ -93,18 +79,6 @@ class SkinOwnershipServiceTest {
             reads.incrementAndGet();
             return failReads ? CompletableFuture.failedFuture(new IllegalStateException("storage unavailable"))
                     : CompletableFuture.completedFuture(values.getOrDefault(playerId, Set.of()));
-        }
-        @Override public CompletionStage<Set<String>> getFavoriteSkinIds(UUID playerId) {
-            return CompletableFuture.completedFuture(favorites.getOrDefault(playerId, Set.of()));
-        }
-        @Override public CompletionStage<Boolean> setSkinFavorite(UUID playerId, String skinId, boolean favorite) {
-            favorites.compute(playerId, (uuid, current) -> {
-                java.util.HashSet<String> next = new java.util.HashSet<>(current == null ? Set.of() : current);
-                if (favorite) next.add(normalize(skinId));
-                else next.remove(normalize(skinId));
-                return Set.copyOf(next);
-            });
-            return CompletableFuture.completedFuture(true);
         }
         @Override public void close() { }
 

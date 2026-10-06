@@ -125,13 +125,6 @@ public interface HMCWraps extends Plugin {
     Storage<Player, Boolean> getFilterStorage();
 
     /**
-     * Get the storage storing the favorite wraps of a player.
-     *
-     * @return The filter storage
-     */
-    Storage<Player, List<Wrap>> getFavoriteWrapStorage();
-
-    /**
      * Get the wraps loader.
      *
      * @return The wraps loader

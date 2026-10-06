@@ -63,8 +63,8 @@ public class DebugCreator {
     }
 
     public static DebugPlayer createDebugPlayer(HMCWrapsPlugin plugin, Player player) {
-        return new DebugPlayer(plugin.getFavoriteWrapStorage().get(player).stream().map(Wrap::getUuid).toList(),
-                plugin.getFilterStorage().get(player), createDebugItemData(plugin, player.getInventory().getItemInMainHand()));
+        return new DebugPlayer(plugin.getFilterStorage().get(player),
+                createDebugItemData(plugin, player.getInventory().getItemInMainHand()));
     }
 
     public static DebugItemData createDebugItemData(HMCWrapsPlugin plugin, ItemStack item) {

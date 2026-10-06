@@ -157,12 +157,6 @@ unwrapper:
     - '<green>Apply this to an item to unwrap it!'
     - '<gray>You may get the physical wrap back.'
 
-# Store a players preference set using actions (SET_FAVORITE) and apply it on pick up and inventory move
-# This feature shouldn't do anything if you don't use the action, but if you have and don't want it anymore, disable this again
-favorites:
-  # If the feature should be enabled
-  enabled: false
-
 # The inventory filter configuration
 # This feature shouldn't do anything if you don't use the action, but if you have and don't want it anymore, disable this
 # If you want the inventory to only show wraps the player owns, enable this feature and set default to 'true' and don't change it using actions
@@ -259,12 +253,10 @@ wrapping:
 # The inventory (/wraps)
 inventory:
   # The sort order by which the wraps in the inventory will be sorted
-  # FAVORITE: Sorts by favorite wraps, favorites first
   # PERMISSION: Sorts by permission, the player has access to first
   # SORT_ID: Sorts by the sort id, lower numbers first. Example: sort: 3
   # MODEL_ID: Sorts by model id, lower numbers first
   sort-order:
-    - 'FAVORITE'
     - 'PERMISSION'
     - 'SORT_ID'
     - 'MODEL_ID'
@@ -289,9 +281,6 @@ inventory:
   # If the player opens the inventory while holding an item (instead of empty hand), only wraps for that item will be shown.
   # This also means that items that have no wrap will show an empty inventory.
   show-all-without-item: false
-  # The prefix to be shown in the GUI on wraps marked as favorite
-  # Leave empty to disable
-  favorite-prefix: ''
   # The title
   title: '<gradient:#8FEAF9:#CDA4F9>ᴡʀᴀᴘs</gradient>'
   # Type of inventory, SCROLLING or PAGINATED

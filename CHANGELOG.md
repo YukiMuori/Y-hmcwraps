@@ -39,7 +39,7 @@
 - Economy provider IDs now treat hyphens and underscores as aliases, so both `excellent_economy` and the previously documented `excellent-economy` resolve correctly in skin prices and automatic priority selection.
 - Nexo skins now always apply their canonical `minecraft:item_model` (`nexo:<id>`) while leaving the target item's CustomModelData untouched; transitions to and from legacy model-data wraps preserve the original component.
 - Floating preview cancellation is idempotent and safe when reload, timeout, and sneak cancellation happen concurrently.
-- Item-display sword previews now rotate the model plane vertically, with the blade pointing upward instead of lying horizontally.
+- Item-display sword previews now use a clockwise −90° Z-axis turn in the display plane, so the blade points upward instead of downward or lying horizontally.
 - Hand previews temporarily hide and then restore the client-side off-hand item, preventing a sword held there from appearing duplicated.
 
 ### Added
@@ -55,8 +55,13 @@
 - Floating previews default to automatic item-display/mannequin selection so modern item-model components render correctly.
 - Bundled wrap, skin, shop, and editor GUIs now use a consistent MiniMessage palette, typography, navigation, localized control lore, and explicitly non-italic item text.
 - Skin-icon lore is minimal by default and fully controlled by the `gui.skin-lore` template, including expansion of each skin file's own lore and optional dynamic placeholders.
-- The selected item in slot 4 is now the unified browser control: left click changes sorting, right click changes filters, and middle click toggles favorites; its lore is configurable through `gui.item-lore`.
-- Previous/next arrows are rendered only when their destination page exists, and catalog icons hide vanilla technical tooltip details so only configured presentation text remains.
+- The selected item in slot 4 is now the unified browser control: left click changes sorting and right click changes filters; both its name and lore are configurable through `gui.item-name` and `gui.item-lore`.
+- Previous/next arrows are rendered only when their destination page exists, and catalog/category icons hide vanilla technical tooltip details so only configured presentation text remains.
+- ItemSkin category controls now use DeluxeMenus-style `enabled`, `slot`, and complete `item` sections, while legacy `category-slots` remains readable.
+- MiniMessage output throughout the plugin inherits an explicit gray base color whenever no more specific color is configured.
+
+### Removed
+- The favorites feature, including legacy wrap actions/configuration, skin GUI controls, persistence repositories, public favorite APIs, profile statistics and PlaceholderAPI expansions.
 - `/wraps validate` now checks themed skin collection definitions/references and the expanded GUI controls.
 
 ## 2.0.1 — 2026-10-05

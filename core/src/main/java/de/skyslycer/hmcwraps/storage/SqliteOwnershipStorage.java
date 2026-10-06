@@ -62,9 +62,6 @@ public final class SqliteOwnershipStorage implements StorageProvider {
                     statement.execute("CREATE TABLE IF NOT EXISTS skin_ownership ("
                             + "player_uuid TEXT NOT NULL, skin_id TEXT NOT NULL, unlocked_at INTEGER NOT NULL, source TEXT NOT NULL, "
                             + "PRIMARY KEY(player_uuid, skin_id))");
-                    statement.execute("CREATE TABLE IF NOT EXISTS skin_favorites ("
-                            + "player_uuid TEXT NOT NULL, skin_id TEXT NOT NULL, created_at INTEGER NOT NULL, "
-                            + "PRIMARY KEY(player_uuid, skin_id))");
                 }
                 ready.set(true);
                 return true;
@@ -131,37 +128,6 @@ public final class SqliteOwnershipStorage implements StorageProvider {
                 }
             }
             return Set.copyOf(values);
-        });
-    }
-
-    @Override
-    public CompletionStage<Set<String>> getFavoriteSkinIds(UUID playerId) {
-        return submit(() -> {
-            Set<String> values = new LinkedHashSet<>();
-            try (PreparedStatement statement = requireConnection().prepareStatement(
-                    "SELECT skin_id FROM skin_favorites WHERE player_uuid=? ORDER BY created_at DESC")) {
-                statement.setString(1, playerId.toString());
-                try (ResultSet result = statement.executeQuery()) {
-                    while (result.next()) values.add(result.getString(1));
-                }
-            }
-            return Set.copyOf(values);
-        });
-    }
-
-    @Override
-    public CompletionStage<Boolean> setSkinFavorite(UUID playerId, String skinId, boolean favorite) {
-        return submit(() -> {
-            String sql = favorite
-                    ? "INSERT OR IGNORE INTO skin_favorites(player_uuid, skin_id, created_at) VALUES(?,?,?)"
-                    : "DELETE FROM skin_favorites WHERE player_uuid=? AND skin_id=?";
-            try (PreparedStatement statement = requireConnection().prepareStatement(sql)) {
-                statement.setString(1, playerId.toString());
-                statement.setString(2, normalize(skinId));
-                if (favorite) statement.setLong(3, System.currentTimeMillis());
-                statement.executeUpdate();
-            }
-            return true;
         });
     }
 

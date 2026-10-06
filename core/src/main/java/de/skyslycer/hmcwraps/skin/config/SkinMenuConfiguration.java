@@ -18,6 +18,7 @@ public class SkinMenuConfiguration {
     private boolean showLocked = true;
     private boolean fillerEnabled = true;
     private boolean itemEnabled = true;
+    private String itemName = "<item_name>";
     private List<String> itemLore = new ArrayList<>(List.of("<item_lore>"));
     private List<String> skinLore = new ArrayList<>(List.of("<skin_lore>"));
     private SkinIconConfiguration filler = new SkinIconConfiguration();
@@ -27,11 +28,11 @@ public class SkinMenuConfiguration {
     private Button sort = new Button();
     private Button filter = new Button();
     private Button search = new Button();
-    private Button favorites = new Button();
     private Button collection = new Button();
     private Button unskin = new Button(false);
     private Button shop = new Button(false);
     private Map<String, Integer> categorySlots = new HashMap<>();
+    private Map<String, Button> categories = new HashMap<>();
     private Map<String, String> clickActions = new HashMap<>();
     private List<String> sortOptions = new ArrayList<>();
     private List<String> filterOptions = new ArrayList<>();
@@ -45,6 +46,7 @@ public class SkinMenuConfiguration {
     public boolean isShowLocked() { return showLocked; }
     public boolean isFillerEnabled() { return fillerEnabled; }
     public boolean isItemEnabled() { return itemEnabled; }
+    public String getItemName() { return itemName == null ? "<item_name>" : itemName; }
     public List<String> getItemLore() { return itemLore == null ? List.of() : itemLore; }
     public List<String> getSkinLore() { return skinLore == null ? List.of() : skinLore; }
     public SkinIconConfiguration getFiller() { return filler == null ? new SkinIconConfiguration() : filler; }
@@ -54,11 +56,11 @@ public class SkinMenuConfiguration {
     public Button getSort() { return sort == null ? new Button() : sort; }
     public Button getFilter() { return filter == null ? new Button() : filter; }
     public Button getSearch() { return search == null ? new Button() : search; }
-    public Button getFavorites() { return favorites == null ? new Button() : favorites; }
     public Button getCollection() { return collection == null ? new Button() : collection; }
     public Button getUnskin() { return unskin == null ? new Button(false) : unskin; }
     public Button getShop() { return shop == null ? new Button(false) : shop; }
     public Map<String, Integer> getCategorySlots() { return categorySlots == null ? Map.of() : categorySlots; }
+    public Map<String, Button> getCategories() { return categories == null ? Map.of() : categories; }
     public Map<String, String> getClickActions() { return clickActions == null ? Map.of() : clickActions; }
     public List<String> getSortOptions() { return sortOptions == null ? List.of() : sortOptions; }
     public List<String> getFilterOptions() { return filterOptions == null ? List.of() : filterOptions; }

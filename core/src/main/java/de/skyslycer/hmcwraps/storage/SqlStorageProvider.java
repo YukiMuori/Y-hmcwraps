@@ -1,7 +1,6 @@
 package de.skyslycer.hmcwraps.storage;
 
 import de.skyslycer.hmcwraps.database.Database;
-import de.skyslycer.hmcwraps.repository.FavoriteRepository;
 import de.skyslycer.hmcwraps.repository.OwnershipRepository;
 import de.skyslycer.hmcwraps.skin.StorageProvider;
 import de.skyslycer.hmcwraps.skin.TransactionalStorage;
@@ -23,13 +22,10 @@ public final class SqlStorageProvider implements TransactionalStorage, StoragePr
 
     private final Database database;
     private final OwnershipRepository ownership;
-    private final FavoriteRepository favorites;
 
-    public SqlStorageProvider(@NotNull Database database, @NotNull OwnershipRepository ownership,
-                              @NotNull FavoriteRepository favorites) {
+    public SqlStorageProvider(@NotNull Database database, @NotNull OwnershipRepository ownership) {
         this.database = database;
         this.ownership = ownership;
-        this.favorites = favorites;
     }
 
     @Override
@@ -65,16 +61,6 @@ public final class SqlStorageProvider implements TransactionalStorage, StoragePr
     @Override
     public @NotNull CompletionStage<Set<String>> getOwnedSkinIds(@NotNull UUID playerId) {
         return ownership.owned(playerId);
-    }
-
-    @Override
-    public @NotNull CompletionStage<Set<String>> getFavoriteSkinIds(@NotNull UUID playerId) {
-        return favorites.favorites(playerId);
-    }
-
-    @Override
-    public @NotNull CompletionStage<Boolean> setSkinFavorite(@NotNull UUID playerId, @NotNull String skinId, boolean favorite) {
-        return favorites.setFavorite(playerId, skinId, favorite);
     }
 
     @Override

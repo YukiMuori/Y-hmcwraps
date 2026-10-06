@@ -61,13 +61,12 @@ public final class ProfileServiceImpl implements ProfileService {
         }
         return load(playerId).exceptionally(error -> {
             logger.accept("Could not load the skin profile of " + playerId + ": " + AsyncUtil.describe(error));
-            return new SkinProfile(playerId, 0, 0, 0, 0, 0, 0, 0, 0, null);
+            return new SkinProfile(playerId, 0, 0, 0, 0, 0, 0, 0, null);
         });
     }
 
     private CompletionStage<SkinProfile> load(UUID playerId) {
         CompletionStage<Set<String>> owned = AsyncUtil.safe(() -> ownership.getOwnedSkinIds(playerId));
-        CompletionStage<Set<String>> favorites = AsyncUtil.safe(() -> ownership.getFavoriteSkinIds(playerId));
         CompletionStage<Integer> purchased = AsyncUtil.safe(() -> purchases.countCompleted(playerId,
                 de.skyslycer.hmcwraps.shop.PurchaseKind.SKIN, de.skyslycer.hmcwraps.shop.PurchaseKind.BUNDLE));
         CompletionStage<Integer> gifted = AsyncUtil.safe(() -> gifts.countSent(playerId));
@@ -79,7 +78,7 @@ public final class ProfileServiceImpl implements ProfileService {
                 .thenApply(optional -> optional == null || optional.isEmpty()
                         ? OptionalLong.empty() : OptionalLong.of(optional.get()));
 
-        List<CompletionStage<?>> stages = List.of(owned, favorites, purchased, gifted, received, redeemed, completed,
+        List<CompletionStage<?>> stages = List.of(owned, purchased, gifted, received, redeemed, completed,
                 experience, firstPurchase);
         CompletableFuture<?>[] futures = stages.stream()
                 .map(stage -> stage.toCompletableFuture().exceptionally(error -> null))
@@ -87,7 +86,6 @@ public final class ProfileServiceImpl implements ProfileService {
         return CompletableFuture.allOf(futures).thenApply(ignored -> {
             SkinProfile profile = new SkinProfile(playerId,
                     countKnown(join(owned, Set.of())),
-                    join(favorites, Set.of()).size(),
                     join(completed, 0),
                     join(purchased, 0),
                     join(gifted, 0),

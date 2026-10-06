@@ -3,6 +3,7 @@ package de.skyslycer.hmcwraps.util;
 import de.skyslycer.hmcwraps.preview.floating.PreviewOrientation;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -14,5 +15,6 @@ class ItemDisplayTransformTest {
         assertTrue(PreviewOrientation.isVerticalItemDisplay("NETHERITE_SWORD"));
         assertFalse(PreviewOrientation.isVerticalItemDisplay("DIAMOND_PICKAXE"));
         assertFalse(PreviewOrientation.isVerticalItemDisplay("PAPER"));
+        assertEquals(-Math.PI / 2D, PreviewOrientation.verticalRotationRadians(), 0.0001D);
     }
 }

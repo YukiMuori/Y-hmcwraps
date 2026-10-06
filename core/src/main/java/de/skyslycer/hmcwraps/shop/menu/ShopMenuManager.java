@@ -165,30 +165,26 @@ public final class ShopMenuManager implements Listener {
         SkinOwnershipService ownership = plugin.getSkinOwnership();
         CompletionStage<Set<String>> owned = ownership == null ? AsyncUtil.completed(Set.of())
                 : ownership.getOwnedSkinIds(player.getUniqueId());
-        CompletionStage<Set<String>> favorites = ownership == null ? AsyncUtil.completed(Set.of())
-                : ownership.getFavoriteSkinIds(player.getUniqueId());
-        owned.thenCombine(favorites, Snapshot::new)
-                .thenCompose(snapshot -> {
-                    session.owned = snapshot.owned();
-                    session.favorites = snapshot.favorites();
+        owned.thenCompose(loadedOwned -> {
+                    session.owned = loadedOwned == null ? Set.of() : loadedOwned;
                     if (profile && plugin.getProfileService() != null) {
                         return plugin.getProfileService().getProfile(player.getUniqueId())
                                 .thenApply(loaded -> {
                                     session.profile = loaded;
-                                    return snapshot;
+                                    return session.owned;
                                 });
                     }
-                    return AsyncUtil.completed(snapshot);
+                    return AsyncUtil.completed(session.owned);
                 })
-                .thenCompose(snapshot -> {
+                .thenCompose(ignored -> {
                     if (gifts && plugin.getGiftService() != null) {
                         return plugin.getGiftService().pendingNotifications(player.getUniqueId())
                                 .thenApply(loaded -> {
                                     session.gifts = loaded;
-                                    return snapshot;
+                                    return session.owned;
                                 });
                     }
-                    return AsyncUtil.completed(snapshot);
+                    return AsyncUtil.completed(session.owned);
                 })
                 .whenComplete((snapshot, error) -> runAtEntity(player, () -> {
                     if (error != null) {
@@ -462,7 +458,6 @@ public final class ShopMenuManager implements Listener {
                 ? List.of(localizedText(player, "shop.purchase.error", values))
                 : List.of(
                 localizedText(player, "shop.menu.stat-owned", resolvers(with("count", String.valueOf(profile.ownedSkins())))),
-                localizedText(player, "shop.menu.stat-favorites", resolvers(with("count", String.valueOf(profile.favoriteSkins())))),
                 localizedText(player, "shop.menu.stat-collections", resolvers(with("count", String.valueOf(profile.collectionsCompleted())))),
                 localizedText(player, "shop.menu.stat-purchases", resolvers(with("count", String.valueOf(profile.purchasedSkins())))),
                 localizedText(player, "shop.menu.stat-gifts-sent", resolvers(with("count", String.valueOf(profile.giftedSkins())))),
@@ -964,9 +959,6 @@ public final class ShopMenuManager implements Listener {
         }
     }
 
-    private record Snapshot(Set<String> owned, Set<String> favorites) {
-    }
-
     private record GiftQuote(double value, double price) {
     }
 
@@ -1009,7 +1001,6 @@ public final class ShopMenuManager implements Listener {
         private final PurchaseKind kind;
         private final Map<Integer, Consumer<ClickType>> actions = new HashMap<>();
         private Set<String> owned = Set.of();
-        private Set<String> favorites = Set.of();
         private List<GiftRecord> gifts = List.of();
         private SkinProfile profile;
         private int page;

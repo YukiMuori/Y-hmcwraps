@@ -226,21 +226,12 @@ public final class ItemSkinManagerImpl implements ItemSkinManager {
     }
 
     @Override public @NotNull CompletionStage<Set<String>> getOwnedSkinIds(@NotNull UUID playerId) { return ownership.getOwnedSkinIds(playerId); }
-    @Override public @NotNull CompletionStage<Set<String>> getFavoriteSkinIds(@NotNull UUID playerId) { return ownership.getFavoriteSkinIds(playerId); }
-    @Override public @NotNull CompletionStage<Boolean> setSkinFavorite(@NotNull UUID playerId, @NotNull String skinId, boolean favorite) {
-        return ownership.setFavorite(playerId, skinId, favorite);
-    }
     public @NotNull CompletionStage<Set<String>> ownedSkinIds(UUID playerId) { return getOwnedSkinIds(playerId); }
-    public @NotNull CompletionStage<Set<String>> favoriteSkinIds(UUID playerId) { return getFavoriteSkinIds(playerId); }
-    public @NotNull CompletionStage<Boolean> setFavorite(UUID playerId, String skinId, boolean favorite) {
-        return setSkinFavorite(playerId, skinId, favorite);
-    }
     public @NotNull CompletionStage<Boolean> transferSkin(UUID fromPlayer, UUID toPlayer, String skinId) {
         if (getSkin(skinId).isEmpty()) return CompletableFuture.completedFuture(false);
         return ownership.transferSkin(fromPlayer, toPlayer, skinId);
     }
     public Set<String> cachedOwnedSkinIds(UUID playerId) { return ownership.cachedOwnedSkinIds(playerId); }
-    public Set<String> cachedFavoriteSkinIds(UUID playerId) { return ownership.cachedFavoriteSkinIds(playerId); }
     public boolean isCachedOwned(UUID playerId, String skinId) { return ownership.isCachedOwned(playerId, skinId); }
     public void preloadOwnership(UUID playerId) { ownership.preload(playerId); }
     public void invalidateOwnership(UUID playerId) { ownership.invalidate(playerId); }

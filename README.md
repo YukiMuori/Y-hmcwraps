@@ -33,7 +33,7 @@ The repository's build artifact is produced by `./gradlew clean build`; the dist
 | `/itemskin shop` | Open the shop: featured entries, the daily rotation, bundles, event shops, coupons, gifts and your profile. |
 | `/itemskin bundles`, `/itemskin events` | Jump straight to the bundle list or the event shops. |
 | `/itemskin coupons` | List the configured coupons and select the one used at checkout (right-click clears it). |
-| `/itemskin profile` | Show owned/favorite/collection/purchase/gift/coupon statistics and recent purchases. |
+| `/itemskin profile` | Show ownership, collection, purchase, gift and coupon statistics and recent purchases. |
 | `/itemskin gifts` | Show gifts that were paid for while you were offline. |
 | `/itemskin gift <player> <skin-id>` | Gift a skin to an online or (if enabled) offline player. You pay the price; the recipient receives the ownership. |
 | `/itemskin coupon <code>` | Apply a coupon code to your next purchase. |
@@ -41,11 +41,11 @@ The repository's build artifact is produced by `./gradlew clean build`; the dist
 | `/itemskin give <skin-id> <player>` | *(Permission `hmcwraps.commands.itemskin.give`)* permanently grant a skin for giveaways without charging the player. |
 | `/wraps` | Existing legacy wrap inventory. |
 
-In the browser, left click applies a free/owned skin, right click previews it, middle click toggles a persistent favorite, and Shift-click buys a configured paid skin. The Shop control opens the integrated `shops.yml`/`coupons.yml` menus, while Unskin restores the selected item. Search opens chat input (`clear` resets it; `cancel` returns without changing the search), the favorites button filters to favorited skins, and the collection button cycles through themed series. Sorting defaults to rarity priority descending. Buttons have independent `enabled`, `slot` and `item` settings; target-item and filler display can also be toggled. Configure content slots, category controls, icons, item models, tooltip styles and MiniMessage titles in `itemskin-gui.yml`.
+In the browser, left click applies a free/owned skin, right click previews it, and Shift-click buys a configured paid skin. The selected item in slot 4 is the compact browser control: left click changes sorting and right click changes filters. Its name and lore are configurable with `item-name` and `item-lore`. The Shop control opens the integrated `shops.yml`/`coupons.yml` menus, while Unskin restores the selected item. Search opens chat input (`clear` resets it; `cancel` returns without changing the search), and the collection button cycles through themed series. Previous and next arrows appear only when their destination page exists. Every control and category has independent `enabled`, `slot`, and complete `item` settings in `itemskin-gui.yml`.
 
-### Themed collections, favorites and trades
+### Themed collections and trades
 
-Define themed series in `skin-collections.yml`, with a translated `display-name-key`, optional icon/priority and category list. Assign a skin with `collection: angelico`; the collection button narrows compatible skins to that series, while the configured category buttons act as its subcategories (for example swords, tools and armor). A skin without `collection` remains in the all-collections view. Persistent favorites and ownership live in `skins.db` (SQLite by default). Player trades require both players to confirm, check ownership again in storage and use a single SQLite transaction to move—not duplicate—the skin. Trades are in-memory, online-only offers and are cancelled on disconnect or after five minutes.
+Define themed series in `skin-collections.yml`, with a translated `display-name-key`, optional icon/priority and category list. Assign a skin with `collection: angelico`; the collection button narrows compatible skins to that series, while the configured category buttons act as its subcategories (for example swords, tools and armor). A skin without `collection` remains in the all-collections view. Ownership lives in `skins.db` (SQLite by default). Player trades require both players to confirm, check ownership again in storage and use a single SQLite transaction to move—not duplicate—the skin. Trades are in-memory, online-only offers and are cancelled on disconnect or after five minutes.
 
 Administrators can run `/wraps validate` for a read-only check of YAML files, skin/wrap IDs and references, translations, materials, economy settings, GUI slots and the shop definitions (`shops.yml`, `coupons.yml`): bundle contents and discounts, purchase modes, the daily pool and reset time, event time windows, featured/event entries, and coupon types, values, limits, expiries and every skin/bundle/category reference. It does not reload or edit files.
 
@@ -157,20 +157,18 @@ if (wraps != null && wraps.getItemSkinManager() != null) {
 }
 ```
 
-`ItemSkinManager` also provides collection/catalog lookup, compatibility lookup, async owned/favorite skin ID access, favorite updates, access/ownership, async purchases, grants, apply/remove and preview operations. The shop is exposed through `ShopService` (daily/featured/event listings, quotes, purchases, bundle modes, collections), `CouponService`, `GiftService`, `ProfileService`, `CollectionService` and `PurchaseTransactionService`, together with the cancellable `SkinPurchaseEvent`, `BundlePurchaseEvent`, `SkinGiftEvent`, `CouponRedeemEvent`, `ShopRefreshEvent`, `CollectionCompleteEvent` and `CollectionRewardClaimEvent`. Other plugins can register economy providers (`EconomyService#register`) and read live progress through the same interfaces the GUIs use. `HMCWraps#getLanguageService()` exposes locale-aware lookup and MiniMessage parsing with `<lang:...>` and `<glyph:...>` tags; the legacy MiniMessage parser delegates these tags to it when available. `registerEconomyProvider(...)` and `registerCompatibilityProvider(...)` let other plugins extend the optional provider boundaries. Bukkit item/player methods should be called on the appropriate server/entity thread; storage and economy results are represented as `CompletionStage`s.
+`ItemSkinManager` also provides collection/catalog lookup, compatibility lookup, asynchronous owned-skin access, access/ownership, purchases, grants, apply/remove and preview operations. The shop is exposed through `ShopService` (daily/featured/event listings, quotes, purchases, bundle modes, collections), `CouponService`, `GiftService`, `ProfileService`, `CollectionService` and `PurchaseTransactionService`, together with the cancellable `SkinPurchaseEvent`, `BundlePurchaseEvent`, `SkinGiftEvent`, `CouponRedeemEvent`, `ShopRefreshEvent`, `CollectionCompleteEvent` and `CollectionRewardClaimEvent`. Other plugins can register economy providers (`EconomyService#register`) and read live progress through the same interfaces the GUIs use. `HMCWraps#getLanguageService()` exposes locale-aware lookup and MiniMessage parsing with `<lang:...>` and `<glyph:...>` tags; the legacy MiniMessage parser delegates these tags to it when available. `registerEconomyProvider(...)` and `registerCompatibilityProvider(...)` let other plugins extend the optional provider boundaries. Bukkit item/player methods should be called on the appropriate server/entity thread; storage and economy results are represented as `CompletionStage`s.
 
 ### PlaceholderAPI
 
-When PlaceholderAPI is installed, HMCWraps exposes these skin statistics (ownership/favorite reads use the asynchronously populated cache):
+When PlaceholderAPI is installed, HMCWraps exposes these skin statistics using the asynchronously populated ownership cache:
 
 | Placeholder | Result |
 |---|---|
 | `%hmcwraps_skins_total%` | Number of configured skins. |
 | `%hmcwraps_skins_owned%` | Number of skins owned by the player. |
-| `%hmcwraps_skins_favorites%` | Number of favorited skins. |
 | `%hmcwraps_skins_owned_percentage%` | Integer percentage of the catalog owned. |
 | `%hmcwraps_skin_owned_<skin-id>%` | `true`/`false` for an individual skin. |
-| `%hmcwraps_skin_favorite_<skin-id>%` | `true`/`false` for an individual favorite. |
 | `%hmcwraps_mainhand_skin%` | Skin ID applied to the main-hand item, or empty. |
 | `%hmcwraps_mainhand_compatible%` | Number of skins compatible with the main-hand item. |
 
@@ -179,7 +177,7 @@ When PlaceholderAPI is installed, HMCWraps exposes these skin statistics (owners
 - Existing `config.yml`, wrap files, collections, permissions, `/wraps`, wrap APIs and item PDC identifiers are not renamed or replaced.
 - New skins are registered as legacy `Wrap` payloads, so the current modifier system continues to apply/remove them and already wrapped items remain readable.
 - Ownership is new in 2.0 and is stored in `plugins/HMCWraps/skins.db` using SQLite. It is not inferred from old wrap permissions: legacy wraps remain governed by their existing rules.
-- The shop adds tables for favorites, transactions, coupon redemptions, the shop rotation, collection rewards, gifts and player settings (schema v6). They are created automatically through dialect-neutral migrations; `shop.reconcile-interrupted-transactions` only controls whether interrupted rows are reported at startup.
+- The shop adds tables for transactions, coupon redemptions, the shop rotation, collection rewards, gifts and player settings (schema v6). They are created automatically through dialect-neutral migrations; `shop.reconcile-interrupted-transactions` only controls whether interrupted rows are reported at startup.
 - Optional providers are discovered at runtime. Missing integrations do not disable the plugin or prevent free/legacy wraps from loading.
 - Back up the complete `plugins/HMCWraps/` folder before upgrading or rolling back. See [Migration notes](docs/MIGRATION-2.0.md).
 
@@ -190,7 +188,7 @@ When PlaceholderAPI is installed, HMCWraps exposes these skin statistics (owners
 ./gradlew test
 ```
 
-Unit tests cover pricing validation, catalog/config references, ownership cache/persistence, favorites, atomic ownership transfers, custom provider registration, and purchase success/failure/refund/double-click behavior. The manual server matrix is in [Testing](docs/TESTING.md). Build against Java 21; the plugin itself does not require ExcellentEconomy, Vault, or a custom-item plugin to compile.
+Unit tests cover pricing validation, catalog/config references, ownership cache/persistence, atomic ownership transfers, custom provider registration, and purchase success/failure/refund/double-click behavior. The manual server matrix is in [Testing](docs/TESTING.md). Build against Java 21; the plugin itself does not require ExcellentEconomy, Vault, or a custom-item plugin to compile.
 
 ## License and upstream
 

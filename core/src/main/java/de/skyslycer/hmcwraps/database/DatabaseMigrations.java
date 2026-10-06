@@ -20,11 +20,8 @@ public final class DatabaseMigrations {
             new DatabaseMigration(1, List.of(
                     "CREATE TABLE IF NOT EXISTS skin_ownership ("
                             + "player_uuid TEXT NOT NULL, skin_id TEXT NOT NULL, unlocked_at INTEGER NOT NULL, "
-                            + "source TEXT NOT NULL, PRIMARY KEY(player_uuid, skin_id))",
-                    "CREATE TABLE IF NOT EXISTS skin_favorites ("
-                            + "player_uuid TEXT NOT NULL, skin_id TEXT NOT NULL, created_at INTEGER NOT NULL, "
-                            + "PRIMARY KEY(player_uuid, skin_id))"
-            ), "baseline ownership and favorites tables"),
+                            + "source TEXT NOT NULL, PRIMARY KEY(player_uuid, skin_id))"
+            ), "baseline ownership table"),
             new DatabaseMigration(2, List.of(
                     "CREATE TABLE IF NOT EXISTS transactions ("
                             + "transaction_id TEXT PRIMARY KEY, player_uuid TEXT NOT NULL, kind TEXT NOT NULL, "

@@ -11,7 +11,6 @@ import java.util.function.Supplier;
 public final class SkinOwnershipService implements OwnershipManager {
     private final StorageProvider storage;
     private final ConcurrentHashMap<UUID, CompletableFuture<Set<String>>> playerCache = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<UUID, CompletableFuture<Set<String>>> favoriteCache = new ConcurrentHashMap<>();
 
     public SkinOwnershipService(StorageProvider storage) { this.storage = storage; }
 
@@ -48,19 +47,6 @@ public final class SkinOwnershipService implements OwnershipManager {
     @Override
     public CompletionStage<Set<String>> getOwnedSkinIds(UUID playerId) { return owned(playerId); }
 
-    public CompletionStage<Set<String>> getFavoriteSkinIds(UUID playerId) { return favorites(playerId); }
-
-    public CompletionStage<Boolean> setFavorite(UUID playerId, String skinId, boolean favorite) {
-        return safe(() -> storage.setSkinFavorite(playerId, skinId, favorite)).thenCompose(success -> {
-            if (!Boolean.TRUE.equals(success)) return CompletableFuture.completedFuture(false);
-            favoriteCache.remove(playerId);
-            return safe(() -> storage.getFavoriteSkinIds(playerId)).handle((ids, error) -> {
-                if (error == null && ids != null) favoriteCache.put(playerId, CompletableFuture.completedFuture(normalize(ids)));
-                return true;
-            });
-        });
-    }
-
     public CompletionStage<Boolean> transferSkin(UUID fromPlayer, UUID toPlayer, String skinId) {
         if (fromPlayer.equals(toPlayer)) return CompletableFuture.completedFuture(false);
         return safe(() -> storage.transferSkin(fromPlayer, toPlayer, skinId)).thenApply(success -> {
@@ -75,12 +61,10 @@ public final class SkinOwnershipService implements OwnershipManager {
 
     public void preload(UUID playerId) {
         owned(playerId);
-        favorites(playerId);
     }
 
     public void invalidate(UUID playerId) {
         playerCache.remove(playerId);
-        favoriteCache.remove(playerId);
     }
 
     public Set<String> cachedOwnedSkinIds(UUID playerId) {
@@ -95,12 +79,6 @@ public final class SkinOwnershipService implements OwnershipManager {
                 && cached.getNow(Set.of()).contains(normalize(skinId));
     }
 
-    public Set<String> cachedFavoriteSkinIds(UUID playerId) {
-        CompletableFuture<Set<String>> cached = favoriteCache.get(playerId);
-        if (cached == null || !cached.isDone() || cached.isCompletedExceptionally()) return Set.of();
-        return cached.getNow(Set.of());
-    }
-
     private CompletableFuture<Set<String>> owned(UUID playerId) {
         CompletableFuture<Set<String>> existing = playerCache.get(playerId);
         if (existing != null) return existing;
@@ -110,23 +88,6 @@ public final class SkinOwnershipService implements OwnershipManager {
         safe(() -> storage.getOwnedSkinIds(playerId)).whenComplete((ids, error) -> {
             if (error != null) {
                 playerCache.remove(playerId, placeholder);
-                placeholder.completeExceptionally(error);
-            } else {
-                placeholder.complete(normalize(ids));
-            }
-        });
-        return placeholder;
-    }
-
-    private CompletableFuture<Set<String>> favorites(UUID playerId) {
-        CompletableFuture<Set<String>> existing = favoriteCache.get(playerId);
-        if (existing != null) return existing;
-        CompletableFuture<Set<String>> placeholder = new CompletableFuture<>();
-        existing = favoriteCache.putIfAbsent(playerId, placeholder);
-        if (existing != null) return existing;
-        safe(() -> storage.getFavoriteSkinIds(playerId)).whenComplete((ids, error) -> {
-            if (error != null) {
-                favoriteCache.remove(playerId, placeholder);
                 placeholder.completeExceptionally(error);
             } else {
                 placeholder.complete(normalize(ids));

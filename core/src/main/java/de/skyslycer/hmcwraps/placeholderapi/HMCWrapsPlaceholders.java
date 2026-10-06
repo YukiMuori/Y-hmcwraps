@@ -47,19 +47,9 @@ public class HMCWrapsPlaceholders extends PlaceholderExpansion {
             skinManager.preloadOwnership(player.getUniqueId());
             return String.valueOf(skinManager.cachedOwnedSkinIds(player.getUniqueId()).contains(skinId.toLowerCase(Locale.ROOT)));
         }
-        if (player != null && normalizedIdentifier.startsWith("skin_favorite_")) {
-            String skinId = identifier.substring("skin_favorite_".length());
-            if (skinManager.getSkin(skinId).isEmpty()) return null;
-            skinManager.preloadOwnership(player.getUniqueId());
-            return String.valueOf(skinManager.cachedFavoriteSkinIds(player.getUniqueId()).contains(skinId.toLowerCase(Locale.ROOT)));
-        }
         if (player != null && normalizedIdentifier.equals("skins_owned")) {
             skinManager.preloadOwnership(player.getUniqueId());
             return String.valueOf(countConfigured(skinManager.cachedOwnedSkinIds(player.getUniqueId())));
-        }
-        if (player != null && normalizedIdentifier.equals("skins_favorites")) {
-            skinManager.preloadOwnership(player.getUniqueId());
-            return String.valueOf(countConfigured(skinManager.cachedFavoriteSkinIds(player.getUniqueId())));
         }
         if (player != null && normalizedIdentifier.equals("skins_owned_percentage")) {
             skinManager.preloadOwnership(player.getUniqueId());
@@ -134,14 +124,6 @@ public class HMCWrapsPlaceholders extends PlaceholderExpansion {
                     return wrap.hasPermission(player) ?
                             StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(player, Messages.PLACEHOLDER_HAS_PERMISSION)))
                             : StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(player, Messages.PLACEHOLDER_NO_PERMISSION)));
-                }
-                case "favorite" -> {
-                    if (wrap == null || player == null) {
-                        return invalidWrap(player);
-                    }
-                    return plugin.getFavoriteWrapStorage().get(player).contains(wrap) ?
-                            StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(player, Messages.PLACEHOLDER_FAVORITE)))
-                            : StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(player, Messages.PLACEHOLDER_NOT_FAVORITE)));
                 }
             }
         }

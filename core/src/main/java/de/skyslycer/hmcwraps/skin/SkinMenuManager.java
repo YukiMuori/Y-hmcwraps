@@ -127,17 +127,14 @@ public final class SkinMenuManager implements Listener {
         }
         session.loading = true;
         skinManager.ownedSkinIds(player.getUniqueId())
-                .thenCombine(skinManager.favoriteSkinIds(player.getUniqueId()), OwnershipSnapshot::new)
-                .whenComplete((snapshot, throwable) -> plugin.getFoliaLib().getScheduler().runAtEntity(player, ignored -> {
+                .whenComplete((owned, throwable) -> plugin.getFoliaLib().getScheduler().runAtEntity(player, ignored -> {
                     if (!player.isOnline() || sessions.get(player.getUniqueId()) != session) return;
-                    Set<String> loadedOwned = snapshot == null || snapshot.owned() == null ? Set.of() : snapshot.owned();
-                    Set<String> loadedFavorites = snapshot == null || snapshot.favorites() == null ? Set.of() : snapshot.favorites();
+                    Set<String> loadedOwned = owned == null ? Set.of() : owned;
                     if (throwable != null) {
                         plugin.getLogger().warning("Could not load skin state for " + player.getUniqueId() + ": " + throwable.getMessage());
                         loadedOwned = skinManager.cachedOwnedSkinIds(player.getUniqueId());
-                        loadedFavorites = skinManager.cachedFavoriteSkinIds(player.getUniqueId());
                     }
-                    render(player, session, loadedOwned, loadedFavorites);
+                    render(player, session, loadedOwned);
                     if (session.refreshAfterLoading) {
                         session.refreshAfterLoading = false;
                         openSession(player, session);
@@ -145,7 +142,7 @@ public final class SkinMenuManager implements Listener {
                 }));
     }
 
-    private void render(Player player, MenuSession session, Set<String> owned, Set<String> favorites) {
+    private void render(Player player, MenuSession session, Set<String> owned) {
         SkinMenuConfiguration config = configuration;
         session.page = Math.max(0, session.page);
         session.slotToSkin.clear();
@@ -167,7 +164,6 @@ public final class SkinMenuManager implements Listener {
                 .filter(skin -> session.collectionId == null || session.collectionId.equals(skin.collectionId()))
                 .filter(skin -> session.categoryId == null || skin.categoryIds().contains(session.categoryId))
                 .filter(skin -> session.searchQuery.isBlank() || matchesSearch(player, skin, session.searchQuery))
-                .filter(skin -> !session.favoritesOnly || favorites.contains(normalize(skin.id())))
                 .filter(skin -> matchesFilter(player, skin, owned, session.filter))
                 .sorted(comparator(player, owned, session.sort, session.descending))
                 .toList();
@@ -182,7 +178,7 @@ public final class SkinMenuManager implements Listener {
         for (int index = 0; index < pageSize && start + index < candidates.size(); index++) {
             ItemSkin skin = candidates.get(start + index);
             int slot = contentSlots.get(index);
-            ItemStack icon = skinIcon(player, skin, owned, favorites);
+            ItemStack icon = skinIcon(player, skin, owned);
             session.inventory.setItem(slot, icon);
             session.slotToSkin.put(slot, skin.id());
         }
@@ -208,8 +204,6 @@ public final class SkinMenuManager implements Listener {
                 ? plugin.getLanguageManager().get(player, "gui.search-empty") : session.searchQuery;
         addButton(session, player, config.getSearch(), plugin.getLanguageManager().get(player, "gui.search"),
                 List.of(localized(player, "gui.search-current", Placeholder.unparsed("query", searchDisplay))), config.getSize());
-        addButton(session, player, config.getFavorites(), plugin.getLanguageManager().get(player, "gui.favorites"),
-                List.of(localized(player, session.favoritesOnly ? "gui.favorites-active" : "gui.favorites-inactive")), config.getSize());
         ItemSkinCollection selectedCollection = session.collectionId == null ? null : skinManager.collection(session.collectionId);
         String collectionLabel = selectedCollection == null
                 ? plugin.getLanguageManager().get(player, "gui.collection-all")
@@ -237,7 +231,13 @@ public final class SkinMenuManager implements Listener {
                 availableCategoryIds = candidateCategoryIds;
             }
         }
-        for (Map.Entry<String, Integer> entry : config.getCategorySlots().entrySet()) {
+        Map<String, Integer> configuredCategories = new java.util.LinkedHashMap<>(config.getCategorySlots());
+        config.getCategories().forEach((id, button) -> {
+            if (id == null || button == null) return;
+            if (button.isEnabled()) configuredCategories.put(id, button.getSlot());
+            else configuredCategories.remove(id);
+        });
+        for (Map.Entry<String, Integer> entry : configuredCategories.entrySet()) {
             if (entry.getKey() == null || entry.getValue() == null) continue;
             int slot = entry.getValue();
             if (!isSlotValid(slot, size)) continue;
@@ -252,7 +252,9 @@ public final class SkinMenuManager implements Listener {
                 plugin.getLogger().warning("GUI category slot refers to unknown category '" + categoryId + "'.");
                 continue;
             }
-            SkinIconConfiguration iconConfiguration = plugin.getSkinCatalog().categoryIconConfiguration(categoryId);
+            SkinMenuConfiguration.Button categoryButton = config.getCategories().get(categoryId);
+            SkinIconConfiguration iconConfiguration = categoryButton == null
+                    ? plugin.getSkinCatalog().categoryIconConfiguration(categoryId) : categoryButton.getItem();
             ItemStack icon = iconConfiguration == null ? category.icon()
                     : plugin.getItemIconFactory().create(iconConfiguration, plugin.getLanguageManager().get(player, category.displayNameKey()), player);
             if (icon == null) icon = new ItemStack(Material.PAPER);
@@ -268,6 +270,7 @@ public final class SkinMenuManager implements Listener {
                         plugin.getLanguageManager().parse(player, label)))));
                 icon = builder.lore(lore).build();
             }
+            icon = hideTechnicalTooltip(icon);
             if (!usedSlots.add(slot)) {
                 plugin.getLogger().warning("Skipping duplicate category GUI slot " + slot + ".");
                 continue;
@@ -298,22 +301,27 @@ public final class SkinMenuManager implements Listener {
         List<Component> lore = new ArrayList<>();
         Component sort = optionLabel(player, "sorting", session.sort);
         Component filter = optionLabel(player, "filters", session.filter);
-        Component favorites = localized(player, session.favoritesOnly
-                ? "gui.item-control-favorites-active" : "gui.item-control-favorites-inactive");
+        Component originalName = meta.hasDisplayName()
+                ? StringUtil.LEGACY_SERIALIZER.deserialize(meta.getDisplayName())
+                : Component.translatable(item.getType().translationKey());
         for (String line : config.getItemLore()) {
             if (line != null && line.trim().equalsIgnoreCase("<item_lore>")) {
                 lore.addAll(originalLore);
                 continue;
             }
             lore.add(nonItalic(plugin.getLanguageManager().parse(player, line,
+                    Placeholder.component("item_name", originalName),
                     Placeholder.component("sort", sort),
-                    Placeholder.component("filter", filter),
-                    Placeholder.component("favorites", favorites))));
+                    Placeholder.component("filter", filter))));
         }
-        return ItemBuilder.from(item).lore(lore).build();
+        Component name = nonItalic(plugin.getLanguageManager().parse(player, config.getItemName(),
+                Placeholder.component("item_name", originalName),
+                Placeholder.component("sort", sort),
+                Placeholder.component("filter", filter)));
+        return hideTechnicalTooltip(ItemBuilder.from(item).name(name).lore(lore).build());
     }
 
-    private ItemStack skinIcon(Player player, ItemSkin skin, Set<String> owned, Set<String> favorites) {
+    private ItemStack skinIcon(Player player, ItemSkin skin, Set<String> owned) {
         SkinIconConfiguration iconConfiguration = plugin.getSkinCatalog().skinIconConfiguration(skin.id());
         ItemStack icon = iconConfiguration == null ? skin.icon()
                 : plugin.getItemIconFactory().create(iconConfiguration, skin.displayName(), player);
@@ -329,8 +337,6 @@ public final class SkinMenuManager implements Listener {
         ItemSkinRarity rarity = skinManager.rarity(skin.rarityId());
         Component rarityLabel = rarity == null ? Component.empty() : plugin.getLanguageManager().parse(player,
                 plugin.getLanguageManager().get(player, rarity.displayNameKey()));
-        Component favoriteLabel = localized(player,
-                favorites.contains(normalize(skin.id())) ? "gui.favorite-on" : "gui.favorite-off");
         String amount = skin.price() == null ? "" : formatAmount(skin.price().amount());
         String currency = skin.price() == null ? "" : skin.price().currency();
 
@@ -345,24 +351,24 @@ public final class SkinMenuManager implements Listener {
                     Placeholder.component("rarity", rarityLabel),
                     Placeholder.component("status", accessLine(player, access)),
                     Placeholder.unparsed("price", amount),
-                    Placeholder.unparsed("currency", currency),
-                    Placeholder.component("favorite", favoriteLabel))));
+                    Placeholder.unparsed("currency", currency))));
         }
-        ItemStack result = builder.lore(lore).build();
-        ItemMeta resultMeta = result.getItemMeta();
-        if (resultMeta != null) {
-            // Catalog entries should expose only their configured name and lore, never vanilla
-            // attributes, enchantments, trim, unbreakable state, or other technical tooltip data.
-            for (ItemFlag flag : ItemFlag.values()) {
-                String flagName = flag.name();
-                if (!flagName.contains("LORE") && !flagName.contains("NAME")
-                        && !flagName.equals("HIDE_TOOLTIP")) {
-                    resultMeta.addItemFlags(flag);
-                }
+        return hideTechnicalTooltip(builder.lore(lore).build());
+    }
+
+    private ItemStack hideTechnicalTooltip(ItemStack item) {
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return item;
+        // Preserve configured name and lore while hiding every vanilla technical detail.
+        for (ItemFlag flag : ItemFlag.values()) {
+            String flagName = flag.name();
+            if (!flagName.contains("LORE") && !flagName.contains("NAME")
+                    && !flagName.equals("HIDE_TOOLTIP")) {
+                meta.addItemFlags(flag);
             }
-            result.setItemMeta(resultMeta);
         }
-        return result;
+        item.setItemMeta(meta);
+        return item;
     }
 
     private List<Component> componentLore(ItemMeta meta) {
@@ -463,10 +469,7 @@ public final class SkinMenuManager implements Listener {
             return;
         }
         if (config.isItemEnabled() && slot == config.getItemSlot()) {
-            if (event.getClick() == ClickType.MIDDLE) {
-                session.favoritesOnly = !session.favoritesOnly;
-                session.page = 0;
-            } else if (event.isRightClick()) {
+            if (event.isRightClick()) {
                 session.filter = nextOption(session.filter, filterOptions);
                 session.page = 0;
             } else if (event.isLeftClick()) {
@@ -504,12 +507,6 @@ public final class SkinMenuManager implements Listener {
             send(player, "messages.search-prompt");
             return;
         }
-        if (buttonAt(config.getFavorites(), slot)) {
-            session.favoritesOnly = !session.favoritesOnly;
-            session.page = 0;
-            openSession(player, session);
-            return;
-        }
         if (buttonAt(config.getCollection(), slot)) {
             cycleCollection(player, session);
             return;
@@ -531,7 +528,6 @@ public final class SkinMenuManager implements Listener {
             case "apply" -> apply(player, session, skin);
             case "preview" -> preview(player, session, skin);
             case "buy", "purchase" -> purchase(player, session, skin);
-            case "favorite" -> toggleFavorite(player, session, skin);
             default -> { }
         }
     }
@@ -597,22 +593,6 @@ public final class SkinMenuManager implements Listener {
         session.categoryId = null;
         session.page = 0;
         openSession(player, session);
-    }
-
-    private void toggleFavorite(Player player, MenuSession session, ItemSkin skin) {
-        UUID playerId = player.getUniqueId();
-        boolean favorite = skinManager.cachedFavoriteSkinIds(playerId).contains(normalize(skin.id()));
-        skinManager.setFavorite(playerId, skin.id(), !favorite).whenComplete((success, error) ->
-                plugin.getFoliaLib().getScheduler().runAtEntity(player, ignored -> {
-                    if (!player.isOnline()) return;
-                    if (error != null || !Boolean.TRUE.equals(success)) {
-                        send(player, "messages.favorite-storage-error");
-                    } else {
-                        send(player, favorite ? "messages.favorite-removed" : "messages.favorite-added",
-                                Placeholder.component("skin", plugin.getLanguageManager().parse(player, skin.displayName())));
-                    }
-                    openSession(player, session);
-                }));
     }
 
     private void apply(Player player, MenuSession session, ItemSkin skin) {
@@ -724,7 +704,7 @@ public final class SkinMenuManager implements Listener {
             case "left" -> "apply";
             case "right" -> "preview";
             case "shift-left", "shift-right" -> "buy";
-            case "middle" -> "favorite";
+            case "middle" -> "";
             default -> "";
         };
         String configured = configuration.getClickActions().get(key);
@@ -746,14 +726,15 @@ public final class SkinMenuManager implements Listener {
     }
 
     private boolean isControlSlot(SkinMenuConfiguration config, int slot) {
-        return isButtonControlSlot(config, slot) || config.getCategorySlots().containsValue(slot);
+        return isButtonControlSlot(config, slot) || config.getCategorySlots().containsValue(slot)
+                || config.getCategories().values().stream().anyMatch(button -> button != null && button.isEnabled() && button.getSlot() == slot);
     }
 
     private boolean isButtonControlSlot(SkinMenuConfiguration config, int slot) {
         return buttonAt(config.getPrevious(), slot) || buttonAt(config.getNext(), slot)
                 || buttonAt(config.getClose(), slot) || buttonAt(config.getSort(), slot)
                 || buttonAt(config.getFilter(), slot) || buttonAt(config.getSearch(), slot)
-                || buttonAt(config.getFavorites(), slot) || buttonAt(config.getCollection(), slot)
+                || buttonAt(config.getCollection(), slot)
                 || buttonAt(config.getUnskin(), slot) || buttonAt(config.getShop(), slot);
     }
 
@@ -814,8 +795,6 @@ public final class SkinMenuManager implements Listener {
     private static String formatAmount(double amount) {
         return java.math.BigDecimal.valueOf(amount).stripTrailingZeros().toPlainString();
     }
-    private record OwnershipSnapshot(Set<String> owned, Set<String> favorites) { }
-
     private static final class MenuSession implements InventoryHolder {
         private final UUID playerId;
         private ItemStack target;
@@ -829,7 +808,6 @@ public final class SkinMenuManager implements Listener {
         private int page;
         private boolean hasPreviousPage;
         private boolean hasNextPage;
-        private boolean favoritesOnly;
         private volatile boolean awaitingSearch;
         private boolean loading;
         private boolean refreshAfterLoading;

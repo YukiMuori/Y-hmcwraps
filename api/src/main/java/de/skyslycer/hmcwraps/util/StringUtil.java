@@ -5,6 +5,7 @@ import de.skyslycer.hmcwraps.lang.LanguageService;
 import de.skyslycer.hmcwraps.serialization.wrap.Wrap;
 import me.clip.placeholderapi.PlaceholderAPI;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.ParsingException;
@@ -51,7 +52,7 @@ public class StringUtil {
         LanguageService language = languageService();
         Component parsed = language == null ? MINI_MESSAGE.deserialize(string, TagResolver.resolver(placeholders))
                 : language.parse(null, string, TagResolver.resolver(placeholders));
-        return Component.text().decoration(TextDecoration.ITALIC, false).append(parsed).build();
+        return Component.text().color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false).append(parsed).build();
     }
 
     /**
@@ -70,7 +71,7 @@ public class StringUtil {
         LanguageService language = languageService();
         Component parsed = language == null ? MINI_MESSAGE.deserialize(text, TagResolver.resolver(resolvers))
                 : language.parse(sender instanceof Player player ? player : null, text, resolvers);
-        return Component.text().decoration(TextDecoration.ITALIC, false).append(parsed).build();
+        return Component.text().color(NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false).append(parsed).build();
     }
 
     /**

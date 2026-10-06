@@ -53,7 +53,7 @@ public class PermissionUtil {
     }
 
     /**
-     * Loops through an inventory and unwraps items the player doesn't have access to and apply favorites if possible.
+     * Loops through an inventory and unwraps items the player does not have access to.
      *
      * @param plugin The plugin
      * @param player The player
@@ -74,23 +74,7 @@ public class PermissionUtil {
     }
 
     /**
-     * Apply a favorite wrap to an item if possible.
-     *
-     * @param plugin The plugin
-     * @param player The player
-     * @param item   The item
-     * @return The item with the favorite wrap applied or the same if no favorite wrap was applied
-     */
-    public static ItemStack applyFavorite(HMCWraps plugin, Player player, ItemStack item)
-    {
-        plugin.getCollectionHelper().getItems(item.getType()).stream().filter(wrap -> plugin.getWrapper().isValid(item, wrap))
-                .filter(wrap -> wrap.hasPermission(player)).filter(wrap -> plugin.getFavoriteWrapStorage().get(player).contains(wrap)).findFirst()
-                .ifPresent(wrap -> plugin.getWrapper().setWrap(wrap, item, false, player));
-        return item;
-    }
-
-    /**
-     * This combines permission checks and favorite wrap applications.
+     * Applies permission checks to a wrapped item.
      *
      * @param plugin The plugin
      * @param player The player
@@ -101,15 +85,11 @@ public class PermissionUtil {
         if (item == null || item.getType().isAir()) {
             return item;
         }
-        var itemInHand = item;
-        if (plugin.getWrapper().getWrap(item) == null && plugin.getConfiguration().getFavorites().isEnabled()) {
-            itemInHand = PermissionUtil.applyFavorite(plugin, player, item);
-        }
-        var newItem = PermissionUtil.hasPermission(plugin, itemInHand, player);
+        var newItem = PermissionUtil.hasPermission(plugin, item, player);
         if (newItem != null) {
             return newItem;
         }
-        return itemInHand;
+        return item;
     }
 
 }

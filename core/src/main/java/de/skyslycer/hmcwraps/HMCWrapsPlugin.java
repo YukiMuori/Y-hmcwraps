@@ -32,7 +32,6 @@ import de.skyslycer.hmcwraps.pool.ObjectPool;
 import de.skyslycer.hmcwraps.preview.PreviewManager;
 import de.skyslycer.hmcwraps.serialization.Config;
 import de.skyslycer.hmcwraps.serialization.wrap.Wrap;
-import de.skyslycer.hmcwraps.storage.FavoriteWrapStorage;
 import de.skyslycer.hmcwraps.storage.PlayerFilterStorage;
 import de.skyslycer.hmcwraps.storage.SqliteOwnershipStorage;
 import de.skyslycer.hmcwraps.storage.Storage;
@@ -45,7 +44,6 @@ import de.skyslycer.hmcwraps.skin.SkinOwnershipService;
 import de.skyslycer.hmcwraps.skin.SkinTradeManager;
 import de.skyslycer.hmcwraps.repository.CollectionRewardRepository;
 import de.skyslycer.hmcwraps.repository.CouponRepository;
-import de.skyslycer.hmcwraps.repository.FavoriteRepository;
 import de.skyslycer.hmcwraps.repository.GiftRepository;
 import de.skyslycer.hmcwraps.repository.OwnershipRepository;
 import de.skyslycer.hmcwraps.repository.PlayerRepository;
@@ -53,7 +51,6 @@ import de.skyslycer.hmcwraps.repository.PurchaseRepository;
 import de.skyslycer.hmcwraps.repository.ShopStateRepository;
 import de.skyslycer.hmcwraps.repository.sql.SqlCollectionRewardRepository;
 import de.skyslycer.hmcwraps.repository.sql.SqlCouponRepository;
-import de.skyslycer.hmcwraps.repository.sql.SqlFavoriteRepository;
 import de.skyslycer.hmcwraps.repository.sql.SqlGiftRepository;
 import de.skyslycer.hmcwraps.repository.sql.SqlOwnershipRepository;
 import de.skyslycer.hmcwraps.repository.sql.SqlPlayerRepository;
@@ -108,7 +105,6 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
     private final ActionHandler actionHandler = new ActionHandler();
     private final FileConverter fileConverter = new FileConverter(this);
     private final Storage<Player, Boolean> filterStorage = new PlayerFilterStorage(this);
-    private final Storage<Player, List<Wrap>> favoriteWrapStorage = new FavoriteWrapStorage(this);
     private final ContinuousUpdateChecker updateChecker = new ContinuousUpdateChecker(this);
     private final WrapsLoader wrapsLoader = new WrapsLoaderImpl(this);
     private final IntegrationHandler integrationHandler = new AllIntegrationsHandler(this);
@@ -474,11 +470,6 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
     }
 
     @Override
-    public Storage<Player, List<Wrap>> getFavoriteWrapStorage() {
-        return favoriteWrapStorage;
-    }
-
-    @Override
     public WrapsLoader getWrapsLoader() {
         return wrapsLoader;
     }
@@ -528,14 +519,13 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
         try {
             database = new SqlDatabase(HMCWraps.PLUGIN_PATH.resolve("skins.db"), message -> getLogger().severe(message));
             OwnershipRepository ownershipRepository = new SqlOwnershipRepository(database);
-            FavoriteRepository favoriteRepository = new SqlFavoriteRepository(database);
             purchaseRepository = new SqlPurchaseRepository(database);
             couponRepository = new SqlCouponRepository(database);
             playerRepository = new SqlPlayerRepository(database);
             shopStateRepository = new SqlShopStateRepository(database);
             collectionRewardRepository = new SqlCollectionRewardRepository(database);
             giftRepository = new SqlGiftRepository(database);
-            shopStorage = new SqlStorageProvider(database, ownershipRepository, favoriteRepository);
+            shopStorage = new SqlStorageProvider(database, ownershipRepository);
             database.initialize().whenComplete((ready, error) -> {
                 if (error != null || !Boolean.TRUE.equals(ready)) {
                     getLogger().severe("The shop database could not be initialized; paid shop operations are disabled.");

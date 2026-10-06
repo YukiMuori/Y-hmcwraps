@@ -9,4 +9,9 @@ public final class PreviewOrientation {
     public static boolean isVerticalItemDisplay(String materialName) {
         return materialName != null && materialName.endsWith("_SWORD");
     }
+
+    /** Clockwise quarter-turn in the display plane, so the sword blade points upward. */
+    public static float verticalRotationRadians() {
+        return (float) (-Math.PI / 2D);
+    }
 }

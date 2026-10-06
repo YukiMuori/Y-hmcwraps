@@ -18,8 +18,6 @@ public enum Action {
     UNWRAP,
     CLOSE_INVENTORY,
     TOGGLE_FILTER,
-    CLEAR_FAVORITES,
-    SET_FAVORITE,
     WRAP,
     PREVIEW
 

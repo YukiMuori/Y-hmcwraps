@@ -605,7 +605,7 @@ public class VersionUtil {
                 var quaternionClass = Class.forName("org.joml.Quaternionf");
                 var quaternion = quaternionClass.getConstructor().newInstance();
                 quaternionClass.getMethod("rotateZ", float.class)
-                        .invoke(quaternion, (float) (Math.PI / 2D));
+                        .invoke(quaternion, PreviewOrientation.verticalRotationRadians());
                 var quaternionSerializer = serializersClass.getField("QUATERNION").get(null);
                 metadata.add(dataValueConstructor.newInstance(13, quaternionSerializer, quaternion));
             }

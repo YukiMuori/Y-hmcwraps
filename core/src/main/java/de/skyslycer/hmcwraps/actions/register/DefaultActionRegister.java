@@ -59,8 +59,6 @@ public class DefaultActionRegister {
         registerUnwrap();
         registerClose();
         registerFilterToggle();
-        registerFavorite();
-        registerClearFavorites();
         registerPreview();
         registerWrap();
     }
@@ -285,45 +283,6 @@ public class DefaultActionRegister {
         });
     }
 
-    private void registerFavorite() {
-        plugin.getActionHandler().subscribe(Action.SET_FAVORITE, (information -> {
-            var player = information.getPlayer();
-            var current = plugin.getFavoriteWrapStorage().get(player);
-            var wrap = getWrap(information);
-            if (wrap == null) return;
-            if (current.removeIf(it -> it.getUuid().equals(wrap.getUuid()))) {
-                plugin.getFavoriteWrapStorage().set(player, current);
-                plugin.getMessageHandler().send(player, Messages.FAVORITES_UNSET);
-                openIfPossible(plugin, information, information.getPlayer());
-                return;
-            }
-
-            var collections = plugin.getCollectionHelper();
-            (new LinkedList<>(current)).forEach((currentWrap) -> {
-                if (currentWrap.getUuid().equals(wrap.getUuid())) {
-                    return;
-                }
-                if (!ListUtil.containsAny(collections.getMaterials(collections.getCollection(currentWrap)), collections.getMaterials(collections.getCollection(wrap)))) {
-                    return;
-                }
-                var range = wrap.getRange() == null ? RangeSettings.empty() : wrap.getRange();
-                var currentRange = currentWrap.getRange() == null ? RangeSettings.empty() : currentWrap.getRange();
-                if (!isSameRange(range.getModelId(), currentRange.getModelId()) || !isSameRange(range.getColor(), currentRange.getColor())
-                        || !isSameRange(range.getOraxen(), currentRange.getOraxen()) || !isSameRange(range.getItemsAdder(), currentRange.getItemsAdder())
-                        || !isSameRange(range.getMythic(), currentRange.getMythic()) || isSameRange(range.getNexo(), currentRange.getNexo())
-                        || !isSameRange(range.getExecutableItems(), currentRange.getExecutableItems()) || !isSameRange(range.getCraftEngine(), currentRange.getCraftEngine())
-                        || !isSameRange(range.getMmoItems(), currentRange.getMmoItems())) {
-                    return;
-                }
-                current.remove(currentWrap);
-            });
-            current.add(wrap);
-            plugin.getFavoriteWrapStorage().set(player, current);
-            plugin.getMessageHandler().send(player, Messages.FAVORITES_SET);
-            openIfPossible(plugin, information, information.getPlayer());
-        }));
-    }
-
     private <T> boolean isSameRange(ValueRangeSettings<T> first, ValueRangeSettings<T> second) {
         if (first.getInclude() != null) {
             if (second.getInclude() != null) {
@@ -339,14 +298,6 @@ public class DefaultActionRegister {
             }
         }
         return true;
-    }
-
-    private void registerClearFavorites() {
-        plugin.getActionHandler().subscribe(Action.CLEAR_FAVORITES, (information -> {
-            plugin.getFavoriteWrapStorage().set(information.getPlayer(), new ArrayList<>());
-            plugin.getMessageHandler().send(information.getPlayer(), Messages.FAVORITES_CLEAR);
-            openIfPossible(plugin, information, information.getPlayer());
-        }));
     }
 
     private void registerPreview() {

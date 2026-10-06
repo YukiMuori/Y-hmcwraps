@@ -60,7 +60,7 @@ public final class ConfigurationValidator {
             "oraxen", "craftengine", "mythic", "executableitems", "mmoitems", "custom");
     private static final Set<String> SORT_OPTIONS = Set.of("rarity", "name", "price", "owned", "category");
     private static final Set<String> FILTER_OPTIONS = Set.of("all", "owned", "unowned", "purchasable", "free");
-    private static final Set<String> CLICK_ACTIONS = Set.of("apply", "preview", "buy", "purchase", "favorite");
+    private static final Set<String> CLICK_ACTIONS = Set.of("apply", "preview", "buy", "purchase");
 
     private final Path dataFolder;
     private final Map<String, EconomyProvider> economyProviders;
@@ -685,7 +685,6 @@ public final class ConfigurationValidator {
         validateIcon(context, path, "GUI sort button", menu.getSort().getItem());
         validateIcon(context, path, "GUI filter button", menu.getFilter().getItem());
         validateIcon(context, path, "GUI search button", menu.getSearch().getItem());
-        validateIcon(context, path, "GUI favorites button", menu.getFavorites().getItem());
         validateIcon(context, path, "GUI collection button", menu.getCollection().getItem());
         validateIcon(context, path, "GUI unskin button", menu.getUnskin().getItem());
         validateIcon(context, path, "GUI shop button", menu.getShop().getItem());
@@ -698,7 +697,6 @@ public final class ConfigurationValidator {
         if (menu.getSort().isEnabled()) addGuiSlot(context, path, occupied, "sort button", menu.getSort().getSlot(), size, validSize, true);
         if (menu.getFilter().isEnabled()) addGuiSlot(context, path, occupied, "filter button", menu.getFilter().getSlot(), size, validSize, true);
         if (menu.getSearch().isEnabled()) addGuiSlot(context, path, occupied, "search button", menu.getSearch().getSlot(), size, validSize, true);
-        if (menu.getFavorites().isEnabled()) addGuiSlot(context, path, occupied, "favorites button", menu.getFavorites().getSlot(), size, validSize, true);
         if (menu.getCollection().isEnabled()) addGuiSlot(context, path, occupied, "collection button", menu.getCollection().getSlot(), size, validSize, true);
         if (menu.getUnskin().isEnabled()) addGuiSlot(context, path, occupied, "unskin button", menu.getUnskin().getSlot(), size, validSize, true);
         if (menu.getShop().isEnabled()) addGuiSlot(context, path, occupied, "shop button", menu.getShop().getSlot(), size, validSize, true);
@@ -708,6 +706,21 @@ public final class ConfigurationValidator {
             if (!contentSlots.add(slot)) context.warning(path, "duplicate-gui-slot", Map.of("slot", String.valueOf(slot)));
             addGuiSlot(context, path, occupied, "content", slot, size, validSize, false);
         }
+        for (Map.Entry<String, SkinMenuConfiguration.Button> entry : menu.getCategories().entrySet()) {
+            String category = entry.getKey();
+            SkinMenuConfiguration.Button button = entry.getValue();
+            if (category == null || button == null) {
+                context.error(path, "invalid-category-slot", Map.of("category", String.valueOf(category)));
+                continue;
+            }
+            validateIcon(context, path, "GUI category " + category, button.getItem());
+            if (!categoryIds.contains(normalize(category))) {
+                context.warning(path, "unknown-menu-category", Map.of("category", category));
+            }
+            if (button.isEnabled()) addGuiSlot(context, path, occupied, "category " + category,
+                    button.getSlot(), size, validSize, false);
+        }
+        // Legacy slot-only category definitions remain readable for existing installations.
         for (Map.Entry<String, Integer> entry : menu.getCategorySlots().entrySet()) {
             String category = entry.getKey();
             Integer slot = entry.getValue();

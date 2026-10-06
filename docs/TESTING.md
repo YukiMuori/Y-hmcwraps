@@ -26,9 +26,10 @@ Use a disposable Paper 1.21.4+ server, fresh player UUIDs and a backup of the da
 
 ### Catalog, language and GUI
 
-- [ ] First start copies examples; reload does not overwrite edited skin/lang/rarity/category/GUI files.
+- [ ] First start copies examples; reload does not overwrite edited skin/lang/rarity/category/GUI files, and missing built-in language keys are added safely.
 - [ ] Invalid YAML, unknown rarity/category, duplicate skin ID/UUID, bad material and empty compatibility entries are skipped/logged without breaking legacy startup.
-- [ ] English and Italian translations resolve; client-locale fallback and default-language fallback work; `<lang:key>` and `<glyph:key>` are translated safely.
+- [ ] English and Italian translations cover every legacy `Messages` key plus item-skin UI, debug replies, update notices and command-help descriptions; client-locale and configured-default fallback work; `<lang:key>` and `<glyph:key>` resolve safely.
+- [ ] Custom values in a pre-existing `messages.properties` are migrated into missing English `legacy.*` keys, while any language YAML values already edited remain unchanged.
 - [ ] Rare/legendary priorities sort descending by default. Configure ascending, name/price/owned sorting and verify ties remain stable.
 - [ ] Category selection, all-category toggle, each configured filter and pagination show only matching compatible skins.
 - [ ] `/itemskin` lists compatible free, owned, purchasable, permission-locked and provider-locked entries; a skin for another material/custom item is absent.

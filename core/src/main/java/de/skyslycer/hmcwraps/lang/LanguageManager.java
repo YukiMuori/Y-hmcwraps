@@ -1,5 +1,6 @@
 package de.skyslycer.hmcwraps.lang;
 
+import com.bgsoftware.common.config.CommentedConfiguration;
 import de.skyslycer.hmcwraps.HMCWraps;
 import de.skyslycer.hmcwraps.HMCWrapsPlugin;
 import net.kyori.adventure.text.Component;
@@ -18,6 +19,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -43,6 +46,27 @@ public final class LanguageManager implements LanguageService {
                 if (Files.notExists(path)) {
                     try (InputStream resource = plugin.getResource("lang/" + locale + ".yml")) {
                         if (resource != null) Files.copy(resource, path);
+                    }
+                    // Migrate old per-server English overrides when the new lang folder did not exist yet.
+                    if (locale.equals("en") && Files.exists(HMCWraps.MESSAGES_PATH)) {
+                        CommentedConfiguration created = CommentedConfiguration.loadConfiguration(path.toFile());
+                        if (!created.hasFailed() && migrateLegacyProperties(created, true)) created.save(path.toFile());
+                    }
+                } else {
+                    // Keep existing translations editable while adding newly introduced plugin keys.
+                    // syncWithConfig only supplies missing paths; it does not replace server values.
+                    try (InputStream resource = plugin.getResource("lang/" + locale + ".yml")) {
+                        if (resource != null) {
+                            CommentedConfiguration existing = CommentedConfiguration.loadConfiguration(path.toFile());
+                            if (existing.hasFailed()) {
+                                plugin.getLogger().warning("Could not update " + path.getFileName()
+                                        + " because the existing language file is invalid; leaving it untouched.");
+                            } else {
+                                boolean migratedLegacyMessages = locale.equals("en") && migrateLegacyProperties(existing, false);
+                                existing.syncWithConfig(path.toFile(), resource);
+                                if (migratedLegacyMessages) existing.save(path.toFile());
+                            }
+                        }
                     }
                 }
             }
@@ -75,6 +99,31 @@ public final class LanguageManager implements LanguageService {
             plugin.logSevere("Could not load language files.", exception);
             return false;
         }
+    }
+
+    private boolean migrateLegacyProperties(CommentedConfiguration language, boolean overrideDefaults) throws IOException {
+        if (Files.notExists(HMCWraps.MESSAGES_PATH)) return false;
+
+        Properties defaults = new Properties();
+        try (InputStream resource = plugin.getResource("messages.properties")) {
+            if (resource == null) return false;
+            defaults.load(resource);
+        }
+        Properties existingMessages = new Properties();
+        try (InputStream input = Files.newInputStream(HMCWraps.MESSAGES_PATH)) {
+            existingMessages.load(input);
+        }
+
+        boolean migrated = false;
+        for (String key : existingMessages.stringPropertyNames()) {
+            String value = existingMessages.getProperty(key);
+            if (!Objects.equals(value, defaults.getProperty(key))
+                    && (overrideDefaults || !language.contains("legacy." + key))) {
+                language.set("legacy." + key, value);
+                migrated = true;
+            }
+        }
+        return migrated;
     }
 
     @Override
@@ -121,16 +170,20 @@ public final class LanguageManager implements LanguageService {
 
     public String getDefaultLocale() { return defaultLocale; }
 
-    private YamlConfiguration locale(Player player) {
+    /** Returns the locale selected for a sender, respecting the configured client-locale option. */
+    public String getSelectedLocale(Player player) {
         if (usePlayerLocale && player != null) {
             String requested = player.getLocale();
             if (requested != null) {
                 String key = normalize(requested.replace('_', '-').split("-")[0]);
-                YamlConfiguration match = locales.get(key);
-                if (match != null) return match;
+                if (locales.containsKey(key)) return key;
             }
         }
-        return locales.get(defaultLocale);
+        return defaultLocale;
+    }
+
+    private YamlConfiguration locale(Player player) {
+        return locales.get(getSelectedLocale(player));
     }
 
     private static String normalize(String locale) {

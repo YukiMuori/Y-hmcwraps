@@ -24,6 +24,18 @@ public interface MessageHandler {
     String get(Messages key);
 
     /**
+     * Get a message for a sender, allowing the sender's client locale to be used when configured.
+     * Existing implementations remain compatible and may fall back to {@link #get(Messages)}.
+     *
+     * @param sender the receiver
+     * @param key the message key
+     * @return the localized message
+     */
+    default String get(CommandSender sender, Messages key) {
+        return get(key);
+    }
+
+    /**
      * Try to update the given .properties file by adding missing messages, which are present in the internal .properties file
      *
      * @param path The file to update

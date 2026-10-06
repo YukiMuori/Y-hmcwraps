@@ -75,14 +75,12 @@ public class ContinuousUpdateChecker {
         if (result == null || result.latest()) {
             return;
         }
-        var component = StringUtil.parseComponent(player, String.format(
-                """
-                        
-                        <gray>There is a new version of <green><bold>HMCWraps</bold></green> available!
-                        <gray>Current version: <red>%s</red> | Latest version: <green>%s</green>
-                        <gray>Download it on <gold><hover:show_text:"<blue>Click to open!"><click:open_url:%s>SpigotMC</gold> or <gold><hover:show_text:"<blue>Click to open!"><click:open_url:%s>Polymart</gold>!
-                        """, plugin.getDescription().getVersion(), result.version(),
-                String.format(PluginPlatform.SPIGOT_MC.url(), SPIGOT_ID), String.format(PluginPlatform.POLYMART.url(), POLYMART_ID)));
+        String message = plugin.getLanguageManager().get(player, "updates.available")
+                .replace("{current}", plugin.getDescription().getVersion())
+                .replace("{latest}", result.version())
+                .replace("{spigot_url}", String.format(PluginPlatform.SPIGOT_MC.url(), SPIGOT_ID))
+                .replace("{polymart_url}", String.format(PluginPlatform.POLYMART.url(), POLYMART_ID));
+        var component = StringUtil.parseComponent(player, message);
         StringUtil.sendComponent(player, component);
     }
 

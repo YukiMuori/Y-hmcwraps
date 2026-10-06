@@ -48,13 +48,30 @@ public class MessageHandlerImpl implements MessageHandler {
 
     @Override
     public String get(Messages key) {
-        if (bundle.containsKey(key.getKey())) {
-            return bundle.getString(key.getKey());
-        } else if (fallback.containsKey(key.getKey())) {
-            return fallback.getString(key.getKey());
-        } else {
-            return "Invalid key: " + key;
+        return get(null, key);
+    }
+
+    @Override
+    public String get(CommandSender sender, Messages key) {
+        String propertiesKey = key.getKey();
+        String languageKey = "legacy." + propertiesKey;
+        var language = plugin.getLanguageManager();
+        Player player = sender instanceof Player target ? target : null;
+
+        if (language != null) {
+            String translated = language.get(player, languageKey);
+            if (!translated.equals(languageKey)) {
+                return translated;
+            }
         }
+
+        if (bundle != null && bundle.containsKey(propertiesKey)) {
+            return bundle.getString(propertiesKey);
+        }
+        if (fallback != null && fallback.containsKey(propertiesKey)) {
+            return fallback.getString(propertiesKey);
+        }
+        return "Invalid key: " + key;
     }
 
     @Override
@@ -80,7 +97,7 @@ public class MessageHandlerImpl implements MessageHandler {
 
     @Override
     public void send(CommandSender sender, Messages key, Single... placeholders) {
-        var messageFromConfig = get(key);
+        var messageFromConfig = get(sender, key);
         if (messageFromConfig.isBlank()) {
             return;
         }

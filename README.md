@@ -14,8 +14,9 @@ The new catalog uses the existing wrap engine as its application adapter. This k
 
 1. Put the shaded `HMCWraps-2.0.1.jar` in `plugins/` and restart the server.
 2. The plugin creates/updates its legacy files and copies the v2 examples into `plugins/HMCWraps/` on first start.
-3. Configure skin files in `plugins/HMCWraps/skins/`, names in `lang/*.yml`, rarity priorities in `rarities.yml`, categories in `categories.yml`, and the browser in `itemskin-gui.yml`.
-4. Restart or use `/wraps reload` after changing configuration.
+3. Configure skin files in `plugins/HMCWraps/skins/`, all plugin text in `lang/*.yml`, rarity priorities in `rarities.yml`, categories in `categories.yml`, and the browser in `itemskin-gui.yml`.
+4. Set `language.default: it` in `config.yml` for Italian, or enable `language.player-locale` to use a matching player's client locale.
+5. Restart or use `/wraps reload` after changing configuration.
 
 The repository's build artifact is produced by `./gradlew clean build`; the distributable jar is `build/libs/HMCWraps-2.0.1.jar` after a successful build.
 
@@ -55,7 +56,19 @@ cosmetic:
 
 `price` is optional; omit it for a free skin. If a price is configured, the provider and currency are required and the amount must be finite and greater than zero; invalid price definitions are skipped rather than silently becoming free. Currency IDs are provider-specific. The included `excellent_economy` adapter discovers ExcellentEconomy through Bukkit's ServicesManager and does not link its optional API at compile time. `vault` supports Vault's single default currency (`vault`, `money` or `default`). Other plugins can register custom `EconomyProvider`s through the public API.
 
-Skin text and rarity/category display names are MiniMessage-aware. Language files are in `plugins/HMCWraps/lang/`; `<lang:key>` resolves a translation and `<glyph:key>` resolves `glyphs.key`. Unknown translations fall back to the configured default language and then to the key.
+## Language and translations
+
+All player-facing plugin text is configurable in `plugins/HMCWraps/lang/<locale>.yml`, including legacy wrap/command messages, item-skin GUI labels and messages, debug replies, update notices and `/wraps help` descriptions. English (`en`) and Italian (`it`) are included. To use Italian by default, set this in `plugins/HMCWraps/config.yml`:
+
+```yaml
+language:
+  default: it
+  player-locale: false
+```
+
+Set `player-locale: true` to select a matching player's client language first. Existing built-in language files receive newly added keys on reload without replacing edited translations. On upgrade, custom English messages from an existing `messages.properties` are migrated into missing `legacy.*` entries in `lang/en.yml`; edit the language YAML files from then on.
+
+In each locale file, edit `legacy` for wrap/command text, `gui` and `messages` for item skins, and `debug`/`updates` for diagnostics and update notices. Skin names, rarity/category display names and message text support MiniMessage. `<lang:key>` resolves a translation and `<glyph:key>` resolves `glyphs.key`; missing translations fall back to the configured default language and then to the key.
 
 ## Public API
 

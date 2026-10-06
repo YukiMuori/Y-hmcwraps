@@ -47,14 +47,14 @@ public class HMCWrapsPlaceholders extends PlaceholderExpansion {
             return meta.getItemModel().toString();
         } else if (identifier.equals("filter") && player != null) {
             if (plugin.getFilterStorage().get(player)) {
-                return StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(Messages.INVENTORY_FILTER_ACTIVE)));
+                return StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(player, Messages.INVENTORY_FILTER_ACTIVE)));
             } else {
-                return StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(Messages.INVENTORY_FILTER_INACTIVE)));
+                return StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(player, Messages.INVENTORY_FILTER_INACTIVE)));
             }
         } else if (identifier.equals("iswrapped") && player != null) {
             var wrap = plugin.getWrapper().getWrap(player.getInventory().getItemInMainHand());
             return PlainTextComponentSerializer.plainText().serialize(StringUtil.parseComponent(player,
-                    plugin.getMessageHandler().get(wrap == null ? Messages.PLACEHOLDER_NOT_EQUIPPED : Messages.PLACEHOLDER_EQUIPPED)));
+                    plugin.getMessageHandler().get(player, wrap == null ? Messages.PLACEHOLDER_NOT_EQUIPPED : Messages.PLACEHOLDER_EQUIPPED)));
         } else if (identifier.split("_").length >= 2) {
             var action = identifier.substring(0, identifier.indexOf("_"));
             var wrapUuid = identifier.substring(identifier.indexOf("_") + 1);
@@ -66,8 +66,8 @@ public class HMCWrapsPlaceholders extends PlaceholderExpansion {
                     }
                     var equipped = plugin.getWrapGui().get(player.getUniqueId());
                     return wrapUuid.equals(equipped) ?
-                            StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(Messages.PLACEHOLDER_EQUIPPED)))
-                            : StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(Messages.PLACEHOLDER_NOT_EQUIPPED)));
+                            StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(player, Messages.PLACEHOLDER_EQUIPPED)))
+                            : StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(player, Messages.PLACEHOLDER_NOT_EQUIPPED)));
                 }
                 case "modelid" -> {
                     if (wrap == null) {
@@ -90,16 +90,16 @@ public class HMCWrapsPlaceholders extends PlaceholderExpansion {
                         return invalidWrap(player);
                     }
                     return wrap.hasPermission(player) ?
-                            StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(Messages.PLACEHOLDER_HAS_PERMISSION)))
-                            : StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(Messages.PLACEHOLDER_NO_PERMISSION)));
+                            StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(player, Messages.PLACEHOLDER_HAS_PERMISSION)))
+                            : StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(player, Messages.PLACEHOLDER_NO_PERMISSION)));
                 }
                 case "favorite" -> {
                     if (wrap == null || player == null) {
                         return invalidWrap(player);
                     }
                     return plugin.getFavoriteWrapStorage().get(player).contains(wrap) ?
-                            StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(Messages.PLACEHOLDER_FAVORITE)))
-                            : StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(Messages.PLACEHOLDER_NOT_FAVORITE)));
+                            StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(player, Messages.PLACEHOLDER_FAVORITE)))
+                            : StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(player, Messages.PLACEHOLDER_NOT_FAVORITE)));
                 }
             }
         }
@@ -107,7 +107,7 @@ public class HMCWrapsPlaceholders extends PlaceholderExpansion {
     }
 
     private String invalidWrap(Player player) {
-        return StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(Messages.PLACEHOLDER_INVALID_WRAP)));
+        return StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(player, Messages.PLACEHOLDER_INVALID_WRAP)));
     }
 
 }

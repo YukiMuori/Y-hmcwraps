@@ -29,6 +29,7 @@ import revxrsal.commands.help.Help;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 @Command("wraps")
@@ -265,17 +266,17 @@ public class WrapCommand {
     public void onList(CommandSender sender) {
         var handler = plugin.getMessageHandler();
         var set = new ArrayList<Component>();
-        set.add(StringUtil.parseComponent(sender, handler.get(Messages.COMMAND_LIST_HEADER)));
-        set.add(StringUtil.parseComponent(sender, handler.get(Messages.COMMAND_LIST_COLLECTIONS)));
+        set.add(StringUtil.parseComponent(sender, handler.get(sender, Messages.COMMAND_LIST_HEADER)));
+        set.add(StringUtil.parseComponent(sender, handler.get(sender, Messages.COMMAND_LIST_COLLECTIONS)));
         plugin.getWrapsLoader().getCollections().forEach((key, list) -> {
-            set.add(StringUtil.parseComponent(sender, handler.get(Messages.COMMAND_LIST_KEY_FORMAT), Placeholder.parsed("value", key)));
+            set.add(StringUtil.parseComponent(sender, handler.get(sender, Messages.COMMAND_LIST_KEY_FORMAT), Placeholder.parsed("value", key)));
             list.forEach(entry -> set.add(
-                    StringUtil.parseComponent(sender, handler.get(Messages.COMMAND_LIST_COLLECTIONS_FORMAT), Placeholder.parsed("value", entry))));
+                    StringUtil.parseComponent(sender, handler.get(sender, Messages.COMMAND_LIST_COLLECTIONS_FORMAT), Placeholder.parsed("value", entry))));
         });
         set.add(Component.space());
-        set.add(StringUtil.parseComponent(sender, handler.get(Messages.COMMAND_LIST_WRAPS)));
+        set.add(StringUtil.parseComponent(sender, handler.get(sender, Messages.COMMAND_LIST_WRAPS)));
         plugin.getWrapsLoader().getTypeWraps().forEach((material, wrapIds) -> {
-            set.add(StringUtil.parseComponent(sender, handler.get(Messages.COMMAND_LIST_KEY_FORMAT), Placeholder.parsed("value", material)));
+            set.add(StringUtil.parseComponent(sender, handler.get(sender, Messages.COMMAND_LIST_KEY_FORMAT), Placeholder.parsed("value", material)));
             wrapIds.forEach((wrapId) -> {
                 var wrap = plugin.getWrapsLoader().getWraps().get(wrapId);
                 var uuid = wrap.getUuid();
@@ -284,7 +285,7 @@ public class WrapCommand {
                         Placeholder.parsed("player", sender instanceof Player player ? player.getName() : " "),
                         Placeholder.parsed("physical", String.valueOf(wrap.getPhysical() != null)),
                         Placeholder.parsed("preview", String.valueOf(wrap.isPreview())));
-                set.add(StringUtil.parseComponent(sender, handler.get(Messages.COMMAND_LIST_WRAPS_FORMAT), placeholders.toArray(Single[]::new)));
+                set.add(StringUtil.parseComponent(sender, handler.get(sender, Messages.COMMAND_LIST_WRAPS_FORMAT), placeholders.toArray(Single[]::new)));
             });
         });
         var component = Component.empty();
@@ -317,12 +318,20 @@ public class WrapCommand {
         } else {
             list.stream()
                     .filter(command -> !command.annotations().contains(NoHelp.class))
-                    .forEach(command ->
-                            StringUtil.send(sender, plugin.getMessageHandler().get(Messages.COMMAND_HELP_FORMAT)
+                    .forEach(command -> {
+                        String description = command.description() == null ? "" : command.description();
+                        String commandPath = command.path().replaceFirst("^/+", "").trim()
+                                .toLowerCase(Locale.ROOT).replaceAll("\\s+", ".");
+                        if (!commandPath.contains(".")) commandPath += ".root";
+                        String descriptionKey = "command-descriptions." + commandPath;
+                        String localizedDescription = plugin.getLanguageManager().get(
+                                sender instanceof Player player ? player : null, descriptionKey);
+                        if (!localizedDescription.equals(descriptionKey)) description = localizedDescription;
+                        StringUtil.send(sender, plugin.getMessageHandler().get(sender, Messages.COMMAND_HELP_FORMAT)
                                 .replace("<command>", command.path())
                                 .replace("<usage>", "")
-                                .replace("<description>", command.description() != null ? command.description() : ""))
-                    );
+                                .replace("<description>", description));
+                    });
         }
     }
 

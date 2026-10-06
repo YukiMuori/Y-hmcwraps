@@ -85,3 +85,118 @@ messages:
   no-skin-to-remove: '<red>The item has no v2 skin to remove.'
   unknown-skin: '<red>Unknown skin: <skin>'
   apply-cancelled: '<red>Another plugin prevented this skin from being applied.'
+# Legacy wraps/commands plus shared diagnostics. All message text can be edited here.
+legacy:
+  no-permission: '<red>Insufficient permission!'
+  no-permission-for-wrap: '<red>You don''t have permission to use this wrap!'
+  apply-wrap: '<gray>Successfully <green>applied <gray>the wrap to the item!'
+  remove-wrap: '<gray>Successfully <red>removed <gray>your current wrap!'
+  no-item: '<red>You need to have an item in your main hand!'
+  no-item-selected: '<red>You need to select an item first!'
+  no-wraps: '<red>There are no wraps for this item!'
+  no-rewrap: '<red>You have to unwrap this item before you can wrap it!'
+  preview:
+    disabled: '<red>You can''t preview this wrap!'
+    bar: '<green>Press <key:key.sneak> to cancel the preview'
+  favorites:
+    set: '<gray>You have successfully <green>set <gray>your favorite wrap!'
+    unset: '<gray>You have successfully <red>removed <gray>this wrap from your favorites!'
+    clear: '<gray>You have successfully <green>cleared <gray>all favorite wraps!'
+  armor-imitation:
+    forbidden-inventory: '<red>You can''t use this with a wrapped item! Please unwrap it first.'
+  inventory:
+    filter:
+      active: '<gray>Filtering <green>enabled!'
+      inactive: '<gray>Filtering <red>disabled!'
+  command:
+    missing-argument: '<red>You have to specify the <argument>!'
+    invalid-wrap: '<red><uuid> <gray>is not a valid wrap UUID!'
+    invalid-physical: '<red><uuid> <gray>doesn''t have a valid physical item configured!'
+    given-physical: '<gray>Successfully gave the <green><uuid> wrapper!'
+    given-unwrapper: '<gray>Successfully gave the <green>unwrapper!'
+    invalid-world: '<red><world> <gray>is not a valid world!'
+    invalid-player: '<red><player> <gray>is not an online player!'
+    dropped-physical: '<gray>Successfully dropped the <green><uuid> <gray>wrapper!'
+    reload: '<green>Successfully reloaded <gray>the plugin in <green><time>ms! <newline><gray>(Loaded <green><wraps> wraps <gray>and <green><collections> collections<gray>)'
+    player-only: '<red>You have to be a player to execute this command!'
+    need-item: '<red>The player has to have an item in their main hand!'
+    item-not-for-wrap: '<red>The wrap you have chosen does not apply to the one the player is holding!'
+    item-not-wrapped: '<red>The item the player is holding is not wrapped!'
+    wrap:
+      wrapped: '<gray>Successfully <green>wrapped <gray>the <green>item!'
+    unwrap:
+      unwrapped: '<gray>Successfully <red>unwrapped <gray>the <green>item!'
+    no-matching-item: '<red>There is no item applicable to this wrap!'
+    preview-created: '<gray>Successfully <green>created <gray>the <green>preview!'
+    help:
+      header: '<gray>=======\> <green>HMCWraps commands <gray>\<======='
+      format: '<green>/<command> <gray>- <description>'
+      no-permission: '<red>There are no commands available at your permission level.'
+    list:
+      header: '<gray>=======\> <green>HMCWraps wraps <gray>\<======='
+      collections: '<green>Collections:'
+      wraps: '<green>Wraps:'
+      key-format: '<gray>  <value>:'
+      collections-format: '<gray>    - <green><value>'
+      wraps-format: '<gray>    <hover:show_text:"<gray>Permission: <green><permission><newline><gray>Model ID: <green><modelid><newline><gray>Click to apply to current item">- <click:run_command:/wraps wrap <value>><green><value>'
+      permission: '<gray>Permission: <green><permission>'
+      custom-model-id: '<gray>Model ID: <green><modelid>'
+    convert:
+      success: '<gray>Successfully <green>converted <gray>all <green>ItemSkins files! <gray>The new files are located in <green>wraps/generated/ <gray>and <green>collections/generated/!'
+      confirm: '<gray>In order to <green>confirm <gray>this action, please run <green>/wraps convert confirm. <gray>NOTE: <red>This should be safe, but please have a backup of your files!'
+      no-confirm: '<red>You currently don''t have anything to confirm! <gray>In order to start the process, run <red>/wraps convert.'
+      failed: '<red>Some or all files failed to convert! <gray>Please <red>check <gray>the console for more information, <red>delete <gray>the folders <red>wraps/generated/ <gray>and <red>collections/generated/, and <red>try again!'
+    create:
+      failed: '<red>An error occurred while generating the wrap file! Please report the error in the console to the developers.'
+      success: '<gray>Successfully <green>created <gray>the <green>wrap <gray>file! You can find it at: <green><path>! <gray>Type <green>/wraps reload <gray>once you want the new wrap to be loaded.'
+    open: '<gray>Successfully <green>opened <gray>the wraps inventory for <green><player>!'
+  placeholder:
+    equipped: '<green>Equipped'
+    not-equipped: '<red>Not equipped'
+    favorite: '<green>Favorite'
+    not-favorite: '<red>Not favorite'
+    has-permission: '<green>Yes'
+    no-permission: '<red>No'
+    invalid-wrap: '<red>Invalid wrap!'
+
+debug:
+  file-upload-failed: '<red>Failed to upload file! Please check the console.'
+  info-printed: '<green>Debug information (<type>) printed to console.'
+  upload-success: '<gray>Successfully uploaded (<type>): '
+  upload-failed: '<red>Failed to upload debug information or file! Please check the console.'
+  file-missing: '<red>This file does not exist!'
+  file-directory: '<red>This file is a directory!'
+  click-to-open: '<aqua>Click to open!'
+  test:
+    invalid-color-received: '<white>[TEST] Received an item with an invalid color code in its lore.'
+    started: '<white>[TEST] Testing reflection helper methods...'
+    attribute-section: '<white>[TEST] Testing attribute methods...'
+    packet-section: '<white>[TEST] Testing NMS packet methods...'
+    passed: '<green>[OK] <gray>Method <method> passed.'
+    failed: '<red>[FAIL] <gray>Method <method> failed.'
+    finished: '<white>[TEST] Tests finished. Check the console for errors.'
+# Descriptions used by /wraps help, keyed by the command path.
+command-descriptions:
+  wraps:
+    root: 'Open the wraps inventory.'
+    open: 'Open the wraps inventory for another player.'
+    reload: 'Reload configuration and messages.'
+    convert: 'Convert ItemSkins files to HMCWraps files.'
+    wrap: 'Wrap the item the player is holding in their main hand.'
+    unwrap: 'Unwrap the item a player is holding in their main hand.'
+    preview: 'Preview a wrap for the specified player.'
+    give:
+      wrapper: 'Give a wrapper to a player.'
+      unwrapper: 'Give an unwrapper to a player.'
+    drop: 'Drop a wrapper at the specified location.'
+    list: 'Shows all wraps and collections configured.'
+    help: 'Shows the help page.'
+    create: 'Create a wrap from an item in hand!'
+  itemskin:
+    root: 'Open the item-skin catalog for the item in your main hand.'
+    open: 'Open the item-skin catalog for the item in your main hand.'
+    remove: 'Remove the current v2 skin from the item in your main hand.'
+    preview: 'Preview a configured skin on the item in your main hand.'
+
+updates:
+  available: '<gray>There is a new version of <green><bold>HMCWraps</bold></green> available!<newline><gray>Current version: <red>{current}</red> | Latest version: <green>{latest}</green><newline><gray>Download it on <gold><hover:show_text:"<blue>Click to open!"><click:open_url:{spigot_url}>SpigotMC</gold> or <gold><hover:show_text:"<blue>Click to open!"><click:open_url:{polymart_url}>Polymart</gold>!'

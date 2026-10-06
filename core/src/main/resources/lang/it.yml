@@ -85,3 +85,118 @@ messages:
   no-skin-to-remove: '<red>L’oggetto non ha una skin 2.0 da rimuovere.'
   unknown-skin: '<red>Skin sconosciuta: <skin>'
   apply-cancelled: '<red>Un altro plugin ha impedito l’applicazione della skin.'
+# Legacy wraps/commands plus shared diagnostics. All message text can be edited here.
+legacy:
+  no-permission: '<red>Non hai il permesso necessario!'
+  no-permission-for-wrap: '<red>Non hai il permesso per usare questa wrap!'
+  apply-wrap: '<gray>Wrap <green>applicata con successo <gray>all’oggetto!'
+  remove-wrap: '<gray>Hai <red>rimosso <gray>con successo la wrap attuale!'
+  no-item: '<red>Devi tenere un oggetto nella mano principale!'
+  no-item-selected: '<red>Devi prima selezionare un oggetto!'
+  no-wraps: '<red>Non ci sono wrap per questo oggetto!'
+  no-rewrap: '<red>Rimuovi la wrap attuale prima di applicarne un’altra!'
+  armor-imitation:
+    forbidden-inventory: '<red>Non puoi farlo con un oggetto rivestito! Rimuovi prima la wrap.'
+  inventory:
+    filter:
+      active: '<gray>Filtro <green>attivato!'
+      inactive: '<gray>Filtro <red>disattivato!'
+  preview:
+    disabled: '<red>Non puoi visualizzare l’anteprima di questa wrap!'
+    bar: '<green>Premi <key:key.sneak> per annullare l’anteprima'
+  favorites:
+    set: '<gray>Hai <green>aggiunto <gray>questa wrap ai preferiti!'
+    unset: '<gray>Hai <red>rimosso <gray>questa wrap dai preferiti!'
+    clear: '<gray>Hai <green>cancellato <gray>tutte le wrap preferite!'
+  command:
+    missing-argument: '<red>Devi specificare <argument>!'
+    player-only: '<red>Questo comando può essere eseguito solo da un giocatore!'
+    invalid-wrap: '<red><uuid> <gray>non è un UUID di wrap valido!'
+    invalid-physical: '<red>Non è configurato un oggetto fisico valido per <uuid>!'
+    given-physical: '<gray>Hai dato la wrap <green><uuid> <gray>al giocatore!'
+    given-unwrapper: '<gray>Hai dato con successo lo <green>strumento per rimuovere le wrap!'
+    invalid-world: '<red><world> <gray>non è un mondo valido!'
+    invalid-player: '<red><player> <gray>non è un giocatore online!'
+    dropped-physical: '<gray>Hai lasciato a terra la wrap <green><uuid>!'
+    reload: '<green>Plugin ricaricato con successo <gray>in <green><time>ms! <newline><gray>(Caricate <green><wraps> wrap <gray>e <green><collections> collezioni<gray>)'
+    need-item: '<red>Il giocatore deve tenere un oggetto nella mano principale!'
+    item-not-for-wrap: '<red>La wrap scelta non è applicabile all’oggetto tenuto dal giocatore!'
+    item-not-wrapped: '<red>L’oggetto tenuto dal giocatore non ha una wrap!'
+    wrap:
+      wrapped: '<gray>Oggetto <green>rivestito <gray>con successo!'
+    unwrap:
+      unwrapped: '<gray>Wrap <red>rimossa <gray>con successo dall’oggetto!'
+    no-matching-item: '<red>Non c’è un oggetto compatibile con questa wrap!'
+    preview-created: '<gray>Anteprima <green>avviata <gray>con successo!'
+    help:
+      header: '<gray>=======\> <green>Comandi HMCWraps <gray>\<======='
+      format: '<green>/<command> <gray>- <description>'
+      no-permission: '<red>Non hai accesso a nessun comando.'
+    list:
+      header: '<gray>=======\> <green>Wrap HMCWraps <gray>\<======='
+      collections: '<green>Collezioni:'
+      wraps: '<green>Wrap:'
+      key-format: '<gray>  <value>:'
+      collections-format: '<gray>    - <green><value>'
+      wraps-format: '<gray>    <hover:show_text:"<gray>Permesso: <green><permission><newline><gray>ID modello: <green><modelid><newline><gray>Clicca per applicarla all’oggetto">- <click:run_command:/wraps wrap <value>><green><value>'
+      permission: '<gray>Permesso: <green><permission>'
+      custom-model-id: '<gray>ID modello: <green><modelid>'
+    convert:
+      success: '<gray>Tutti i file di ItemSkins sono stati <green>convertiti <gray>con successo! I nuovi file sono in <green>wraps/generated/ <gray>e <green>collections/generated/!'
+      confirm: '<gray>Per <green>confermare <gray>l’operazione, esegui <green>/wraps convert confirm. <gray>NOTA: <red>l’operazione dovrebbe essere sicura, ma fai prima una copia di backup dei file!'
+      no-confirm: '<red>Non c’è alcuna operazione da confermare! <gray>Per avviare il processo, esegui <red>/wraps convert.'
+      failed: '<red>La conversione di alcuni file non è riuscita! <gray>Controlla la console, <red>elimina <gray>le cartelle <red>wraps/generated/ <gray>e <red>collections/generated/, quindi <gray>riprova.'
+    create:
+      failed: '<red>Errore durante la creazione del file wrap! Segnala l’errore riportato in console agli sviluppatori.'
+      success: '<gray>File wrap <green>creato <gray>con successo! Percorso: <green><path>! <gray>Esegui <green>/wraps reload <gray>per caricare la nuova wrap.'
+    open: '<gray>Hai aperto con successo l’inventario delle wrap di <green><player>!'
+  placeholder:
+    equipped: '<green>Equipaggiata'
+    not-equipped: '<red>Non equipaggiata'
+    favorite: '<green>Preferita'
+    not-favorite: '<red>Non preferita'
+    has-permission: '<green>Sì'
+    no-permission: '<red>No'
+    invalid-wrap: '<red>Wrap non valida!'
+
+debug:
+  file-upload-failed: '<red>Caricamento del file non riuscito. Controlla la console.'
+  info-printed: '<green>Informazioni di debug (<type>) stampate in console.'
+  upload-success: '<gray>Caricamento completato (<type>): '
+  upload-failed: '<red>Caricamento delle informazioni di debug o del file non riuscito. Controlla la console.'
+  file-missing: '<red>Questo file non esiste!'
+  file-directory: '<red>Il percorso specificato è una cartella!'
+  click-to-open: '<aqua>Clicca per aprire!'
+  test:
+    invalid-color-received: '<white>[TEST] Hai ricevuto un oggetto con un codice colore non valido nella descrizione.'
+    started: '<white>[TEST] Avvio dei test dei metodi di riflessione...'
+    attribute-section: '<white>[TEST] Esecuzione dei test degli attributi...'
+    packet-section: '<white>[TEST] Esecuzione dei test dei pacchetti NMS...'
+    passed: '<green>[OK] <gray>Test del metodo <method> superato.'
+    failed: '<red>[FAIL] <gray>Test del metodo <method> non riuscito.'
+    finished: '<white>[TEST] Test terminati. Controlla la console per eventuali errori.'
+# Descriptions used by /wraps help, keyed by the command path.
+command-descriptions:
+  wraps:
+    root: 'Apri l’inventario delle wrap.'
+    open: 'Apri l’inventario delle wrap per un altro giocatore.'
+    reload: 'Ricarica la configurazione e i messaggi.'
+    convert: 'Converti i file ItemSkins nel formato HMCWraps.'
+    wrap: 'Applica una wrap all’oggetto tenuto nella mano principale.'
+    unwrap: 'Rimuovi la wrap dall’oggetto tenuto nella mano principale.'
+    preview: 'Mostra l’anteprima di una wrap per il giocatore indicato.'
+    give:
+      wrapper: 'Dai una wrap fisica a un giocatore.'
+      unwrapper: 'Dai uno strumento per rimuovere le wrap a un giocatore.'
+    drop: 'Lascia a terra una wrap nel punto indicato.'
+    list: 'Mostra tutte le wrap e le collezioni configurate.'
+    help: 'Mostra la pagina di aiuto.'
+    create: 'Crea una wrap a partire dall’oggetto tenuto in mano.'
+  itemskin:
+    root: 'Apri il catalogo delle skin per l’oggetto tenuto nella mano principale.'
+    open: 'Apri il catalogo delle skin per l’oggetto tenuto nella mano principale.'
+    remove: 'Rimuovi la skin v2 attuale dall’oggetto tenuto nella mano principale.'
+    preview: 'Mostra l’anteprima di una skin configurata sull’oggetto tenuto nella mano principale.'
+
+updates:
+  available: '<gray>È disponibile una nuova versione di <green><bold>HMCWraps</bold></green>!<newline><gray>Versione attuale: <red>{current}</red> | Ultima versione: <green>{latest}</green><newline><gray>Scaricala da <gold><hover:show_text:"<blue>Clicca per aprire!"><click:open_url:{spigot_url}>SpigotMC</gold> o <gold><hover:show_text:"<blue>Clicca per aprire!"><click:open_url:{polymart_url}>Polymart</gold>!'

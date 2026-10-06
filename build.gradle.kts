@@ -38,12 +38,15 @@ allprojects {
 // Everything is wrapped in try/catch: a problem in the diagnostics must never break a build.
 // ---------------------------------------------------------------------------
 subprojects {
-    val diagnosticsScript = rootProject.file("gradle/ci-annotations.gradle")
-    if (System.getenv("GITHUB_ACTIONS") == "true" && diagnosticsScript.exists()) {
-        try {
-            apply(from = diagnosticsScript)
-        } catch (throwable: Throwable) {
-            println("::error::Could not apply the CI diagnostics script to " + name + ": " + throwable.message)
+    val subproject = this
+    pluginManager.withPlugin("java") {
+        val diagnosticsScript = rootProject.file("gradle/ci-annotations.gradle")
+        if (System.getenv("GITHUB_ACTIONS") == "true" && diagnosticsScript.exists()) {
+            try {
+                subproject.apply { from(diagnosticsScript) }
+            } catch (throwable: Throwable) {
+                println("::error::Could not apply the CI diagnostics script to " + subproject.name + ": " + throwable.message)
+            }
         }
     }
 }

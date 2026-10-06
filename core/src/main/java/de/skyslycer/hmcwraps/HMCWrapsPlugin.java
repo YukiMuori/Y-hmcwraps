@@ -67,6 +67,7 @@ import de.skyslycer.hmcwraps.shop.ProfileServiceImpl;
 import de.skyslycer.hmcwraps.shop.ShopListener;
 import de.skyslycer.hmcwraps.shop.ShopRegistry;
 import de.skyslycer.hmcwraps.shop.ShopServiceImpl;
+import de.skyslycer.hmcwraps.shop.menu.ShopMenuManager;
 import de.skyslycer.hmcwraps.storage.SqlStorageProvider;
 import de.skyslycer.hmcwraps.transformation.ConfigFileTransformations;
 import de.skyslycer.hmcwraps.updater.ContinuousUpdateChecker;
@@ -137,6 +138,7 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
     private CollectionServiceImpl collectionService;
     private ProfileServiceImpl profileService;
     private ShopServiceImpl shopService;
+    private ShopMenuManager shopMenuManager;
     private GiftServiceImpl giftService;
     private EconomyService economyService;
     private PurchaseTransactionService transactionService;
@@ -287,6 +289,9 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
             shopRefreshTask = null;
         }
         itemSkinManager.menuManager().closeAll();
+        if (shopMenuManager != null) {
+            shopMenuManager.closeAll();
+        }
         skinTradeManager.cancelAll();
         integrationHandler.unload();
         getWrapsLoader().unload();
@@ -484,6 +489,7 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
     @Override public LanguageManager getLanguageService() { return languageManager; }
     public ItemIconFactory getItemIconFactory() { return itemIconFactory; }
     public SkinCatalog getSkinCatalog() { return skinCatalog; }
+    public SkinOwnershipService getSkinOwnership() { return skinOwnership; }
     public CompatibilityRegistry getCompatibilityRegistry() { return compatibilityRegistry; }
     public EconomyManager getEconomyManager() { return economyManager; }
 
@@ -549,6 +555,8 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
             giftService = new GiftServiceImpl(this, shopRegistry, skinCatalog, skinOwnership, economyService,
                     transactionService, giftRepository, scheduler, () -> config == null ? null : config.getGifts(),
                     message -> getLogger().warning(message));
+            shopMenuManager = new ShopMenuManager(this);
+            Bukkit.getPluginManager().registerEvents(shopMenuManager, this);
             Bukkit.getPluginManager().registerEvents(new ShopListener(this), this);
             startShopTasks();
             getLogger().info("The shop system is ready (" + shopRegistry.bundles().size() + " bundles, "
@@ -621,6 +629,10 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
 
     public ShopServiceImpl getShopService() {
         return shopService;
+    }
+
+    public ShopMenuManager getShopMenuManager() {
+        return shopMenuManager;
     }
 
     public GiftServiceImpl getGiftService() {

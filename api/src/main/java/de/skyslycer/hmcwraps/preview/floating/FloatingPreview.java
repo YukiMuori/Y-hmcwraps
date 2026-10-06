@@ -9,7 +9,6 @@ import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.Optional;
 import java.util.function.Consumer;
 
 public class FloatingPreview implements Preview {
@@ -47,8 +46,12 @@ public class FloatingPreview implements Preview {
     }
 
     public void cancel(boolean open) {
-        Optional.of(task).ifPresent(WrappedTask::cancel);
-        Optional.of(cancelTask).ifPresent(WrappedTask::cancel);
+        if (task != null) {
+            task.cancel();
+        }
+        if (cancelTask != null) {
+            cancelTask.cancel();
+        }
         if (open && onClose != null) {
             onClose.accept(player);
         }

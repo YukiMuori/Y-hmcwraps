@@ -12,7 +12,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.Optional;
 import java.util.function.Consumer;
 
 public class HandPreview implements Preview {
@@ -48,8 +47,12 @@ public class HandPreview implements Preview {
     }
 
     public void cancel(boolean open) {
-        Optional.of(task).ifPresent(WrappedTask::cancel);
-        Optional.of(cancelTask).ifPresent(WrappedTask::cancel);
+        if (task != null) {
+            task.cancel();
+        }
+        if (cancelTask != null) {
+            cancelTask.cancel();
+        }
         if (open && onClose != null) {
             onClose.accept(player);
         }

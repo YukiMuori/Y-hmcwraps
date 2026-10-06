@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 
 public class PreviewManager {
 
@@ -33,9 +34,14 @@ public class PreviewManager {
      * @param open If the inventory should open up again
      */
     public void remove(UUID uuid, boolean open) {
-        if (previews.containsKey(uuid)) {
-            previews.get(uuid).cancel(open);
-            previews.remove(uuid);
+        var preview = previews.remove(uuid);
+        if (preview == null) {
+            return;
+        }
+        try {
+            preview.cancel(open);
+        } catch (Exception exception) {
+            plugin.getLogger().log(Level.WARNING, "The preview of " + uuid + " could not be cancelled cleanly!", exception);
         }
     }
 
@@ -86,8 +92,10 @@ public class PreviewManager {
         } else {
             preview = new FloatingPreview(player, item, Optional.fromNullable(wrap.isUpsideDownPreview()).or(false), onClose, plugin);
         }
-        previews.put(player.getUniqueId(), preview);
+        // Register only after the preview started: a preview that fails to start must never
+        // linger in the map, where every later remove/create/reload would trip over it.
         preview.preview();
+        previews.put(player.getUniqueId(), preview);
     }
 
     /**

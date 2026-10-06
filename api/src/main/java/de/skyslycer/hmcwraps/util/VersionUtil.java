@@ -2,6 +2,7 @@ package de.skyslycer.hmcwraps.util;
 
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.World;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -14,10 +15,13 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class VersionUtil {
 
@@ -711,20 +715,113 @@ public class VersionUtil {
     }
 
     /**
-     * Get the next entity ID for spawning entities.
-     * This method uses reflection to access the nextEntityId method.
+     * Get the next entity ID for spawning a client-side entity.
      *
      * @return The next entity ID
      */
     public static int getNextEntityId() {
+        return getNextEntityId(null);
+    }
+
+    /**
+     * Get the next entity ID for spawning a client-side entity. Prefer the server API allocator,
+     * which is the supported way to avoid collisions and accepts a world on newer server versions.
+     * The reflective NMS paths are retained for older Paper/Spigot implementations.
+     *
+     * @param world the world where the fake entity will be shown, if available
+     * @return The next entity ID
+     */
+    public static int getNextEntityId(World world) {
+        Exception unsafeFailure = null;
         try {
-            var entityClass = Class.forName("net.minecraft.world.entity.Entity");
-            var nextEntityIdMethod = entityClass.getMethod("nextEntityId");
-            var result = nextEntityIdMethod.invoke(null);
-            return (int) result;
+            return getNextEntityIdFromUnsafeValues(world);
         } catch (Exception exception) {
-            throw new RuntimeException("Failed to get next entity ID", exception);
+            unsafeFailure = exception;
         }
+
+        try {
+            return getNextEntityIdFromNms();
+        } catch (Exception nmsFailure) {
+            if (unsafeFailure != null) {
+                nmsFailure.addSuppressed(unsafeFailure);
+            }
+            throw new RuntimeException("Failed to get next entity ID from the server API or NMS", nmsFailure);
+        }
+    }
+
+    private static int getNextEntityIdFromUnsafeValues(World world) throws Exception {
+        Class<?> bukkitClass = Class.forName("org.bukkit.Bukkit");
+        Object unsafeValues = bukkitClass.getMethod("getUnsafe").invoke(null);
+        Class<?> unsafeValuesClass = Class.forName("org.bukkit.UnsafeValues");
+
+        World targetWorld = world;
+        if (targetWorld == null) {
+            List<World> worlds = Bukkit.getWorlds();
+            if (!worlds.isEmpty()) targetWorld = worlds.getFirst();
+        }
+
+        Method worldAllocator = null;
+        Method globalAllocator = null;
+        for (Method method : unsafeValuesClass.getMethods()) {
+            if (!method.getName().equals("nextEntityId")) continue;
+            Class<?>[] parameters = method.getParameterTypes();
+            if (parameters.length == 0) {
+                globalAllocator = method;
+            } else if (parameters.length == 1 && targetWorld != null && parameters[0].isInstance(targetWorld)) {
+                worldAllocator = method;
+            }
+        }
+
+        // Prefer the world-aware overload where the server provides it.
+        Method allocator = worldAllocator != null ? worldAllocator : globalAllocator;
+        Object[] arguments = worldAllocator != null ? new Object[]{targetWorld} : new Object[0];
+        if (allocator == null) {
+            throw new NoSuchMethodException("UnsafeValues.nextEntityId() or nextEntityId(World) is unavailable");
+        }
+        Object result = allocator.invoke(unsafeValues, arguments);
+        if (result instanceof Number number) return number.intValue();
+        throw new IllegalStateException("UnsafeValues.nextEntityId returned a non-numeric value");
+    }
+
+    private static int getNextEntityIdFromNms() throws Exception {
+        Class<?> entityClass = Class.forName("net.minecraft.world.entity.Entity");
+        try {
+            Method method;
+            try {
+                method = entityClass.getMethod("nextEntityId");
+            } catch (NoSuchMethodException ignored) {
+                method = entityClass.getDeclaredMethod("nextEntityId");
+                method.setAccessible(true);
+            }
+            Object result = method.invoke(null);
+            if (result instanceof Number number) return number.intValue();
+            throw new IllegalStateException("Entity.nextEntityId returned a non-numeric value");
+        } catch (NoSuchMethodException missingMethod) {
+            // Some recent server versions removed/renamed the method but still keep the
+            // monotonically increasing entity-ID counter on Entity.
+            return incrementEntityIdCounter(entityClass, missingMethod);
+        }
+    }
+
+    private static int incrementEntityIdCounter(Class<?> entityClass, NoSuchMethodException missingMethod) throws Exception {
+        for (String name : List.of("ENTITY_COUNTER", "ENTITY_ID_COUNTER", "CURRENT_ID")) {
+            try {
+                Field field = entityClass.getDeclaredField(name);
+                if (Modifier.isStatic(field.getModifiers()) && AtomicInteger.class.isAssignableFrom(field.getType())) {
+                    field.setAccessible(true);
+                    return ((AtomicInteger) field.get(null)).incrementAndGet();
+                }
+            } catch (NoSuchFieldException ignored) {
+                // Try the next known mapping name.
+            }
+        }
+
+        for (Field field : entityClass.getDeclaredFields()) {
+            if (!Modifier.isStatic(field.getModifiers()) || !AtomicInteger.class.isAssignableFrom(field.getType())) continue;
+            field.setAccessible(true);
+            return ((AtomicInteger) field.get(null)).incrementAndGet();
+        }
+        throw missingMethod;
     }
 
     private static void sendPacket(Player player, Object packet) {

@@ -52,6 +52,10 @@ public final class ItemSkinManagerImpl implements ItemSkinManager {
     @Override public @NotNull Collection<ItemSkinCategory> getCategories() {
         return catalog.categoryMap().values().stream().sorted(Comparator.comparingInt(ItemSkinCategory::priority)).toList();
     }
+    @Override public @NotNull Collection<ItemSkinCollection> getCollections() {
+        return catalog.collectionMap().values().stream().sorted(Comparator.comparingInt(ItemSkinCollection::priority)
+                .thenComparing(ItemSkinCollection::id)).toList();
+    }
     @Override public @NotNull Optional<ItemSkin> getSkin(@NotNull String id) { return Optional.ofNullable(catalog.skinMap().get(normalize(id))); }
 
     @Override
@@ -221,11 +225,28 @@ public final class ItemSkinManagerImpl implements ItemSkinManager {
         plugin.getFoliaLib().getScheduler().runAtEntity(player, ignored -> menuManager.open(player, item, categoryId));
     }
 
-    @NotNull CompletionStage<Set<String>> ownedSkinIds(UUID playerId) { return ownership.getOwnedSkinIds(playerId); }
-    Set<String> cachedOwnedSkinIds(UUID playerId) { return ownership.cachedOwnedSkinIds(playerId); }
-    void invalidateOwnership(UUID playerId) { ownership.invalidate(playerId); }
+    @Override public @NotNull CompletionStage<Set<String>> getOwnedSkinIds(@NotNull UUID playerId) { return ownership.getOwnedSkinIds(playerId); }
+    @Override public @NotNull CompletionStage<Set<String>> getFavoriteSkinIds(@NotNull UUID playerId) { return ownership.getFavoriteSkinIds(playerId); }
+    @Override public @NotNull CompletionStage<Boolean> setSkinFavorite(@NotNull UUID playerId, @NotNull String skinId, boolean favorite) {
+        return ownership.setFavorite(playerId, skinId, favorite);
+    }
+    public @NotNull CompletionStage<Set<String>> ownedSkinIds(UUID playerId) { return getOwnedSkinIds(playerId); }
+    public @NotNull CompletionStage<Set<String>> favoriteSkinIds(UUID playerId) { return getFavoriteSkinIds(playerId); }
+    public @NotNull CompletionStage<Boolean> setFavorite(UUID playerId, String skinId, boolean favorite) {
+        return setSkinFavorite(playerId, skinId, favorite);
+    }
+    public @NotNull CompletionStage<Boolean> transferSkin(UUID fromPlayer, UUID toPlayer, String skinId) {
+        if (getSkin(skinId).isEmpty()) return CompletableFuture.completedFuture(false);
+        return ownership.transferSkin(fromPlayer, toPlayer, skinId);
+    }
+    public Set<String> cachedOwnedSkinIds(UUID playerId) { return ownership.cachedOwnedSkinIds(playerId); }
+    public Set<String> cachedFavoriteSkinIds(UUID playerId) { return ownership.cachedFavoriteSkinIds(playerId); }
+    public boolean isCachedOwned(UUID playerId, String skinId) { return ownership.isCachedOwned(playerId, skinId); }
+    public void preloadOwnership(UUID playerId) { ownership.preload(playerId); }
+    public void invalidateOwnership(UUID playerId) { ownership.invalidate(playerId); }
     @Nullable ItemSkinRarity rarity(String id) { return catalog.rarityMap().get(normalize(id)); }
     @Nullable ItemSkinCategory category(String id) { return catalog.categoryMap().get(normalize(id)); }
+    @Nullable ItemSkinCollection collection(String id) { return catalog.collectionMap().get(normalize(id)); }
 
     private boolean isRegistered(ItemSkin skin) {
         return skin != null && catalog.skinMap().get(normalize(skin.id())) == skin;

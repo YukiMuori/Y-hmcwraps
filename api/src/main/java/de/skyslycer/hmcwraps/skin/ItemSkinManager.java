@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
 /** Public facade for catalog lookup, application, preview, ownership, purchasing and menus. */
@@ -15,6 +17,8 @@ public interface ItemSkinManager {
     @NotNull Collection<ItemSkin> getSkins();
     @NotNull Collection<ItemSkinRarity> getRarities();
     @NotNull Collection<ItemSkinCategory> getCategories();
+    /** Themed skin series such as Angelic (swords, tools and armor). */
+    default @NotNull Collection<ItemSkinCollection> getCollections() { return List.of(); }
     @NotNull Optional<ItemSkin> getSkin(@NotNull String id);
     @NotNull List<ItemSkin> getCompatibleSkins(@NotNull ItemStack item);
     @NotNull CompletionStage<SkinAccess> getAccess(@NotNull Player player, @NotNull ItemSkin skin);
@@ -26,6 +30,19 @@ public interface ItemSkinManager {
     void registerCompatibilityProvider(@NotNull CompatibilityProvider provider);
     /** Returns the current persistent ownership provider (SQLite in the default implementation). */
     @NotNull StorageProvider getStorageProvider();
+    /** Loads all skin IDs currently owned by the player. */
+    default @NotNull CompletionStage<Set<String>> getOwnedSkinIds(@NotNull UUID playerId) {
+        return getStorageProvider().getOwnedSkinIds(playerId);
+    }
+    /** Loads the player's persistent skin favorites; older storage providers may return an empty set. */
+    default @NotNull CompletionStage<Set<String>> getFavoriteSkinIds(@NotNull UUID playerId) {
+        return getStorageProvider().getFavoriteSkinIds(playerId);
+    }
+    /** Adds or removes a persistent skin favorite. */
+    default @NotNull CompletionStage<Boolean> setSkinFavorite(@NotNull UUID playerId,
+                                                               @NotNull String skinId, boolean favorite) {
+        return getStorageProvider().setSkinFavorite(playerId, skinId, favorite);
+    }
     @NotNull ItemStack applySkin(@NotNull Player player, @NotNull ItemStack item, @NotNull ItemSkin skin);
     @NotNull ItemStack removeSkin(@NotNull Player player, @NotNull ItemStack item);
     void preview(@NotNull Player player, @NotNull ItemStack item, @NotNull ItemSkin skin);

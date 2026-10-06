@@ -19,6 +19,7 @@ public final class ItemSkin {
     private final String id;
     private final String displayName;
     private final String rarityId;
+    private final String collectionId;
     private final Set<String> categoryIds;
     private final List<Material> compatibleMaterials;
     private final List<String> compatibleItems;
@@ -33,9 +34,20 @@ public final class ItemSkin {
                     @NotNull List<String> compatibleItems, @Nullable SkinPrice price,
                     @Nullable String permission, boolean previewEnabled,
                     @Nullable ItemStack icon, @NotNull Wrap cosmetic) {
+        this(id, displayName, rarityId, categoryIds, compatibleMaterials, compatibleItems, price,
+                permission, previewEnabled, icon, cosmetic, null);
+    }
+
+    public ItemSkin(@NotNull String id, @NotNull String displayName, @NotNull String rarityId,
+                    @NotNull Set<String> categoryIds, @NotNull List<Material> compatibleMaterials,
+                    @NotNull List<String> compatibleItems, @Nullable SkinPrice price,
+                    @Nullable String permission, boolean previewEnabled,
+                    @Nullable ItemStack icon, @NotNull Wrap cosmetic, @Nullable String collectionId) {
         this.id = Objects.requireNonNull(id, "id").toLowerCase(Locale.ROOT).trim();
         this.displayName = Objects.requireNonNull(displayName, "displayName");
         this.rarityId = Objects.requireNonNull(rarityId, "rarityId").toLowerCase(Locale.ROOT).trim();
+        this.collectionId = collectionId == null || collectionId.isBlank()
+                ? null : collectionId.toLowerCase(Locale.ROOT).trim();
         this.categoryIds = Set.copyOf(categoryIds);
         this.compatibleMaterials = List.copyOf(compatibleMaterials);
         this.compatibleItems = List.copyOf(compatibleItems);
@@ -50,6 +62,7 @@ public final class ItemSkin {
     public @NotNull String id() { return id; }
     public @NotNull String displayName() { return displayName; }
     public @NotNull String rarityId() { return rarityId; }
+    public @Nullable String collectionId() { return collectionId; }
     public @NotNull Set<String> categoryIds() { return categoryIds; }
     public @NotNull List<Material> compatibleMaterials() { return compatibleMaterials; }
     public @NotNull List<String> compatibleItems() { return compatibleItems; }

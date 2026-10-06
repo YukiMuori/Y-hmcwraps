@@ -1,0 +1,11 @@
+# Themed skin series. A series can contain subcategories such as swords, tools and armor.
+# Add `collection: angelico` to a skin file to place it in this themed collection.
+enabled: true
+collections:
+  angelico:
+    priority: 10
+    display-name-key: collections.angelico
+    categories: [swords, tools, armor]
+    icon:
+      type: material
+      id: DIAMOND_SWORD

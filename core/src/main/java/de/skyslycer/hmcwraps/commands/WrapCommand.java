@@ -10,9 +10,11 @@ import de.skyslycer.hmcwraps.serialization.wrap.Wrap;
 import de.skyslycer.hmcwraps.util.PlayerUtil;
 import de.skyslycer.hmcwraps.util.StringUtil;
 import de.skyslycer.hmcwraps.util.VersionUtil;
+import de.skyslycer.hmcwraps.validation.ConfigurationValidator;
 import dev.triumphteam.gui.guis.BaseGui;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver.Single;
 import net.kyori.adventure.text.serializer.bungeecord.BungeeComponentSerializer;
 import org.bukkit.Location;
@@ -29,12 +31,14 @@ import revxrsal.commands.help.Help;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 @Command("wraps")
 public class WrapCommand {
 
     private static final String RELOAD_PERMISSION = "hmcwraps.commands.reload";
+    private static final String VALIDATE_PERMISSION = "hmcwraps.commands.validate";
     private static final String CONVERT_PERMISSION = "hmcwraps.commands.convert";
     private static final String WRAP_PERMISSION = "hmcwraps.commands.wrap";
     private static final String WRAP_SELF_PERMISSION = "hmcwraps.commands.wrap.self";
@@ -121,6 +125,46 @@ public class WrapCommand {
                     Placeholder.parsed("wraps", String.valueOf(plugin.getWrapsLoader().getWraps().size())),
                     Placeholder.parsed("collections", String.valueOf(plugin.getWrapsLoader().getCollections().size())));
         });
+    }
+
+    @Subcommand("validate")
+    @CommandPermission(VALIDATE_PERMISSION)
+    @Description("Validate plugin configuration without changing or reloading files.")
+    public void onValidate(CommandSender sender) {
+        ConfigurationValidator.Report report = new ConfigurationValidator(
+                plugin.getDataFolder().toPath(), plugin.getEconomyManager().providers()).validate();
+        Player player = sender instanceof Player target ? target : null;
+        var language = plugin.getLanguageManager();
+        int displayLimit = 10;
+
+        for (ConfigurationValidator.Issue issue : report.issues()) {
+            var level = issue.severity() == ConfigurationValidator.Severity.ERROR
+                    ? java.util.logging.Level.SEVERE : java.util.logging.Level.WARNING;
+            plugin.getLogger().log(level, "[Config validation] " + issue.path() + ": " + issue.key() + " " + issue.arguments());
+        }
+        for (ConfigurationValidator.Issue issue : report.issues().stream().limit(displayLimit).toList()) {
+            String detailKey = "validation.messages." + issue.key();
+            String detail = language.get(player, detailKey);
+            if (detail.equals(detailKey)) detail = issue.key() + " " + issue.arguments();
+            TagResolver[] details = issue.arguments().entrySet().stream()
+                    .map(entry -> Placeholder.unparsed(entry.getKey(), entry.getValue()))
+                    .toArray(TagResolver[]::new);
+            Component message = language.parse(player, detail, details);
+            String lineKey = issue.severity() == ConfigurationValidator.Severity.ERROR
+                    ? "validation.issue-error" : "validation.issue-warning";
+            Component line = language.parse(player, language.get(player, lineKey),
+                    Placeholder.unparsed("file", issue.path()), Placeholder.component("message", message));
+            StringUtil.sendComponent(sender, line);
+        }
+        if (report.issues().size() > displayLimit) {
+            StringUtil.sendComponent(sender, language.parse(player, language.get(player, "validation.more-issues"),
+                    Placeholder.unparsed("count", String.valueOf(report.issues().size() - displayLimit))));
+        }
+        String summaryKey = report.isValid() ? "validation.summary-success" : "validation.summary-failed";
+        StringUtil.sendComponent(sender, language.parse(player, language.get(player, summaryKey),
+                Placeholder.unparsed("files", String.valueOf(report.filesChecked())),
+                Placeholder.unparsed("errors", String.valueOf(report.errorCount())),
+                Placeholder.unparsed("warnings", String.valueOf(report.warningCount()))));
     }
 
     @Subcommand("convert")
@@ -265,17 +309,17 @@ public class WrapCommand {
     public void onList(CommandSender sender) {
         var handler = plugin.getMessageHandler();
         var set = new ArrayList<Component>();
-        set.add(StringUtil.parseComponent(sender, handler.get(Messages.COMMAND_LIST_HEADER)));
-        set.add(StringUtil.parseComponent(sender, handler.get(Messages.COMMAND_LIST_COLLECTIONS)));
+        set.add(StringUtil.parseComponent(sender, handler.get(sender, Messages.COMMAND_LIST_HEADER)));
+        set.add(StringUtil.parseComponent(sender, handler.get(sender, Messages.COMMAND_LIST_COLLECTIONS)));
         plugin.getWrapsLoader().getCollections().forEach((key, list) -> {
-            set.add(StringUtil.parseComponent(sender, handler.get(Messages.COMMAND_LIST_KEY_FORMAT), Placeholder.parsed("value", key)));
+            set.add(StringUtil.parseComponent(sender, handler.get(sender, Messages.COMMAND_LIST_KEY_FORMAT), Placeholder.parsed("value", key)));
             list.forEach(entry -> set.add(
-                    StringUtil.parseComponent(sender, handler.get(Messages.COMMAND_LIST_COLLECTIONS_FORMAT), Placeholder.parsed("value", entry))));
+                    StringUtil.parseComponent(sender, handler.get(sender, Messages.COMMAND_LIST_COLLECTIONS_FORMAT), Placeholder.parsed("value", entry))));
         });
         set.add(Component.space());
-        set.add(StringUtil.parseComponent(sender, handler.get(Messages.COMMAND_LIST_WRAPS)));
+        set.add(StringUtil.parseComponent(sender, handler.get(sender, Messages.COMMAND_LIST_WRAPS)));
         plugin.getWrapsLoader().getTypeWraps().forEach((material, wrapIds) -> {
-            set.add(StringUtil.parseComponent(sender, handler.get(Messages.COMMAND_LIST_KEY_FORMAT), Placeholder.parsed("value", material)));
+            set.add(StringUtil.parseComponent(sender, handler.get(sender, Messages.COMMAND_LIST_KEY_FORMAT), Placeholder.parsed("value", material)));
             wrapIds.forEach((wrapId) -> {
                 var wrap = plugin.getWrapsLoader().getWraps().get(wrapId);
                 var uuid = wrap.getUuid();
@@ -284,7 +328,7 @@ public class WrapCommand {
                         Placeholder.parsed("player", sender instanceof Player player ? player.getName() : " "),
                         Placeholder.parsed("physical", String.valueOf(wrap.getPhysical() != null)),
                         Placeholder.parsed("preview", String.valueOf(wrap.isPreview())));
-                set.add(StringUtil.parseComponent(sender, handler.get(Messages.COMMAND_LIST_WRAPS_FORMAT), placeholders.toArray(Single[]::new)));
+                set.add(StringUtil.parseComponent(sender, handler.get(sender, Messages.COMMAND_LIST_WRAPS_FORMAT), placeholders.toArray(Single[]::new)));
             });
         });
         var component = Component.empty();
@@ -317,12 +361,20 @@ public class WrapCommand {
         } else {
             list.stream()
                     .filter(command -> !command.annotations().contains(NoHelp.class))
-                    .forEach(command ->
-                            StringUtil.send(sender, plugin.getMessageHandler().get(Messages.COMMAND_HELP_FORMAT)
+                    .forEach(command -> {
+                        String description = command.description() == null ? "" : command.description();
+                        String commandPath = command.path().replaceFirst("^/+", "").trim()
+                                .toLowerCase(Locale.ROOT).replaceAll("\\s+", ".");
+                        if (!commandPath.contains(".")) commandPath += ".root";
+                        String descriptionKey = "command-descriptions." + commandPath;
+                        String localizedDescription = plugin.getLanguageManager().get(
+                                sender instanceof Player player ? player : null, descriptionKey);
+                        if (!localizedDescription.equals(descriptionKey)) description = localizedDescription;
+                        StringUtil.send(sender, plugin.getMessageHandler().get(sender, Messages.COMMAND_HELP_FORMAT)
                                 .replace("<command>", command.path())
                                 .replace("<usage>", "")
-                                .replace("<description>", command.description() != null ? command.description() : ""))
-                    );
+                                .replace("<description>", description));
+                    });
         }
     }
 

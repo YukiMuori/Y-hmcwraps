@@ -6,6 +6,7 @@ import de.skyslycer.hmcwraps.serialization.wrap.Wrap;
 import de.skyslycer.hmcwraps.skin.config.CategoryConfiguration;
 import de.skyslycer.hmcwraps.skin.config.RarityConfiguration;
 import de.skyslycer.hmcwraps.skin.config.SkinFile;
+import de.skyslycer.hmcwraps.skin.config.SkinCollectionConfiguration;
 import de.skyslycer.hmcwraps.skin.config.SkinIconConfiguration;
 import de.skyslycer.hmcwraps.skin.config.SkinPriceConfiguration;
 import de.skyslycer.hmcwraps.skin.ItemIconFactory;
@@ -36,8 +37,10 @@ public final class SkinCatalog {
     private volatile Map<String, ItemSkin> skins = Map.of();
     private volatile Map<String, ItemSkinRarity> rarities = Map.of();
     private volatile Map<String, ItemSkinCategory> categories = Map.of();
+    private volatile Map<String, ItemSkinCollection> collections = Map.of();
     private volatile Map<String, SkinIconConfiguration> skinIconConfigurations = Map.of();
     private volatile Map<String, SkinIconConfiguration> categoryIconConfigurations = Map.of();
+    private volatile Map<String, SkinIconConfiguration> collectionIconConfigurations = Map.of();
 
     public SkinCatalog(HMCWrapsPlugin plugin, ItemIconFactory iconFactory) {
         this.plugin = plugin;
@@ -48,25 +51,31 @@ public final class SkinCatalog {
         skins = Map.of();
         rarities = Map.of();
         categories = Map.of();
+        collections = Map.of();
         skinIconConfigurations = Map.of();
         categoryIconConfigurations = Map.of();
+        collectionIconConfigurations = Map.of();
         try {
             Files.createDirectories(HMCWraps.SKINS_PATH);
             copyIfAbsent("rarities.yml", HMCWraps.RARITIES_PATH);
             copyIfAbsent("categories.yml", HMCWraps.CATEGORIES_PATH);
+            copyIfAbsent("skin-collections.yml", HMCWraps.SKIN_COLLECTIONS_PATH);
             copyIfAbsent("itemskin-gui.yml", HMCWraps.ITEMSKIN_GUI_PATH);
             copyIfAbsent("skins/ruby_sword.yml", HMCWraps.SKINS_PATH.resolve("ruby_sword.yml"));
             copyIfAbsent("skins/README.yml", HMCWraps.SKINS_PATH.resolve("README.yml"));
 
             RarityConfiguration rarityConfiguration = load(HMCWraps.RARITIES_PATH, RarityConfiguration.class);
             CategoryConfiguration categoryConfiguration = load(HMCWraps.CATEGORIES_PATH, CategoryConfiguration.class);
-            if (rarityConfiguration == null || categoryConfiguration == null) return false;
+            SkinCollectionConfiguration collectionConfiguration = load(HMCWraps.SKIN_COLLECTIONS_PATH, SkinCollectionConfiguration.class);
+            if (rarityConfiguration == null || categoryConfiguration == null || collectionConfiguration == null) return false;
 
             Map<String, ItemSkinRarity> nextRarities = loadRarities(rarityConfiguration);
             Map<String, SkinIconConfiguration> nextCategoryIcons = new LinkedHashMap<>();
             Map<String, ItemSkinCategory> nextCategories = loadCategories(categoryConfiguration, nextCategoryIcons);
+            Map<String, SkinIconConfiguration> nextCollectionIcons = new LinkedHashMap<>();
+            Map<String, ItemSkinCollection> nextCollections = loadCollections(collectionConfiguration, nextCategories, nextCollectionIcons);
             Map<String, SkinIconConfiguration> parsedIconConfigurations = new LinkedHashMap<>();
-            Map<String, ItemSkin> parsedSkins = loadSkins(nextRarities, nextCategories, parsedIconConfigurations);
+            Map<String, ItemSkin> parsedSkins = loadSkins(nextRarities, nextCategories, nextCollections, parsedIconConfigurations);
             Map<String, ItemSkin> nextSkins = new LinkedHashMap<>();
             Map<String, SkinIconConfiguration> nextSkinIcons = new LinkedHashMap<>();
             for (ItemSkin skin : parsedSkins.values()) {
@@ -84,10 +93,13 @@ public final class SkinCatalog {
             }
             rarities = Map.copyOf(nextRarities);
             categories = Map.copyOf(nextCategories);
+            collections = Map.copyOf(nextCollections);
             categoryIconConfigurations = Map.copyOf(nextCategoryIcons);
+            collectionIconConfigurations = Map.copyOf(nextCollectionIcons);
             skins = Map.copyOf(nextSkins);
             skinIconConfigurations = Map.copyOf(nextSkinIcons);
-            plugin.getLogger().info("Loaded " + skins.size() + " v2 item skins, " + rarities.size() + " rarities and " + categories.size() + " categories.");
+            plugin.getLogger().info("Loaded " + skins.size() + " v2 item skins, " + rarities.size() + " rarities, " + categories.size()
+                    + " categories and " + collections.size() + " themed collections.");
             return true;
         } catch (IOException | RuntimeException exception) {
             plugin.logSevere("Could not load the v2 skin catalog.", exception);
@@ -125,8 +137,37 @@ public final class SkinCatalog {
         return values;
     }
 
+    private Map<String, ItemSkinCollection> loadCollections(SkinCollectionConfiguration config,
+                                                              Map<String, ItemSkinCategory> availableCategories,
+                                                              Map<String, SkinIconConfiguration> iconConfigurations) {
+        Map<String, ItemSkinCollection> values = new LinkedHashMap<>();
+        if (!config.isEnabled()) return values;
+        config.getCollections().forEach((id, entry) -> {
+            if (id == null || id.isBlank() || entry == null || entry.getDisplayNameKey() == null
+                    || entry.getDisplayNameKey().isBlank()) {
+                plugin.getLogger().warning("Skipping a themed skin collection with an empty id or display-name-key.");
+                return;
+            }
+            String normalizedId = normalize(id);
+            Set<String> categoryIds = entry.getCategories().stream()
+                    .filter(value -> value != null && !value.isBlank()).map(SkinCatalog::normalize).collect(java.util.stream.Collectors.toSet());
+            for (String categoryId : categoryIds) {
+                if (!availableCategories.containsKey(categoryId)) {
+                    plugin.getLogger().warning("Collection '" + normalizedId + "' refers to unknown category '" + categoryId + "'.");
+                }
+            }
+            SkinIconConfiguration iconConfiguration = entry.getIcon();
+            ItemStack icon = iconConfiguration == null ? null : iconFactory.create(iconConfiguration, "");
+            values.put(normalizedId, new ItemSkinCollection(id, entry.getDisplayNameKey(), icon,
+                    entry.getPriority(), categoryIds));
+            if (iconConfiguration != null) iconConfigurations.put(normalizedId, iconConfiguration);
+        });
+        return values;
+    }
+
     private Map<String, ItemSkin> loadSkins(Map<String, ItemSkinRarity> availableRarities,
                                              Map<String, ItemSkinCategory> availableCategories,
+                                             Map<String, ItemSkinCollection> availableCollections,
                                              Map<String, SkinIconConfiguration> iconConfigurations) throws IOException {
         Map<String, ItemSkin> values = new LinkedHashMap<>();
         Set<String> cosmeticIds = new java.util.HashSet<>();
@@ -143,7 +184,7 @@ public final class SkinCatalog {
                     continue;
                 }
                 if (file == null || !file.isEnabled()) continue;
-                ItemSkin skin = createSkin(file, path, availableRarities, availableCategories);
+                ItemSkin skin = createSkin(file, path, availableRarities, availableCategories, availableCollections);
                 if (skin == null) continue;
                 if (values.containsKey(skin.id())) {
                     plugin.getLogger().warning("Duplicate skin id '" + skin.id() + "' in " + path + "; skipping this entry.");
@@ -162,7 +203,8 @@ public final class SkinCatalog {
 
     private @Nullable ItemSkin createSkin(SkinFile file, Path path,
                                            Map<String, ItemSkinRarity> availableRarities,
-                                           Map<String, ItemSkinCategory> availableCategories) {
+                                           Map<String, ItemSkinCategory> availableCategories,
+                                           Map<String, ItemSkinCollection> availableCollections) {
         String id = file.getId() == null ? "" : normalize(file.getId());
         if (id.isBlank()) {
             plugin.getLogger().warning("Skin file " + path.getFileName() + " has no id; skipping.");
@@ -180,6 +222,11 @@ public final class SkinCatalog {
         List<String> categoryIds = file.getCategories().stream().filter(value -> value != null && !value.isBlank()).map(SkinCatalog::normalize).distinct().toList();
         for (String category : categoryIds) {
             if (!availableCategories.containsKey(category)) plugin.getLogger().warning("Skin '" + id + "' refers to unknown category '" + category + "'.");
+        }
+        String collectionId = file.getCollection() == null || file.getCollection().isBlank()
+                ? null : normalize(file.getCollection());
+        if (collectionId != null && !availableCollections.containsKey(collectionId)) {
+            plugin.getLogger().warning("Skin '" + id + "' refers to unknown themed collection '" + collectionId + "'.");
         }
 
         List<Material> materials = new ArrayList<>();
@@ -210,7 +257,7 @@ public final class SkinCatalog {
         }
         String permission = file.getPermission() == null || file.getPermission().isBlank() ? null : file.getPermission().trim();
         return new ItemSkin(id, file.getDisplayName(), rarityId, Set.copyOf(categoryIds), materials, compatibleItems,
-                price, permission, file.isPreview(), icon, cosmetic);
+                price, permission, file.isPreview(), icon, cosmetic, collectionId);
     }
 
     private @Nullable SkinPrice createPrice(@Nullable SkinPriceConfiguration config, String skinId) {
@@ -238,11 +285,15 @@ public final class SkinCatalog {
     public Map<String, ItemSkin> skinMap() { return skins; }
     public Map<String, ItemSkinRarity> rarityMap() { return rarities; }
     public Map<String, ItemSkinCategory> categoryMap() { return categories; }
+    public Map<String, ItemSkinCollection> collectionMap() { return collections; }
     public @Nullable SkinIconConfiguration skinIconConfiguration(String skinId) {
         return skinIconConfigurations.get(normalize(skinId));
     }
     public @Nullable SkinIconConfiguration categoryIconConfiguration(String categoryId) {
         return categoryIconConfigurations.get(normalize(categoryId));
+    }
+    public @Nullable SkinIconConfiguration collectionIconConfiguration(String collectionId) {
+        return collectionIconConfigurations.get(normalize(collectionId));
     }
 
     private <T> T load(Path path, Class<T> type) throws IOException {

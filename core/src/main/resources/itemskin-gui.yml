@@ -1,58 +1,88 @@
-# Rendered from configurable inventory slots and item definitions.
-# Use Nexo or another registered custom-item hook for resource-pack-ready filler/buttons.
+# Every visible control can be disabled, moved and given a custom material or hooked item.
+# Skin icons and controls accept MiniMessage, model data, item-model and tooltip-style settings.
 gui:
   title: '<gradient:#8FEAF9:#CDA4F9><lang:gui.title>'
   size: 54
   content-slots: [10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34]
-  item-slot: 4
+  item-enabled: true
+  item-slot: 8
   default-sort: rarity
   default-sort-order: descending
   show-locked: true
+  filler-enabled: true
   filler:
     type: material
     id: BLACK_STAINED_GLASS_PANE
     name: ' '
   previous:
+    enabled: true
     slot: 45
     item:
       type: material
       id: ARROW
       name: '<green><lang:gui.previous>'
-  next:
-    slot: 53
+  search:
+    enabled: true
+    slot: 46
     item:
       type: material
-      id: ARROW
-      name: '<green><lang:gui.next>'
+      id: SPYGLASS
+      name: '<aqua><lang:gui.search>'
+  favorites:
+    enabled: true
+    slot: 47
+    item:
+      type: material
+      id: NETHER_STAR
+      name: '<gold><lang:gui.favorites>'
+  collection:
+    enabled: true
+    slot: 48
+    item:
+      type: material
+      id: BOOK
+      name: '<light_purple><lang:gui.collection>'
   close:
+    enabled: true
     slot: 49
     item:
       type: material
       id: BARRIER
       name: '<red><lang:gui.close>'
   sort:
+    enabled: true
     slot: 51
     item:
       type: material
       id: COMPARATOR
       name: '<yellow><lang:gui.sort>'
   filter:
+    enabled: true
     slot: 52
     item:
       type: material
       id: HOPPER
       name: '<aqua><lang:gui.filter>'
+  next:
+    enabled: true
+    slot: 53
+    item:
+      type: material
+      id: ARROW
+      name: '<green><lang:gui.next>'
   category-slots:
-    swords: 46
-    pickaxes: 47
-    axes: 48
-    armor: 50
+    swords: 0
+    pickaxes: 1
+    axes: 2
+    armor: 3
+    tools: 4
   click-actions:
     left: apply
     right: preview
+    middle: favorite
     shift-left: buy
     shift-right: buy
 sorting:
-  options: [rarity, name, price]
+  options: [rarity, name, price, owned, category]
 filters:
   options: [all, owned, unowned, purchasable, free]

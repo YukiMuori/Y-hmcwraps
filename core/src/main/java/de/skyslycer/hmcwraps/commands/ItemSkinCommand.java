@@ -63,6 +63,29 @@ public final class ItemSkinCommand {
         plugin.getItemSkinManager().preview(player, item, skin);
     }
 
+    @Subcommand("trade")
+    @Description("Offer an owned skin to another player; both players must confirm.")
+    public void onTrade(Player sender, Player recipient, @SkinIds String skinId) {
+        ItemSkin skin = plugin.getItemSkinManager().getSkin(skinId).orElse(null);
+        if (skin == null) {
+            send(sender, "messages.unknown-skin", Placeholder.unparsed("skin", skinId));
+            return;
+        }
+        plugin.getSkinTradeManager().offer(sender, recipient, skin);
+    }
+
+    @Subcommand("trade confirm")
+    @Description("Confirm your active skin trade offer.")
+    public void onTradeConfirm(Player player) {
+        plugin.getSkinTradeManager().confirm(player);
+    }
+
+    @Subcommand("trade cancel")
+    @Description("Cancel your active skin trade offer.")
+    public void onTradeCancel(Player player) {
+        plugin.getSkinTradeManager().cancel(player);
+    }
+
     private void open(Player player) {
         ItemStack item = player.getInventory().getItemInMainHand();
         if (item == null || item.getType().isAir()) {

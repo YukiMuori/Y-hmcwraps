@@ -4,7 +4,7 @@
 
 1. Stop the server and back up the full `plugins/HMCWraps/` directory, including `config.yml`, `wraps/`, `collections/`, `messages.properties`, language/skin YAML and any integrations' data.
 2. Keep the same plugin data-folder name (`HMCWraps`).
-3. Install the 2.0 jar and start once. Existing legacy files are loaded through their established loaders; the new language, rarity, category, GUI and skin examples are copied only when the destination does not exist.
+3. Install the 2.0 jar and start once. Existing legacy files are loaded through their established loaders. Custom English messages from `messages.properties` are migrated into missing `legacy.*` entries in `lang/en.yml`; the built-in `en.yml` and `it.yml` files also receive new keys without overwriting edited translations. Rarity, category, GUI and skin examples are copied only when the destination does not exist.
 
 ## What changes
 

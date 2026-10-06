@@ -12,6 +12,7 @@ public class SkinFile {
     private String id;
     private String displayName;
     private String rarity = "common";
+    private String collection;
     private List<String> categories = new ArrayList<>();
     private SkinIconConfiguration icon = new SkinIconConfiguration();
     private SkinCompatibilityConfiguration compatibility = new SkinCompatibilityConfiguration();
@@ -24,6 +25,7 @@ public class SkinFile {
     public String getId() { return id; }
     public String getDisplayName() { return displayName; }
     public String getRarity() { return rarity; }
+    public String getCollection() { return collection; }
     public List<String> getCategories() { return categories == null ? List.of() : categories; }
     public SkinIconConfiguration getIcon() { return icon == null ? new SkinIconConfiguration() : icon; }
     public SkinCompatibilityConfiguration getCompatibility() { return compatibility == null ? new SkinCompatibilityConfiguration() : compatibility; }

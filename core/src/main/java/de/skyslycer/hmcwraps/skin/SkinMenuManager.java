@@ -19,6 +19,7 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -122,15 +123,18 @@ public final class SkinMenuManager implements Listener {
             return;
         }
         session.loading = true;
-        skinManager.ownedSkinIds(player.getUniqueId()).whenComplete((owned, throwable) ->
-                plugin.getFoliaLib().getScheduler().runAtEntity(player, ignored -> {
+        skinManager.ownedSkinIds(player.getUniqueId())
+                .thenCombine(skinManager.favoriteSkinIds(player.getUniqueId()), OwnershipSnapshot::new)
+                .whenComplete((snapshot, throwable) -> plugin.getFoliaLib().getScheduler().runAtEntity(player, ignored -> {
                     if (!player.isOnline() || sessions.get(player.getUniqueId()) != session) return;
-                    Set<String> loadedOwned = owned == null ? Set.of() : owned;
+                    Set<String> loadedOwned = snapshot == null || snapshot.owned() == null ? Set.of() : snapshot.owned();
+                    Set<String> loadedFavorites = snapshot == null || snapshot.favorites() == null ? Set.of() : snapshot.favorites();
                     if (throwable != null) {
-                        plugin.getLogger().warning("Could not load owned skins for " + player.getUniqueId() + ": " + throwable.getMessage());
-                        loadedOwned = Set.of();
+                        plugin.getLogger().warning("Could not load skin state for " + player.getUniqueId() + ": " + throwable.getMessage());
+                        loadedOwned = skinManager.cachedOwnedSkinIds(player.getUniqueId());
+                        loadedFavorites = skinManager.cachedFavoriteSkinIds(player.getUniqueId());
                     }
-                    render(player, session, loadedOwned);
+                    render(player, session, loadedOwned, loadedFavorites);
                     if (session.refreshAfterLoading) {
                         session.refreshAfterLoading = false;
                         openSession(player, session);
@@ -138,7 +142,7 @@ public final class SkinMenuManager implements Listener {
                 }));
     }
 
-    private void render(Player player, MenuSession session, Set<String> owned) {
+    private void render(Player player, MenuSession session, Set<String> owned, Set<String> favorites) {
         SkinMenuConfiguration config = configuration;
         session.page = Math.max(0, session.page);
         session.slotToSkin.clear();
@@ -147,15 +151,20 @@ public final class SkinMenuManager implements Listener {
                 StringUtil.LEGACY_SERIALIZER.serialize(plugin.getLanguageManager().parse(player, config.getTitle())));
         session.loading = false;
 
-        ItemStack filler = plugin.getItemIconFactory().create(config.getFiller(), " ", player);
-        for (int slot = 0; slot < config.getSize(); slot++) session.inventory.setItem(slot, filler.clone());
+        if (config.isFillerEnabled()) {
+            ItemStack filler = plugin.getItemIconFactory().create(config.getFiller(), " ", player);
+            for (int slot = 0; slot < config.getSize(); slot++) session.inventory.setItem(slot, filler.clone());
+        }
 
-        ItemStack target = session.target.clone();
-        int targetSlot = config.getItemSlot();
-        if (isSlotValid(targetSlot, config.getSize())) session.inventory.setItem(targetSlot, target);
+        if (config.isItemEnabled() && isSlotValid(config.getItemSlot(), config.getSize())) {
+            session.inventory.setItem(config.getItemSlot(), session.target.clone());
+        }
 
         List<ItemSkin> candidates = skinManager.getCompatibleSkins(session.target).stream()
+                .filter(skin -> session.collectionId == null || session.collectionId.equals(skin.collectionId()))
                 .filter(skin -> session.categoryId == null || skin.categoryIds().contains(session.categoryId))
+                .filter(skin -> session.searchQuery.isBlank() || matchesSearch(player, skin, session.searchQuery))
+                .filter(skin -> !session.favoritesOnly || favorites.contains(normalize(skin.id())))
                 .filter(skin -> matchesFilter(player, skin, owned, session.filter))
                 .sorted(comparator(player, owned, session.sort, session.descending))
                 .toList();
@@ -168,7 +177,7 @@ public final class SkinMenuManager implements Listener {
         for (int index = 0; index < pageSize && start + index < candidates.size(); index++) {
             ItemSkin skin = candidates.get(start + index);
             int slot = contentSlots.get(index);
-            ItemStack icon = skinIcon(player, skin, owned);
+            ItemStack icon = skinIcon(player, skin, owned, favorites);
             session.inventory.setItem(slot, icon);
             session.slotToSkin.put(slot, skin.id());
         }
@@ -184,25 +193,49 @@ public final class SkinMenuManager implements Listener {
                 List.of(localized(player, "gui.selected-sort", Placeholder.component("value", optionLabel(player, "sorting", session.sort)))), config.getSize());
         addButton(session, player, config.getFilter(), plugin.getLanguageManager().get(player, "gui.filter"),
                 List.of(localized(player, "gui.selected-filter", Placeholder.component("value", optionLabel(player, "filters", session.filter)))), config.getSize());
-        addCategoryButtons(session, player, config, candidates, config.getSize());
+        String searchDisplay = session.searchQuery.isBlank()
+                ? plugin.getLanguageManager().get(player, "gui.search-empty") : session.searchQuery;
+        addButton(session, player, config.getSearch(), plugin.getLanguageManager().get(player, "gui.search"),
+                List.of(localized(player, "gui.search-current", Placeholder.unparsed("query", searchDisplay))), config.getSize());
+        addButton(session, player, config.getFavorites(), plugin.getLanguageManager().get(player, "gui.favorites"),
+                List.of(localized(player, session.favoritesOnly ? "gui.favorites-active" : "gui.favorites-inactive")), config.getSize());
+        ItemSkinCollection selectedCollection = session.collectionId == null ? null : skinManager.collection(session.collectionId);
+        String collectionLabel = selectedCollection == null
+                ? plugin.getLanguageManager().get(player, "gui.collection-all")
+                : plugin.getLanguageManager().get(player, selectedCollection.displayNameKey());
+        addButton(session, player, config.getCollection(), plugin.getLanguageManager().get(player, "gui.collection"),
+                List.of(localized(player, "gui.selected-collection", Placeholder.unparsed("value", collectionLabel))), config.getSize());
+        addCategoryButtons(session, player, config, config.getSize());
 
         player.openInventory(session.inventory);
     }
 
-    private void addCategoryButtons(MenuSession session, Player player, SkinMenuConfiguration config,
-                                    List<ItemSkin> candidates, int size) {
+    private void addCategoryButtons(MenuSession session, Player player, SkinMenuConfiguration config, int size) {
         Set<Integer> usedSlots = new HashSet<>();
+        Set<String> availableCategoryIds = null;
+        if (session.collectionId != null) {
+            ItemSkinCollection selected = skinManager.collection(session.collectionId);
+            Set<String> candidateCategoryIds = skinManager.getCompatibleSkins(session.target).stream()
+                    .filter(skin -> session.collectionId.equals(skin.collectionId()))
+                    .flatMap(skin -> skin.categoryIds().stream())
+                    .collect(java.util.stream.Collectors.toSet());
+            if (selected != null && !selected.categoryIds().isEmpty()) {
+                availableCategoryIds = new HashSet<>(selected.categoryIds());
+                availableCategoryIds.retainAll(candidateCategoryIds);
+            } else {
+                availableCategoryIds = candidateCategoryIds;
+            }
+        }
         for (Map.Entry<String, Integer> entry : config.getCategorySlots().entrySet()) {
             if (entry.getKey() == null || entry.getValue() == null) continue;
             int slot = entry.getValue();
             if (!isSlotValid(slot, size)) continue;
-            if (slot == config.getItemSlot() || slot == config.getPrevious().getSlot()
-                    || slot == config.getNext().getSlot() || slot == config.getClose().getSlot()
-                    || slot == config.getSort().getSlot() || slot == config.getFilter().getSlot()) {
+            if ((config.isItemEnabled() && slot == config.getItemSlot()) || isButtonControlSlot(config, slot)) {
                 plugin.getLogger().warning("Skipping category button for '" + entry.getKey() + "' because its GUI slot overlaps a reserved slot.");
                 continue;
             }
             String categoryId = normalize(entry.getKey());
+            if (availableCategoryIds != null && !availableCategoryIds.contains(categoryId)) continue;
             ItemSkinCategory category = skinManager.category(categoryId);
             if (category == null) {
                 plugin.getLogger().warning("GUI category slot refers to unknown category '" + categoryId + "'.");
@@ -235,7 +268,7 @@ public final class SkinMenuManager implements Listener {
 
     private void addButton(MenuSession session, Player player, SkinMenuConfiguration.Button button, String fallbackName,
                            List<Component> dynamicLore, int inventorySize) {
-        if (button == null || !isSlotValid(button.getSlot(), inventorySize)) return;
+        if (button == null || !button.isEnabled() || !isSlotValid(button.getSlot(), inventorySize)) return;
         ItemStack icon = plugin.getItemIconFactory().create(button.getItem(), fallbackName, player);
         ItemMeta meta = icon.getItemMeta();
         if (meta != null && !dynamicLore.isEmpty()) {
@@ -247,7 +280,7 @@ public final class SkinMenuManager implements Listener {
         session.inventory.setItem(button.getSlot(), icon);
     }
 
-    private ItemStack skinIcon(Player player, ItemSkin skin, Set<String> owned) {
+    private ItemStack skinIcon(Player player, ItemSkin skin, Set<String> owned, Set<String> favorites) {
         SkinIconConfiguration iconConfiguration = plugin.getSkinCatalog().skinIconConfiguration(skin.id());
         ItemStack icon = iconConfiguration == null ? skin.icon()
                 : plugin.getItemIconFactory().create(iconConfiguration, skin.displayName(), player);
@@ -275,6 +308,9 @@ public final class SkinMenuManager implements Listener {
         lore.add(StringUtil.LEGACY_SERIALIZER.serialize(localized(player, "gui.click-apply")));
         lore.add(StringUtil.LEGACY_SERIALIZER.serialize(localized(player, "gui.click-preview")));
         if (access.state() == SkinAccess.State.PURCHASABLE) lore.add(StringUtil.LEGACY_SERIALIZER.serialize(localized(player, "gui.click-buy")));
+        lore.add(StringUtil.LEGACY_SERIALIZER.serialize(localized(player,
+                favorites.contains(normalize(skin.id())) ? "gui.favorite-on" : "gui.favorite-off")));
+        lore.add(StringUtil.LEGACY_SERIALIZER.serialize(localized(player, "gui.click-favorite")));
         meta.setLore(lore);
         icon.setItemMeta(meta);
         return icon;
@@ -299,6 +335,25 @@ public final class SkinMenuManager implements Listener {
             case "purchasable" -> skinManager.accessNow(player, skin, owned).state() == SkinAccess.State.PURCHASABLE;
             default -> true;
         };
+    }
+
+    private boolean matchesSearch(Player player, ItemSkin skin, String query) {
+        String normalizedQuery = normalize(query);
+        if (normalize(skin.id()).contains(normalizedQuery)) return true;
+        String name = PlainTextComponentSerializer.plainText()
+                .serialize(plugin.getLanguageManager().parse(player, skin.displayName()));
+        if (normalize(name).contains(normalizedQuery)) return true;
+        for (String categoryId : skin.categoryIds()) {
+            if (normalize(categoryId).contains(normalizedQuery)) return true;
+            ItemSkinCategory category = skinManager.category(categoryId);
+            if (category != null && normalize(plugin.getLanguageManager().get(player, category.displayNameKey())).contains(normalizedQuery)) return true;
+        }
+        if (skin.collectionId() != null) {
+            ItemSkinCollection collection = skinManager.collection(skin.collectionId());
+            if (collection != null && (normalize(collection.id()).contains(normalizedQuery)
+                    || normalize(plugin.getLanguageManager().get(player, collection.displayNameKey())).contains(normalizedQuery))) return true;
+        }
+        return false;
     }
 
     private Comparator<ItemSkin> comparator(Player player, Set<String> owned, String sort, boolean descending) {
@@ -329,29 +384,45 @@ public final class SkinMenuManager implements Listener {
         if (session.loading || event.getClickedInventory() != session.inventory) return;
         int slot = event.getSlot();
         SkinMenuConfiguration config = configuration;
-        if (slot == config.getClose().getSlot()) {
+        if (buttonAt(config.getClose(), slot)) {
             player.closeInventory();
             return;
         }
-        if (slot == config.getPrevious().getSlot()) {
+        if (buttonAt(config.getPrevious(), slot)) {
             session.page = Math.max(0, session.page - 1);
             openSession(player, session);
             return;
         }
-        if (slot == config.getNext().getSlot()) {
+        if (buttonAt(config.getNext(), slot)) {
             session.page++;
             openSession(player, session);
             return;
         }
-        if (slot == config.getSort().getSlot()) {
+        if (buttonAt(config.getSort(), slot)) {
             session.sort = nextOption(session.sort, sortOptions);
             openSession(player, session);
             return;
         }
-        if (slot == config.getFilter().getSlot()) {
+        if (buttonAt(config.getFilter(), slot)) {
             session.filter = nextOption(session.filter, filterOptions);
             session.page = 0;
             openSession(player, session);
+            return;
+        }
+        if (buttonAt(config.getSearch(), slot)) {
+            session.awaitingSearch = true;
+            player.closeInventory();
+            send(player, "messages.search-prompt");
+            return;
+        }
+        if (buttonAt(config.getFavorites(), slot)) {
+            session.favoritesOnly = !session.favoritesOnly;
+            session.page = 0;
+            openSession(player, session);
+            return;
+        }
+        if (buttonAt(config.getCollection(), slot)) {
+            cycleCollection(player, session);
             return;
         }
         if (session.slotToCategory.containsKey(slot)) {
@@ -371,6 +442,7 @@ public final class SkinMenuManager implements Listener {
             case "apply" -> apply(player, session, skin);
             case "preview" -> preview(player, session, skin);
             case "buy", "purchase" -> purchase(player, session, skin);
+            case "favorite" -> toggleFavorite(player, session, skin);
             default -> { }
         }
     }
@@ -386,9 +458,31 @@ public final class SkinMenuManager implements Listener {
         if (!(event.getPlayer() instanceof Player player)) return;
         MenuSession session = sessions.get(player.getUniqueId());
         if (session != null && event.getView().getTopInventory() == session.inventory
-                && !plugin.getPreviewManager().isPreviewing(player)) {
+                && !session.awaitingSearch && !plugin.getPreviewManager().isPreviewing(player)) {
             sessions.remove(player.getUniqueId(), session);
         }
+    }
+
+    @EventHandler
+    public void onAsyncPlayerChat(AsyncPlayerChatEvent event) {
+        Player player = event.getPlayer();
+        MenuSession session = sessions.get(player.getUniqueId());
+        if (session == null || !session.awaitingSearch) return;
+        event.setCancelled(true);
+        String message = event.getMessage().trim();
+        plugin.getFoliaLib().getScheduler().runAtEntity(player, ignored -> {
+            if (!player.isOnline() || sessions.get(player.getUniqueId()) != session) return;
+            session.awaitingSearch = false;
+            if (message.equalsIgnoreCase("cancel")) {
+                send(player, "messages.search-cancelled");
+            } else {
+                session.searchQuery = message.equalsIgnoreCase("clear") ? "" : message;
+                session.page = 0;
+                if (session.searchQuery.isBlank()) send(player, "messages.search-cleared");
+                else send(player, "messages.search-set", Placeholder.unparsed("query", session.searchQuery));
+            }
+            openSession(player, session);
+        });
     }
 
     @EventHandler
@@ -396,6 +490,40 @@ public final class SkinMenuManager implements Listener {
         UUID playerId = event.getPlayer().getUniqueId();
         sessions.remove(playerId);
         skinManager.invalidateOwnership(playerId);
+    }
+
+    private void cycleCollection(Player player, MenuSession session) {
+        List<String> available = skinManager.getCompatibleSkins(session.target).stream()
+                .map(ItemSkin::collectionId).filter(java.util.Objects::nonNull).distinct()
+                .filter(id -> skinManager.collection(id) != null)
+                .sorted(Comparator.comparingInt((String id) -> skinManager.collection(id).priority())
+                        .thenComparing(id -> id, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+        if (available.isEmpty()) {
+            send(player, "messages.no-collections");
+            return;
+        }
+        int current = session.collectionId == null ? -1 : available.indexOf(session.collectionId);
+        session.collectionId = current < 0 || current == available.size() - 1 ? null : available.get(current + 1);
+        session.categoryId = null;
+        session.page = 0;
+        openSession(player, session);
+    }
+
+    private void toggleFavorite(Player player, MenuSession session, ItemSkin skin) {
+        UUID playerId = player.getUniqueId();
+        boolean favorite = skinManager.cachedFavoriteSkinIds(playerId).contains(normalize(skin.id()));
+        skinManager.setFavorite(playerId, skin.id(), !favorite).whenComplete((success, error) ->
+                plugin.getFoliaLib().getScheduler().runAtEntity(player, ignored -> {
+                    if (!player.isOnline()) return;
+                    if (error != null || !Boolean.TRUE.equals(success)) {
+                        send(player, "messages.favorite-storage-error");
+                    } else {
+                        send(player, favorite ? "messages.favorite-removed" : "messages.favorite-added",
+                                Placeholder.component("skin", plugin.getLanguageManager().parse(player, skin.displayName())));
+                    }
+                    openSession(player, session);
+                }));
     }
 
     private void apply(Player player, MenuSession session, ItemSkin skin) {
@@ -489,6 +617,7 @@ public final class SkinMenuManager implements Listener {
             case "left" -> "apply";
             case "right" -> "preview";
             case "shift-left", "shift-right" -> "buy";
+            case "middle" -> "favorite";
             default -> "";
         };
         String configured = configuration.getClickActions().get(key);
@@ -498,22 +627,30 @@ public final class SkinMenuManager implements Listener {
     private List<Integer> validContentSlots(SkinMenuConfiguration config) {
         List<Integer> slots = config.getContentSlots().stream().filter(java.util.Objects::nonNull).distinct()
                 .filter(slot -> isSlotValid(slot, config.getSize()))
-                .filter(slot -> slot != config.getItemSlot())
+                .filter(slot -> !config.isItemEnabled() || slot != config.getItemSlot())
                 .filter(slot -> !isControlSlot(config, slot))
                 .toList();
         if (!slots.isEmpty()) return slots;
         List<Integer> fallback = new ArrayList<>();
         for (int slot = 0; slot < config.getSize(); slot++) {
-            if (slot != config.getItemSlot() && !isControlSlot(config, slot)) fallback.add(slot);
+            if ((!config.isItemEnabled() || slot != config.getItemSlot()) && !isControlSlot(config, slot)) fallback.add(slot);
         }
         return fallback;
     }
 
     private boolean isControlSlot(SkinMenuConfiguration config, int slot) {
-        if (slot == config.getPrevious().getSlot() || slot == config.getNext().getSlot()
-                || slot == config.getClose().getSlot() || slot == config.getSort().getSlot()
-                || slot == config.getFilter().getSlot()) return true;
-        return config.getCategorySlots().containsValue(slot);
+        return isButtonControlSlot(config, slot) || config.getCategorySlots().containsValue(slot);
+    }
+
+    private boolean isButtonControlSlot(SkinMenuConfiguration config, int slot) {
+        return buttonAt(config.getPrevious(), slot) || buttonAt(config.getNext(), slot)
+                || buttonAt(config.getClose(), slot) || buttonAt(config.getSort(), slot)
+                || buttonAt(config.getFilter(), slot) || buttonAt(config.getSearch(), slot)
+                || buttonAt(config.getFavorites(), slot) || buttonAt(config.getCollection(), slot);
+    }
+
+    private boolean buttonAt(SkinMenuConfiguration.Button button, int slot) {
+        return button != null && button.isEnabled() && button.getSlot() == slot;
     }
 
     private int findSourceSlot(Player player, ItemStack target) {
@@ -569,15 +706,21 @@ public final class SkinMenuManager implements Listener {
     private static String formatAmount(double amount) {
         return java.math.BigDecimal.valueOf(amount).stripTrailingZeros().toPlainString();
     }
+    private record OwnershipSnapshot(Set<String> owned, Set<String> favorites) { }
+
     private static final class MenuSession implements InventoryHolder {
         private final UUID playerId;
         private ItemStack target;
         private final int sourceSlot;
         private String categoryId;
+        private String collectionId;
+        private String searchQuery = "";
         private String sort;
         private String filter;
         private final boolean descending;
         private int page;
+        private boolean favoritesOnly;
+        private volatile boolean awaitingSearch;
         private boolean loading;
         private boolean refreshAfterLoading;
         private Inventory inventory;

@@ -1,5 +1,6 @@
-# Language files are stored in plugins/HMCWraps/lang/.
-# Set player-locale to true to use a player's client locale when a matching file exists.
+# All player-facing text is stored in plugins/HMCWraps/lang/<locale>.yml (English: en, Italian: it).
+# Set default to 'it' to use Italian by default; edit the selected file to customize wording and MiniMessage formatting.
+# Set player-locale to true to use each player's client language when a matching file exists.
 language:
   default: 'en'
   player-locale: false

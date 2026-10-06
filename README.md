@@ -12,12 +12,12 @@ The new catalog uses the existing wrap engine as its application adapter. This k
 
 ## Install
 
-1. Put the shaded `HMCWraps-2.0.0.jar` in `plugins/` and restart the server.
+1. Put the shaded `HMCWraps-2.0.1.jar` in `plugins/` and restart the server.
 2. The plugin creates/updates its legacy files and copies the v2 examples into `plugins/HMCWraps/` on first start.
 3. Configure skin files in `plugins/HMCWraps/skins/`, names in `lang/*.yml`, rarity priorities in `rarities.yml`, categories in `categories.yml`, and the browser in `itemskin-gui.yml`.
 4. Restart or use `/wraps reload` after changing configuration.
 
-The repository's build artifact is produced by `./gradlew clean build`; the distributable jar is `build/libs/HMCWraps-2.0.0.jar` after a successful build.
+The repository's build artifact is produced by `./gradlew clean build`; the distributable jar is `build/libs/HMCWraps-2.0.1.jar` after a successful build.
 
 ## Player commands
 

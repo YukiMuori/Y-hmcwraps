@@ -46,6 +46,7 @@ public final class SqliteOwnershipStorage implements StorageProvider {
 
     @Override public String id() { return "sqlite"; }
     @Override public boolean isReady() { return ready.get(); }
+    @Override public boolean supportsSkinTransfers() { return true; }
 
     @Override
     public synchronized CompletionStage<Boolean> initialize() {
@@ -60,6 +61,9 @@ public final class SqliteOwnershipStorage implements StorageProvider {
                     statement.execute("PRAGMA foreign_keys=ON");
                     statement.execute("CREATE TABLE IF NOT EXISTS skin_ownership ("
                             + "player_uuid TEXT NOT NULL, skin_id TEXT NOT NULL, unlocked_at INTEGER NOT NULL, source TEXT NOT NULL, "
+                            + "PRIMARY KEY(player_uuid, skin_id))");
+                    statement.execute("CREATE TABLE IF NOT EXISTS skin_favorites ("
+                            + "player_uuid TEXT NOT NULL, skin_id TEXT NOT NULL, created_at INTEGER NOT NULL, "
                             + "PRIMARY KEY(player_uuid, skin_id))");
                 }
                 ready.set(true);
@@ -127,6 +131,92 @@ public final class SqliteOwnershipStorage implements StorageProvider {
                 }
             }
             return Set.copyOf(values);
+        });
+    }
+
+    @Override
+    public CompletionStage<Set<String>> getFavoriteSkinIds(UUID playerId) {
+        return submit(() -> {
+            Set<String> values = new LinkedHashSet<>();
+            try (PreparedStatement statement = requireConnection().prepareStatement(
+                    "SELECT skin_id FROM skin_favorites WHERE player_uuid=? ORDER BY created_at DESC")) {
+                statement.setString(1, playerId.toString());
+                try (ResultSet result = statement.executeQuery()) {
+                    while (result.next()) values.add(result.getString(1));
+                }
+            }
+            return Set.copyOf(values);
+        });
+    }
+
+    @Override
+    public CompletionStage<Boolean> setSkinFavorite(UUID playerId, String skinId, boolean favorite) {
+        return submit(() -> {
+            String sql = favorite
+                    ? "INSERT OR IGNORE INTO skin_favorites(player_uuid, skin_id, created_at) VALUES(?,?,?)"
+                    : "DELETE FROM skin_favorites WHERE player_uuid=? AND skin_id=?";
+            try (PreparedStatement statement = requireConnection().prepareStatement(sql)) {
+                statement.setString(1, playerId.toString());
+                statement.setString(2, normalize(skinId));
+                if (favorite) statement.setLong(3, System.currentTimeMillis());
+                statement.executeUpdate();
+            }
+            return true;
+        });
+    }
+
+    @Override
+    public CompletionStage<Boolean> transferSkin(UUID fromPlayer, UUID toPlayer, String skinId) {
+        if (fromPlayer.equals(toPlayer)) return CompletableFuture.completedFuture(false);
+        return submit(() -> {
+            Connection current = requireConnection();
+            boolean originalAutoCommit = current.getAutoCommit();
+            current.setAutoCommit(false);
+            try {
+                String normalizedSkinId = normalize(skinId);
+                try (PreparedStatement exists = current.prepareStatement(
+                        "SELECT 1 FROM skin_ownership WHERE player_uuid=? AND skin_id=?")) {
+                    exists.setString(1, fromPlayer.toString());
+                    exists.setString(2, normalizedSkinId);
+                    try (ResultSet result = exists.executeQuery()) {
+                        if (!result.next()) {
+                            current.rollback();
+                            return false;
+                        }
+                    }
+                    exists.setString(1, toPlayer.toString());
+                    try (ResultSet result = exists.executeQuery()) {
+                        if (result.next()) {
+                            current.rollback();
+                            return false;
+                        }
+                    }
+                }
+                try (PreparedStatement insert = current.prepareStatement(
+                        "INSERT INTO skin_ownership(player_uuid, skin_id, unlocked_at, source) VALUES(?,?,?,?)")) {
+                    insert.setString(1, toPlayer.toString());
+                    insert.setString(2, normalizedSkinId);
+                    insert.setLong(3, System.currentTimeMillis());
+                    insert.setString(4, "trade");
+                    insert.executeUpdate();
+                }
+                try (PreparedStatement delete = current.prepareStatement(
+                        "DELETE FROM skin_ownership WHERE player_uuid=? AND skin_id=?")) {
+                    delete.setString(1, fromPlayer.toString());
+                    delete.setString(2, normalizedSkinId);
+                    if (delete.executeUpdate() != 1) {
+                        current.rollback();
+                        return false;
+                    }
+                }
+                current.commit();
+                return true;
+            } catch (SQLException exception) {
+                try { current.rollback(); } catch (SQLException rollbackException) { exception.addSuppressed(rollbackException); }
+                throw exception;
+            } finally {
+                current.setAutoCommit(originalAutoCommit);
+            }
         });
     }
 

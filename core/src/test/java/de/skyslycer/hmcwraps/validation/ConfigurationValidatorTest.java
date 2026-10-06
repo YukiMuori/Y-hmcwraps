@@ -43,6 +43,16 @@ class ConfigurationValidatorTest {
                   swords:
                     priority: 1
                     display-name-key: categories.swords
+                  tools:
+                    priority: 2
+                    display-name-key: categories.tools
+                  armor:
+                    priority: 3
+                    display-name-key: categories.armor
+                """);
+        write("skin-collections.yml", """
+                enabled: true
+                collections: {}
                 """);
         write("itemskin-gui.yml", """
                 gui:
@@ -80,6 +90,33 @@ class ConfigurationValidatorTest {
 
         assertTrue(report.isValid(), () -> report.issues().toString());
         assertTrue(report.filesChecked() >= 7);
+    }
+
+    @Test
+    void acceptsThemedCollectionsAndSkinReferences() throws IOException {
+        write("skin-collections.yml", """
+                enabled: true
+                collections:
+                  angelico:
+                    priority: 10
+                    display-name-key: collections.angelico
+                    categories: [swords, tools, armor]
+                """);
+        write("skins/sample.yml", """
+                enabled: true
+                id: sample
+                display-name: '<red>Sample skin'
+                rarity: common
+                collection: angelico
+                categories: [swords]
+                compatibility:
+                  materials: [DIAMOND_SWORD]
+                  items: []
+                """);
+
+        ConfigurationValidator.Report report = new ConfigurationValidator(dataFolder).validate();
+
+        assertTrue(report.isValid(), () -> report.issues().toString());
     }
 
     @Test

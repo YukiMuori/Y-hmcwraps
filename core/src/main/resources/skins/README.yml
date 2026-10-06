@@ -3,6 +3,7 @@ enabled: false
 id: example_skin
 display-name: '<aqua>Example Skin'
 rarity: common
+collection: angelico # optional ID from skin-collections.yml
 categories: [swords]
 icon:
   type: material # material, nexo, itemsadder, oraxen, craftengine, head

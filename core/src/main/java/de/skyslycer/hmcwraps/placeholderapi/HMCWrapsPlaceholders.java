@@ -8,6 +8,7 @@ import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.entity.Player;
 
+import java.util.Locale;
 import java.util.Map;
 
 public class HMCWrapsPlaceholders extends PlaceholderExpansion {
@@ -35,6 +36,47 @@ public class HMCWrapsPlaceholders extends PlaceholderExpansion {
 
     @Override
     public String onPlaceholderRequest(Player player, String identifier) {
+        var skinManager = plugin.getItemSkinManager();
+        String normalizedIdentifier = identifier.toLowerCase(Locale.ROOT);
+        if (normalizedIdentifier.equals("skins_total")) {
+            return String.valueOf(skinManager.getSkins().size());
+        }
+        if (player != null && normalizedIdentifier.startsWith("skin_owned_")) {
+            String skinId = identifier.substring("skin_owned_".length());
+            if (skinManager.getSkin(skinId).isEmpty()) return null;
+            skinManager.preloadOwnership(player.getUniqueId());
+            return String.valueOf(skinManager.cachedOwnedSkinIds(player.getUniqueId()).contains(skinId.toLowerCase(Locale.ROOT)));
+        }
+        if (player != null && normalizedIdentifier.startsWith("skin_favorite_")) {
+            String skinId = identifier.substring("skin_favorite_".length());
+            if (skinManager.getSkin(skinId).isEmpty()) return null;
+            skinManager.preloadOwnership(player.getUniqueId());
+            return String.valueOf(skinManager.cachedFavoriteSkinIds(player.getUniqueId()).contains(skinId.toLowerCase(Locale.ROOT)));
+        }
+        if (player != null && normalizedIdentifier.equals("skins_owned")) {
+            skinManager.preloadOwnership(player.getUniqueId());
+            return String.valueOf(countConfigured(skinManager.cachedOwnedSkinIds(player.getUniqueId())));
+        }
+        if (player != null && normalizedIdentifier.equals("skins_favorites")) {
+            skinManager.preloadOwnership(player.getUniqueId());
+            return String.valueOf(countConfigured(skinManager.cachedFavoriteSkinIds(player.getUniqueId())));
+        }
+        if (player != null && normalizedIdentifier.equals("skins_owned_percentage")) {
+            skinManager.preloadOwnership(player.getUniqueId());
+            int total = skinManager.getSkins().size();
+            if (total == 0) return "0";
+            return String.valueOf((int) Math.floor(countConfigured(skinManager.cachedOwnedSkinIds(player.getUniqueId())) * 100.0 / total));
+        }
+        if (player != null && normalizedIdentifier.equals("mainhand_skin")) {
+            var mainHandWrap = plugin.getWrapper().getWrap(player.getInventory().getItemInMainHand());
+            if (mainHandWrap == null) return "";
+            return skinManager.getSkins().stream()
+                    .filter(skin -> skin.cosmetic().getUuid().equals(mainHandWrap.getUuid()))
+                    .map(skin -> skin.id()).findFirst().orElse("");
+        }
+        if (player != null && normalizedIdentifier.equals("mainhand_compatible")) {
+            return String.valueOf(skinManager.getCompatibleSkins(player.getInventory().getItemInMainHand()).size());
+        }
         if (identifier.equals("mainhand") && player != null) {
             var wrap = plugin.getWrapper().getWrap(player.getInventory().getItemInMainHand());
             if (wrap == null) {
@@ -104,6 +146,11 @@ public class HMCWrapsPlaceholders extends PlaceholderExpansion {
             }
         }
         return null;
+    }
+
+    private int countConfigured(java.util.Set<String> skinIds) {
+        return (int) plugin.getItemSkinManager().getSkins().stream()
+                .filter(skin -> skinIds.contains(skin.id().toLowerCase(Locale.ROOT))).count();
     }
 
     private String invalidWrap(Player player) {

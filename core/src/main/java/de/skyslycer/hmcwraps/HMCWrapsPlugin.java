@@ -34,6 +34,7 @@ import de.skyslycer.hmcwraps.skin.ItemIconFactory;
 import de.skyslycer.hmcwraps.skin.ItemSkinManagerImpl;
 import de.skyslycer.hmcwraps.skin.SkinCatalog;
 import de.skyslycer.hmcwraps.skin.SkinOwnershipService;
+import de.skyslycer.hmcwraps.skin.SkinTradeManager;
 import de.skyslycer.hmcwraps.transformation.ConfigFileTransformations;
 import de.skyslycer.hmcwraps.updater.ContinuousUpdateChecker;
 import de.skyslycer.hmcwraps.updater.version.PluginVersion;
@@ -83,6 +84,7 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
     private final SqliteOwnershipStorage skinStorage = new SqliteOwnershipStorage(this);
     private final SkinOwnershipService skinOwnership = new SkinOwnershipService(skinStorage);
     private final ItemSkinManagerImpl itemSkinManager = new ItemSkinManagerImpl(this, skinCatalog, compatibilityRegistry, skinOwnership, economyManager);
+    private final SkinTradeManager skinTradeManager = new SkinTradeManager(this, itemSkinManager);
     private volatile java.util.concurrent.CompletableFuture<Boolean> skinStorageInitialization;
     private HookAccessor hookAccessor;
     private Config config;
@@ -154,6 +156,7 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
         Bukkit.getPluginManager().registerEvents(new PlayerOffHandSwitchListener(this), this);
         Bukkit.getPluginManager().registerEvents(new DispenserArmorListener(this), this);
         Bukkit.getPluginManager().registerEvents(itemSkinManager.menuManager(), this);
+        Bukkit.getPluginManager().registerEvents(skinTradeManager, this);
         Bukkit.getPluginManager().registerEvents(new PlayerItemBreakListener(this), this);
         Bukkit.getPluginManager().registerEvents(new PlayerDeathListener(this), this);
 
@@ -216,6 +219,7 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
     @Override
     public void unload() {
         itemSkinManager.menuManager().closeAll();
+        skinTradeManager.cancelAll();
         integrationHandler.unload();
         getWrapsLoader().unload();
         if (checkTask != null) {
@@ -405,6 +409,8 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
     public ItemSkinManagerImpl getItemSkinManager() {
         return itemSkinManager;
     }
+
+    public SkinTradeManager getSkinTradeManager() { return skinTradeManager; }
 
     public LanguageManager getLanguageManager() { return languageManager; }
     @Override public LanguageManager getLanguageService() { return languageManager; }

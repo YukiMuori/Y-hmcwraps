@@ -14,7 +14,9 @@ Current unit coverage is intended to check:
 - `VersionParser` handling of legacy (`1.21.4-R0.1-SNAPSHOT`), new-scheme (`26.1.2`), non-numeric (`26.2.build.123-alpha`) and unparseable version strings.
 - `SkinPrice` provider normalization, custom currency IDs and invalid amounts.
 - Rarity identifier normalization/validation.
-- Ownership-cache read behavior, grants and purchase-audit unlock calls.
+- Ownership-cache read behavior, favorite-cache invalidation, grants and purchase-audit unlock calls.
+- SQLite favorite persistence and atomic, duplicate-safe ownership transfer.
+- Themed collection/category references and expanded menu validation.
 - Custom economy provider registration/replacement.
 - Purchase success, custom currency forwarding, insufficient balance, failed withdrawal, persistence failure/refund compensation and repeated-click rejection.
 - Read-only configuration validation for duplicate skin IDs, invalid compatibility materials, malformed YAML and out-of-range GUI slots.
@@ -34,6 +36,9 @@ Use a disposable Paper 1.21.4+ server, fresh player UUIDs and a backup of the da
 - [ ] Custom values in a pre-existing `messages.properties` are migrated into missing English `legacy.*` keys, while any language YAML values already edited remain unchanged.
 - [ ] Rare/legendary priorities sort descending by default. Configure ascending, name/price/owned sorting and verify ties remain stable.
 - [ ] Category selection, all-category toggle, each configured filter and pagination show only matching compatible skins.
+- [ ] Themed `angelico` collection cycles from all to series and back; its sword/tool/armor categories remain selectable even when one category or search query is active.
+- [ ] Search matches skin IDs, localized display names, categories and collection names; `clear` and `cancel` behave as documented.
+- [ ] Search/Favorites/Collection controls, target-item display and filler can be individually disabled; configured slots/icons render and do not overlap content.
 - [ ] `/itemskin` lists compatible free, owned, purchasable, permission-locked and provider-locked entries; a skin for another material/custom item is absent.
 - [ ] Test configured filler, category icons, player heads, custom model/item model, tooltip style and hook-provided item icons.
 - [ ] Try left/right/shift click, number keys, drag, shift-click from player inventory and double-click. No GUI item may be taken or duplicated.
@@ -54,6 +59,10 @@ For each case, compare a saved pre-operation item and test both applying a skin 
 ### Ownership, SQLite and economy
 
 - [ ] SQLite creates `plugins/HMCWraps/skins.db`; grant, query, purchase, restart and query again to verify persistence.
+- [ ] Add/remove a favorite in the GUI, verify the favorites filter, restart, and confirm the favorite is still stored.
+- [ ] `%hmcwraps_skins_total%`, owned/favorite counts, per-skin status and main-hand statistics reflect the loaded catalog/player state; verify values after join/cache warm-up.
+- [ ] Start `/itemskin trade <player> <skin-id>`: verify one confirmation is insufficient, both are required, and storage moves one ownership row with source `trade`.
+- [ ] Trade rejection for unowned/already-owned skins, same player, busy offers and unsupported storage; cancellation, disconnect, expiry, plugin reload, and a failed storage transfer never duplicate or remove ownership.
 - [ ] Free skins work when SQLite is unavailable; paid skins stay locked and never charge when storage is unavailable.
 - [ ] ExcellentEconomy provider/currency lookup; use a custom currency such as `coins` and a price such as `5000`.
 - [ ] Sufficient balance charges once and grants once; insufficient balance, unavailable provider/currency and failed withdraw grant nothing.

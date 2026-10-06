@@ -16,6 +16,27 @@ class SqliteOwnershipStorageTest {
     @TempDir Path directory;
 
     @Test
+    void favoritesPersistAndOwnershipTransfersAtomically() throws Exception {
+        Path database = directory.resolve("skin-trade.db");
+        UUID sender = UUID.randomUUID();
+        UUID recipient = UUID.randomUUID();
+        SqliteOwnershipStorage storage = new SqliteOwnershipStorage(database, ignored -> { });
+        try {
+            assertTrue(storage.initialize().toCompletableFuture().get(10, TimeUnit.SECONDS));
+            assertTrue(storage.unlockPurchasedSkin(sender, "ruby_sword").toCompletableFuture().get(10, TimeUnit.SECONDS));
+            assertTrue(storage.setSkinFavorite(sender, "ruby_sword", true).toCompletableFuture().get(10, TimeUnit.SECONDS));
+            assertTrue(storage.getFavoriteSkinIds(sender).toCompletableFuture().get(10, TimeUnit.SECONDS).contains("ruby_sword"));
+
+            assertTrue(storage.transferSkin(sender, recipient, "RUBY_SWORD").toCompletableFuture().get(10, TimeUnit.SECONDS));
+            assertFalse(storage.hasSkin(sender, "ruby_sword").toCompletableFuture().get(10, TimeUnit.SECONDS));
+            assertTrue(storage.hasSkin(recipient, "ruby_sword").toCompletableFuture().get(10, TimeUnit.SECONDS));
+            assertFalse(storage.transferSkin(sender, recipient, "ruby_sword").toCompletableFuture().get(10, TimeUnit.SECONDS));
+        } finally {
+            storage.close();
+        }
+    }
+
+    @Test
     void ownershipPersistsAcrossStorageRestart() throws Exception {
         Path database = directory.resolve("skins.db");
         UUID player = UUID.randomUUID();

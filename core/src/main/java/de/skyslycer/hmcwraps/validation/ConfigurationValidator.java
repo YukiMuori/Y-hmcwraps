@@ -10,6 +10,7 @@ import de.skyslycer.hmcwraps.skin.config.CategoryConfiguration;
 import de.skyslycer.hmcwraps.skin.config.RarityConfiguration;
 import de.skyslycer.hmcwraps.skin.config.SkinCompatibilityConfiguration;
 import de.skyslycer.hmcwraps.skin.config.SkinFile;
+import de.skyslycer.hmcwraps.skin.config.SkinCollectionConfiguration;
 import de.skyslycer.hmcwraps.skin.config.SkinIconConfiguration;
 import de.skyslycer.hmcwraps.skin.config.SkinMenuConfiguration;
 import de.skyslycer.hmcwraps.skin.config.SkinPriceConfiguration;
@@ -50,7 +51,7 @@ public final class ConfigurationValidator {
             "oraxen", "craftengine", "mythic", "executableitems", "mmoitems", "custom");
     private static final Set<String> SORT_OPTIONS = Set.of("rarity", "name", "price", "owned", "category");
     private static final Set<String> FILTER_OPTIONS = Set.of("all", "owned", "unowned", "purchasable", "free");
-    private static final Set<String> CLICK_ACTIONS = Set.of("apply", "preview", "buy", "purchase");
+    private static final Set<String> CLICK_ACTIONS = Set.of("apply", "preview", "buy", "purchase", "favorite");
 
     private final Path dataFolder;
     private final Map<String, EconomyProvider> economyProviders;
@@ -97,7 +98,8 @@ public final class ConfigurationValidator {
 
         Set<String> rarityIds = loadRarities(context);
         Set<String> categoryIds = loadCategories(context);
-        validateSkinFiles(context, rarityIds, categoryIds, wrapIds);
+        Set<String> skinCollectionIds = loadSkinCollections(context, categoryIds);
+        validateSkinFiles(context, rarityIds, categoryIds, skinCollectionIds, wrapIds);
         validateItemSkinMenu(context, categoryIds);
         Map<String, Set<String>> languageKeys = loadLanguages(context);
         validateLanguageReferences(context, languageKeys, config);
@@ -293,8 +295,34 @@ public final class ConfigurationValidator {
         return Set.copyOf(ids);
     }
 
+    private Set<String> loadSkinCollections(Context context, Set<String> categoryIds) {
+        Path path = dataFolder.resolve("skin-collections.yml");
+        ConfigurationNode node = readYaml(context, path, true);
+        if (node == null) return Set.of();
+        SkinCollectionConfiguration configuration = deserialize(context, path, node, SkinCollectionConfiguration.class);
+        if (configuration == null || !configuration.isEnabled()) return Set.of();
+        Set<String> ids = new LinkedHashSet<>();
+        for (Map.Entry<String, SkinCollectionConfiguration.Entry> entry : configuration.getCollections().entrySet()) {
+            String id = normalize(entry.getKey());
+            SkinCollectionConfiguration.Entry value = entry.getValue();
+            if (id.isBlank() || value == null || value.getDisplayNameKey() == null || value.getDisplayNameKey().isBlank()) {
+                context.error(path, "invalid-skin-collection", Map.of("id", String.valueOf(entry.getKey())));
+                continue;
+            }
+            if (!ids.add(id)) context.error(path, "duplicate-skin-collection", Map.of("id", id));
+            context.directTranslationReferences.add(new TranslationReference(path, value.getDisplayNameKey(), null));
+            validateIcon(context, path, "skin collection " + id, value.getIcon());
+            for (String category : value.getCategories()) {
+                if (category != null && !category.isBlank() && !categoryIds.contains(normalize(category))) {
+                    context.warning(path, "unknown-skin-collection-category", Map.of("id", id, "category", category));
+                }
+            }
+        }
+        return Set.copyOf(ids);
+    }
+
     private void validateSkinFiles(Context context, Set<String> rarityIds, Set<String> categoryIds,
-                                   Map<String, Path> wrapIds) {
+                                   Set<String> skinCollectionIds, Map<String, Path> wrapIds) {
         Path directory = dataFolder.resolve("skins");
         Map<String, Path> skinIds = new HashMap<>();
         Map<String, Path> cosmeticIds = new HashMap<>(wrapIds);
@@ -322,6 +350,10 @@ public final class ConfigurationValidator {
                 if (category != null && !category.isBlank() && !categoryIds.contains(normalize(category))) {
                     context.warning(path, "unknown-category", Map.of("id", id, "category", category));
                 }
+            }
+            if (file.getCollection() != null && !file.getCollection().isBlank()
+                    && !skinCollectionIds.contains(normalize(file.getCollection()))) {
+                context.warning(path, "unknown-skin-collection-reference", Map.of("id", id, "collection", file.getCollection()));
             }
 
             SkinCompatibilityConfiguration compatibility = file.getCompatibility();
@@ -425,14 +457,20 @@ public final class ConfigurationValidator {
         validateIcon(context, path, "GUI close button", menu.getClose().getItem());
         validateIcon(context, path, "GUI sort button", menu.getSort().getItem());
         validateIcon(context, path, "GUI filter button", menu.getFilter().getItem());
+        validateIcon(context, path, "GUI search button", menu.getSearch().getItem());
+        validateIcon(context, path, "GUI favorites button", menu.getFavorites().getItem());
+        validateIcon(context, path, "GUI collection button", menu.getCollection().getItem());
 
         Map<Integer, String> occupied = new HashMap<>();
-        addGuiSlot(context, path, occupied, "target item", menu.getItemSlot(), size, validSize, true);
-        addGuiSlot(context, path, occupied, "previous button", menu.getPrevious().getSlot(), size, validSize, true);
-        addGuiSlot(context, path, occupied, "next button", menu.getNext().getSlot(), size, validSize, true);
-        addGuiSlot(context, path, occupied, "close button", menu.getClose().getSlot(), size, validSize, true);
-        addGuiSlot(context, path, occupied, "sort button", menu.getSort().getSlot(), size, validSize, true);
-        addGuiSlot(context, path, occupied, "filter button", menu.getFilter().getSlot(), size, validSize, true);
+        if (menu.isItemEnabled()) addGuiSlot(context, path, occupied, "target item", menu.getItemSlot(), size, validSize, true);
+        if (menu.getPrevious().isEnabled()) addGuiSlot(context, path, occupied, "previous button", menu.getPrevious().getSlot(), size, validSize, true);
+        if (menu.getNext().isEnabled()) addGuiSlot(context, path, occupied, "next button", menu.getNext().getSlot(), size, validSize, true);
+        if (menu.getClose().isEnabled()) addGuiSlot(context, path, occupied, "close button", menu.getClose().getSlot(), size, validSize, true);
+        if (menu.getSort().isEnabled()) addGuiSlot(context, path, occupied, "sort button", menu.getSort().getSlot(), size, validSize, true);
+        if (menu.getFilter().isEnabled()) addGuiSlot(context, path, occupied, "filter button", menu.getFilter().getSlot(), size, validSize, true);
+        if (menu.getSearch().isEnabled()) addGuiSlot(context, path, occupied, "search button", menu.getSearch().getSlot(), size, validSize, true);
+        if (menu.getFavorites().isEnabled()) addGuiSlot(context, path, occupied, "favorites button", menu.getFavorites().getSlot(), size, validSize, true);
+        if (menu.getCollection().isEnabled()) addGuiSlot(context, path, occupied, "collection button", menu.getCollection().getSlot(), size, validSize, true);
         Set<Integer> contentSlots = new HashSet<>();
         for (Integer slot : menu.getContentSlots()) {
             if (slot == null) continue;
@@ -452,7 +490,7 @@ public final class ConfigurationValidator {
             addGuiSlot(context, path, occupied, "category " + category, slot, size, validSize, false);
         }
 
-        List<String> sorts = configuredOptions(root, "sorting", "options", List.of("rarity", "name", "price"), context, path);
+        List<String> sorts = configuredOptions(root, "sorting", "options", List.of("rarity", "name", "price", "owned", "category"), context, path);
         List<String> filters = configuredOptions(root, "filters", "options", List.of("all", "owned", "unowned", "purchasable", "free"), context, path);
         for (String sort : sorts) if (!SORT_OPTIONS.contains(normalize(sort))) context.warning(path, "unknown-sort-option", Map.of("value", sort));
         for (String filter : filters) if (!FILTER_OPTIONS.contains(normalize(filter))) context.warning(path, "unknown-filter-option", Map.of("value", filter));

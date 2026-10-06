@@ -36,6 +36,7 @@ public interface HMCWraps extends Plugin {
     Path LANG_PATH = PLUGIN_PATH.resolve("lang");
     Path RARITIES_PATH = PLUGIN_PATH.resolve("rarities.yml");
     Path CATEGORIES_PATH = PLUGIN_PATH.resolve("categories.yml");
+    Path SKIN_COLLECTIONS_PATH = PLUGIN_PATH.resolve("skin-collections.yml");
     Path ITEMSKIN_GUI_PATH = PLUGIN_PATH.resolve("itemskin-gui.yml");
 
     /**

@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Themed skin collections with category subcategories, persistent SQLite favorites, catalog search, and configurable Search/Favorites/Collection GUI controls.
+- Online player skin gifts/trades with ownership checks, two-party confirmation, expiration/cancel handling, and a single atomic storage transfer.
+- PlaceholderAPI skin totals, ownership/favorite counts, per-skin status, main-hand skin ID, and compatible-skin counts.
+
+### Changed
+- `/wraps validate` now checks themed skin collection definitions/references and the expanded GUI controls.
+
 ## 2.0.1 — 2026-10-05
 
 ### Fixed

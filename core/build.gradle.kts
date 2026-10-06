@@ -7,6 +7,9 @@ plugins {
     id("xyz.jpenilla.run-paper") version "3.0.2"
 }
 
+// Reports compile errors as GitHub check annotations when running in CI (see the script header).
+apply(from = rootProject.file("gradle/ci-annotations.gradle.kts"))
+
 val shadePattern = "$group.hmcwraps.shade"
 
 dependencies {

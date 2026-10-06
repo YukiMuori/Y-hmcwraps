@@ -1,0 +1,118 @@
+# ============================================================================
+#  HMCWraps shop definition
+# ============================================================================
+#
+#  This file describes everything the shop sells. Skin prices themselves live in
+#  the skin files (skins/*.yml, "price" section); the shop only decides *where*
+#  and *for how much extra* a skin is offered.
+#
+#  Tickets are optional: leave "provider" unset (or "auto") to use the provider
+#  configured in config.yml (economy.provider / economy.priority).
+#
+#  Reload the file in game with "/itemskin shop reload" (permission
+#  hmcwraps.shop.reload) - a reload never rerolls a running rotation.
+# ============================================================================
+
+# Master switch for the whole shop (daily, featured, bundles and events).
+enabled: true
+
+# ----------------------------------------------------------------------------
+#  Daily shop
+# ----------------------------------------------------------------------------
+#  A deterministic subset of the pool is offered for a period. The rotation is
+#  seeded from the cycle key, so restarts and reloads can never reroll it and
+#  every server with the same configuration shows the same offers.
+daily-shop:
+  enabled: true
+  # How many skins are offered at the same time (clamped to the pool size).
+  slots: 6
+  # daily | weekly | never
+  refresh: daily
+  # Local time of the reset, in the configured zone (HH:mm).
+  reset-time: "00:00"
+  # IANA zone id, or a fixed offset such as "UTC+2".
+  zone: "UTC"
+  # Changing the salt rerolls every rotation; useful for seasonal events.
+  rotation-salt: "hmcwraps"
+  # Explicit pool of skin ids. Empty means: every priced skin in the catalog.
+  pool: []
+  # Skin ids that must never appear in the daily shop.
+  exclude: []
+  # Also offer skins that have no price configured (they become free offers).
+  include-unpriced: false
+  # Optional price override for every daily offer. When set it replaces the
+  # price of the skin file. "discount" is a percentage (0-100).
+  # price:
+  #   provider: auto
+  #   currency: coins
+  #   amount: 5000
+  # discount: 10
+
+# ----------------------------------------------------------------------------
+#  Featured section
+# ----------------------------------------------------------------------------
+featured:
+  enabled: true
+  # Hand-picked entries. "skin:<id>" or a plain id for a skin, "bundle:<id>" for
+  # a bundle. The order of this list is the order in the menu.
+  entries: []
+  # discount: 15
+  # price:
+  #   provider: auto
+  #   currency: coins
+  #   amount: 7500
+  # Alternatively let the shop pick entries for you.
+  automatic: false
+  automatic-count: 3
+  # Explicit candidates for the automatic selection; empty means every priced skin.
+  automatic-pool: []
+  # Rotate the automatic selection together with the daily rotation.
+  automatic-rotate: true
+
+# ----------------------------------------------------------------------------
+#  Bundles
+# ----------------------------------------------------------------------------
+#  A bundle grants several skins for a single price. "purchase-mode" controls
+#  what a player who already owns a part of the bundle can buy:
+#    full        - only the complete bundle
+#    missing-only - only the missing skins, at a dynamic price
+#    both        - the player chooses in the bundle menu
+bundles: {}
+  # halloween:
+  #   name: "Halloween Bundle"
+  #   icon:
+  #     type: material
+  #     id: JACK_O_LANTERN
+  #   skins:
+  #     - pumpkin_knight
+  #     - ghost_blade
+  #   price:
+  #     provider: auto
+  #     currency: coins
+  #     amount: 15000
+  #   discount: 20
+  #   purchase-mode: both
+  #   permission: hmcwraps.shop.bundle.halloween
+  #   featured: true
+
+# ----------------------------------------------------------------------------
+#  Timed event shops
+# ----------------------------------------------------------------------------
+#  "start" and "end" accept ISO instants (2026-10-31T18:00:00Z), zoned date
+#  times or plain dates (2026-10-31, meaning midnight UTC).
+events: {}
+  # halloween_2026:
+  #   name: "<gradient:#ff8800:#ffcc00>Halloween Shop</gradient>"
+  #   description:
+  #     - "<gray>Limited spooky skins, only until the 5th of November."
+  #   icon:
+  #     type: material
+  #     id: CARVED_PUMPKIN
+  #   start: "2026-10-25T00:00:00Z"
+  #   end: "2026-11-05T23:59:59Z"
+  #   entries:
+  #     - skin:pumpkin_knight
+  #     - bundle:halloween
+  #   discount: 25
+  #   permission: hmcwraps.shop.event.halloween
+  #   enabled: true

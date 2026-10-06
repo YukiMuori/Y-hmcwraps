@@ -37,6 +37,8 @@ public interface HMCWraps extends Plugin {
     Path RARITIES_PATH = PLUGIN_PATH.resolve("rarities.yml");
     Path CATEGORIES_PATH = PLUGIN_PATH.resolve("categories.yml");
     Path SKIN_COLLECTIONS_PATH = PLUGIN_PATH.resolve("skin-collections.yml");
+    Path SHOPS_PATH = PLUGIN_PATH.resolve("shops.yml");
+    Path COUPONS_PATH = PLUGIN_PATH.resolve("coupons.yml");
     Path ITEMSKIN_GUI_PATH = PLUGIN_PATH.resolve("itemskin-gui.yml");
 
     /**
@@ -160,6 +162,66 @@ public interface HMCWraps extends Plugin {
      */
     @Nullable
     default LanguageService getLanguageService() {
+        return null;
+    }
+
+    /**
+     * Get the integrated skin shop (daily rotation, featured section, bundles, events, coupons).
+     *
+     * @return the shop service, if provided
+     */
+    @Nullable
+    default de.skyslycer.hmcwraps.shop.ShopService getShopService() {
+        return null;
+    }
+
+    /**
+     * Get the coupon service.
+     *
+     * @return the coupon service, if provided
+     */
+    @Nullable
+    default de.skyslycer.hmcwraps.shop.CouponService getCouponService() {
+        return null;
+    }
+
+    /**
+     * Get the gift service.
+     *
+     * @return the gift service, if provided
+     */
+    @Nullable
+    default de.skyslycer.hmcwraps.shop.GiftService getGiftService() {
+        return null;
+    }
+
+    /**
+     * Get the collection progress and reward service.
+     *
+     * @return the collection service, if provided
+     */
+    @Nullable
+    default de.skyslycer.hmcwraps.collection.CollectionService getCollectionService() {
+        return null;
+    }
+
+    /**
+     * Get the aggregated skin profile service.
+     *
+     * @return the profile service, if provided
+     */
+    @Nullable
+    default de.skyslycer.hmcwraps.shop.ProfileService getProfileService() {
+        return null;
+    }
+
+    /**
+     * Get the economy facade used by the shop.
+     *
+     * @return the economy service, if provided
+     */
+    @Nullable
+    default de.skyslycer.hmcwraps.economy.EconomyService getEconomyService() {
         return null;
     }
 

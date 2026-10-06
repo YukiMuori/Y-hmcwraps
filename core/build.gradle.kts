@@ -179,6 +179,10 @@ bukkit {
             description = "Gives access to the in-game editor for shops.yml and coupons.yml."
             children = listOf("hmcwraps.admin")
         }
+        register("hmcwraps.commands.itemskin.give") {
+            description = "Allows granting a skin permanently to a player without charging them."
+            children = listOf("hmcwraps.admin")
+        }
         register("hmcwraps.debug") {
             description = "Gives access to debug commands."
             children = listOf("hmcwraps.admin")

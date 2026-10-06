@@ -15,6 +15,18 @@ gui:
     id: BLACK_STAINED_GLASS_PANE
     name: ' '
     hide-tooltip: true
+  shop:
+    enabled: true
+    slot: 7
+    item:
+      type: material
+      id: EMERALD
+      name: '<gradient:#8FEAF9:#CDA4F9><lang:gui.shop></gradient>'
+      lore:
+        - ''
+        - '<#F0FAFF><lang:gui.shop-description></#F0FAFF>'
+        - ''
+        - '<#FFE89A>➜ <lang:gui.click-shop></#FFE89A>'
   previous:
     enabled: true
     slot: 45

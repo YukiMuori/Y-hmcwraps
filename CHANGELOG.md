@@ -36,12 +36,15 @@
 ## Unreleased
 
 ### Fixed
+- Economy provider IDs now treat hyphens and underscores as aliases, so both `excellent_economy` and the previously documented `excellent-economy` resolve correctly in skin prices and automatic priority selection.
 - Nexo skins now always apply their canonical `minecraft:item_model` (`nexo:<id>`) while leaving the target item's CustomModelData untouched; transitions to and from legacy model-data wraps preserve the original component.
 - Floating preview cancellation is idempotent and safe when reload, timeout, and sneak cancellation happen concurrently.
 
 ### Added
 - Compact Nexo/DeluxeMenus-style skin files using top-level `material`, `item-model`, `lore`, `compatible-materials` and `compatible-items`, while retaining the advanced schema.
 - A configurable Unskin button in the skin browser restores the selected item’s original appearance.
+- A configurable Shop button opens the integrated shop backed by `shops.yml` and `coupons.yml` directly from `/itemskin`.
+- `/itemskin give <skin> <player>` lets administrators grant permanent skin ownership for giveaways without charging economy.
 - Themed skin collections with category subcategories, persistent SQLite favorites, catalog search, and configurable Search/Favorites/Collection GUI controls.
 - Online player skin gifts/trades with ownership checks, two-party confirmation, expiration/cancel handling, and a single atomic storage transfer.
 - PlaceholderAPI skin totals, ownership/favorite counts, per-skin status, main-hand skin ID, and compatible-skin counts.

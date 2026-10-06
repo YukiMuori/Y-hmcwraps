@@ -374,10 +374,10 @@ inventory:
 # Economy provider selection for the v2 shop and skin purchases.
 economy:
   # 'auto' probes the priority list below and uses the first available provider; a concrete id such as
-  # 'vault' or 'excellent-economy' pins one provider.
+  # 'vault' or 'excellent_economy' pins one provider ('excellent-economy' is accepted as an alias).
   provider: auto
   priority:
-    - excellent-economy
+    - excellent_economy
     - vault
   # Currency passed to the provider when a price does not name one.
   default-currency: coins

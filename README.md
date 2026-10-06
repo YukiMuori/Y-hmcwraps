@@ -38,9 +38,10 @@ The repository's build artifact is produced by `./gradlew clean build`; the dist
 | `/itemskin gift <player> <skin-id>` | Gift a skin to an online or (if enabled) offline player. You pay the price; the recipient receives the ownership. |
 | `/itemskin coupon <code>` | Apply a coupon code to your next purchase. |
 | `/itemskin editor` | *(Permission `hmcwraps.commands.itemskin.editor`)* edit `shops.yml`/`coupons.yml` in game. |
+| `/itemskin give <skin-id> <player>` | *(Permission `hmcwraps.commands.itemskin.give`)* permanently grant a skin for giveaways without charging the player. |
 | `/wraps` | Existing legacy wrap inventory. |
 
-In the browser, left click applies a free/owned skin, right click previews it, middle click toggles a persistent favorite, and Shift-click buys a configured paid skin. Search opens chat input (`clear` resets it; `cancel` returns without changing the search), the favorites button filters to favorited skins, and the collection button cycles through themed series. Sorting defaults to rarity priority descending. Buttons have independent `enabled`, `slot` and `item` settings; target-item and filler display can also be toggled. Configure content slots, category controls, icons, item models, tooltip styles and MiniMessage titles in `itemskin-gui.yml`.
+In the browser, left click applies a free/owned skin, right click previews it, middle click toggles a persistent favorite, and Shift-click buys a configured paid skin. The Shop control opens the integrated `shops.yml`/`coupons.yml` menus, while Unskin restores the selected item. Search opens chat input (`clear` resets it; `cancel` returns without changing the search), the favorites button filters to favorited skins, and the collection button cycles through themed series. Sorting defaults to rarity priority descending. Buttons have independent `enabled`, `slot` and `item` settings; target-item and filler display can also be toggled. Configure content slots, category controls, icons, item models, tooltip styles and MiniMessage titles in `itemskin-gui.yml`.
 
 ### Themed collections, favorites and trades
 

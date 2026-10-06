@@ -21,5 +21,9 @@ public final class EconomyManager {
     public Optional<EconomyProvider> get(String id) { return Optional.ofNullable(providers.get(normalize(id))); }
     public Collection<EconomyProvider> providers() { return java.util.List.copyOf(providers.values()); }
     public void clear() { providers.clear(); }
-    private static String normalize(String value) { return value == null ? "" : value.toLowerCase(Locale.ROOT).trim(); }
+    private static String normalize(String value) {
+        // Configuration historically documented both excellent-economy and excellent_economy.
+        // Treat separators identically for every provider so either spelling resolves reliably.
+        return value == null ? "" : value.toLowerCase(Locale.ROOT).trim().replace('-', '_');
+    }
 }

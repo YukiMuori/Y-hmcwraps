@@ -18,6 +18,7 @@ class EconomyManagerTest {
         TestProvider first = new TestProvider("custom_coins", "coins");
         manager.register(first);
         assertSame(first, manager.get("CUSTOM_COINS").orElseThrow());
+        assertSame(first, manager.get("custom-coins").orElseThrow());
         assertTrue(first.supportsCurrency("coins"));
 
         TestProvider replacement = new TestProvider("custom_coins", "tokens");

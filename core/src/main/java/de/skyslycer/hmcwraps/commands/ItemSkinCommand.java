@@ -5,6 +5,9 @@ import de.skyslycer.hmcwraps.commands.annotation.SkinIds;
 import de.skyslycer.hmcwraps.skin.ItemSkin;
 import de.skyslycer.hmcwraps.util.StringUtil;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import revxrsal.commands.annotation.Command;
@@ -85,6 +88,42 @@ public final class ItemSkinCommand {
     @Description("Cancel your active skin trade offer.")
     public void onTradeCancel(Player player) {
         plugin.getSkinTradeManager().cancel(player);
+    }
+
+    @Subcommand("give")
+    @Description("Grant a skin permanently to a player without charging them.")
+    @CommandPermission("hmcwraps.commands.itemskin.give")
+    public void onGive(CommandSender sender, @SkinIds String skinId, String playerName) {
+        ItemSkin skin = plugin.getItemSkinManager().getSkin(skinId).orElse(null);
+        if (skin == null) {
+            send(sender, "messages.unknown-skin", Placeholder.unparsed("skin", skinId));
+            return;
+        }
+        OfflinePlayer target = Bukkit.getOfflinePlayer(playerName);
+        if (!target.isOnline() && !target.hasPlayedBefore()) {
+            send(sender, "messages.admin-player-not-found", Placeholder.unparsed("player", playerName));
+            return;
+        }
+        if (plugin.getSkinOwnership() == null || !plugin.getSkinOwnership().isReady()) {
+            send(sender, "messages.storage-unavailable");
+            return;
+        }
+        plugin.getSkinOwnership().hasSkin(target.getUniqueId(), skin.id()).thenCompose(owned -> {
+            if (owned) return java.util.concurrent.CompletableFuture.completedFuture(GiveResult.ALREADY_OWNED);
+            return plugin.getSkinOwnership().unlockSkin(target.getUniqueId(), skin.id())
+                    .thenApply(success -> Boolean.TRUE.equals(success) ? GiveResult.SUCCESS : GiveResult.FAILED);
+        }).whenComplete((result, error) -> sync(sender, () -> {
+            if (error != null || result == GiveResult.FAILED) {
+                send(sender, "messages.admin-give-failed", Placeholder.unparsed("player", target.getName() == null ? playerName : target.getName()),
+                        Placeholder.component("skin", plugin.getLanguageManager().parse(sender instanceof Player player ? player : null, skin.displayName())));
+            } else if (result == GiveResult.ALREADY_OWNED) {
+                send(sender, "messages.admin-give-already-owned", Placeholder.unparsed("player", target.getName() == null ? playerName : target.getName()),
+                        Placeholder.component("skin", plugin.getLanguageManager().parse(sender instanceof Player player ? player : null, skin.displayName())));
+            } else {
+                send(sender, "messages.admin-give-success", Placeholder.unparsed("player", target.getName() == null ? playerName : target.getName()),
+                        Placeholder.component("skin", plugin.getLanguageManager().parse(sender instanceof Player player ? player : null, skin.displayName())));
+            }
+        }));
     }
 
     @Subcommand("editor")
@@ -225,8 +264,23 @@ public final class ItemSkinCommand {
         plugin.getItemSkinManager().openMenu(player, item);
     }
 
-    private void send(Player player, String key, net.kyori.adventure.text.minimessage.tag.resolver.TagResolver... resolvers) {
+    private void sync(CommandSender sender, Runnable task) {
+        if (sender instanceof Player player) {
+            plugin.getFoliaLib().getScheduler().runAtEntity(player, ignored -> task.run());
+        } else {
+            plugin.getFoliaLib().getScheduler().runNextTick(ignored -> task.run());
+        }
+    }
+
+    private void send(CommandSender sender, String key, net.kyori.adventure.text.minimessage.tag.resolver.TagResolver... resolvers) {
+        Player player = sender instanceof Player online ? online : null;
         String value = plugin.getLanguageManager().get(player, key);
-        StringUtil.sendComponent(player, plugin.getLanguageManager().parse(player, value, resolvers));
+        StringUtil.sendComponent(sender, plugin.getLanguageManager().parse(player, value, resolvers));
+    }
+
+    private enum GiveResult {
+        SUCCESS,
+        ALREADY_OWNED,
+        FAILED
     }
 }

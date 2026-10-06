@@ -74,7 +74,7 @@ public final class ConfigurationValidator {
         Map<String, EconomyProvider> normalized = new HashMap<>();
         if (providers != null) {
             for (EconomyProvider provider : providers) {
-                if (provider != null && provider.id() != null) normalized.put(normalize(provider.id()), provider);
+                if (provider != null && provider.id() != null) normalized.put(normalizeProvider(provider.id()), provider);
             }
         }
         this.economyProviders = Map.copyOf(normalized);
@@ -601,7 +601,7 @@ public final class ConfigurationValidator {
             return;
         }
         if (normalize(provider).equals("auto")) return;
-        EconomyProvider economyProvider = economyProviders.get(normalize(provider));
+        EconomyProvider economyProvider = economyProviders.get(normalizeProvider(provider));
         if (economyProvider == null) {
             context.warning(path, "provider-unavailable", Map.of("id", ownerId, "provider", provider));
             return;
@@ -620,7 +620,7 @@ public final class ConfigurationValidator {
             context.error(path, "invalid-price", Map.of("id", skinId));
             return;
         }
-        EconomyProvider provider = economyProviders.get(normalize(price.getProvider()));
+        EconomyProvider provider = economyProviders.get(normalizeProvider(price.getProvider()));
         if (provider == null) {
             context.warning(path, "provider-unavailable", Map.of("id", skinId, "provider", price.getProvider()));
             return;
@@ -688,6 +688,7 @@ public final class ConfigurationValidator {
         validateIcon(context, path, "GUI favorites button", menu.getFavorites().getItem());
         validateIcon(context, path, "GUI collection button", menu.getCollection().getItem());
         validateIcon(context, path, "GUI unskin button", menu.getUnskin().getItem());
+        validateIcon(context, path, "GUI shop button", menu.getShop().getItem());
 
         Map<Integer, String> occupied = new HashMap<>();
         if (menu.isItemEnabled()) addGuiSlot(context, path, occupied, "target item", menu.getItemSlot(), size, validSize, true);
@@ -700,6 +701,7 @@ public final class ConfigurationValidator {
         if (menu.getFavorites().isEnabled()) addGuiSlot(context, path, occupied, "favorites button", menu.getFavorites().getSlot(), size, validSize, true);
         if (menu.getCollection().isEnabled()) addGuiSlot(context, path, occupied, "collection button", menu.getCollection().getSlot(), size, validSize, true);
         if (menu.getUnskin().isEnabled()) addGuiSlot(context, path, occupied, "unskin button", menu.getUnskin().getSlot(), size, validSize, true);
+        if (menu.getShop().isEnabled()) addGuiSlot(context, path, occupied, "shop button", menu.getShop().getSlot(), size, validSize, true);
         Set<Integer> contentSlots = new HashSet<>();
         for (Integer slot : menu.getContentSlots()) {
             if (slot == null) continue;
@@ -980,6 +982,10 @@ public final class ConfigurationValidator {
 
     private static String normalize(String value) {
         return value == null ? "" : value.toLowerCase(Locale.ROOT).trim();
+    }
+
+    private static String normalizeProvider(String value) {
+        return normalize(value).replace('-', '_');
     }
 
     private static String normalizeLocale(String value) {

@@ -18,7 +18,7 @@ public class EconomySettings {
     private String provider = AUTO;
 
     @Setting("priority")
-    private List<String> priority = new ArrayList<>(List.of("excellent-economy", "vault"));
+    private List<String> priority = new ArrayList<>(List.of("excellent_economy", "vault"));
 
     @Setting("default-currency")
     private String defaultCurrency = "coins";
@@ -31,7 +31,7 @@ public class EconomySettings {
     /** The detection order used when {@link #getProvider()} is {@code auto}. */
     public List<String> getPriority() {
         if (priority == null || priority.isEmpty()) {
-            return List.of("excellent-economy", "vault");
+            return List.of("excellent_economy", "vault");
         }
         List<String> result = new ArrayList<>(priority.size());
         for (String entry : priority) {

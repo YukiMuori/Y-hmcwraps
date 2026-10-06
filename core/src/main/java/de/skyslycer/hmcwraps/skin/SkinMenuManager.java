@@ -184,6 +184,7 @@ public final class SkinMenuManager implements Listener {
             session.slotToSkin.put(slot, skin.id());
         }
 
+        addButton(session, player, config.getShop(), plugin.getLanguageManager().get(player, "gui.shop"), List.of(), config.getSize());
         addButton(session, player, config.getPrevious(), plugin.getLanguageManager().get(player, "gui.previous"),
                 List.of(localized(player, "gui.page", Placeholder.unparsed("page", String.valueOf(session.page + 1)),
                         Placeholder.unparsed("pages", String.valueOf(maxPage + 1)))), config.getSize());
@@ -403,6 +404,15 @@ public final class SkinMenuManager implements Listener {
         }
         if (buttonAt(config.getUnskin(), slot)) {
             unskin(player, session);
+            return;
+        }
+        if (buttonAt(config.getShop(), slot)) {
+            if (plugin.getShopMenuManager() == null) {
+                send(player, "shop.purchase.unavailable");
+            } else {
+                sessions.remove(player.getUniqueId(), session);
+                plugin.getShopMenuManager().openHome(player);
+            }
             return;
         }
         if (buttonAt(config.getPrevious(), slot)) {
@@ -682,7 +692,7 @@ public final class SkinMenuManager implements Listener {
                 || buttonAt(config.getClose(), slot) || buttonAt(config.getSort(), slot)
                 || buttonAt(config.getFilter(), slot) || buttonAt(config.getSearch(), slot)
                 || buttonAt(config.getFavorites(), slot) || buttonAt(config.getCollection(), slot)
-                || buttonAt(config.getUnskin(), slot);
+                || buttonAt(config.getUnskin(), slot) || buttonAt(config.getShop(), slot);
     }
 
     private boolean buttonAt(SkinMenuConfiguration.Button button, int slot) {

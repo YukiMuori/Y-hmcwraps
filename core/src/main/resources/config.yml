@@ -362,6 +362,68 @@ inventory:
           UNWRAP:
             - ''
 
+# Economy provider selection for the v2 shop and skin purchases.
+economy:
+  # 'auto' probes the priority list below and uses the first available provider; a concrete id such as
+  # 'vault' or 'excellent-economy' pins one provider.
+  provider: auto
+  priority:
+    - excellent-economy
+    - vault
+  # Currency passed to the provider when a price does not name one.
+  default-currency: coins
+
+# The shop (daily offers, featured section, bundles, event shops) and its menus.
+shop:
+  enabled: true
+  # Whether the rotating daily section is offered.
+  daily-enabled: true
+  # Announce newly completed skin collections to the player.
+  collection-completion-notifications: true
+  # How many purchases the profile and history screens show.
+  history-limit: 10
+  # Reconciles journal rows that were interrupted by a crash on startup.
+  reconcile-interrupted-transactions: true
+
+# Gifting: players can buy a skin or bundle for someone else.
+gifts:
+  enabled: true
+  # Allow gifting to players who are offline (they are notified on their next join).
+  allow-offline: true
+  # Seconds a player must wait between two gifts (0 disables the cooldown).
+  cooldown-seconds: 30
+  # Maximum length of the optional gift message (0 disables messages).
+  message-max-length: 64
+  # Notify a recipient who was offline as soon as they join.
+  notify-on-join: true
+
+# Optional Discord notifications. The webhook is called asynchronously and failures never affect gameplay.
+discord:
+  enabled: false
+  # The webhook URL from the Discord channel settings.
+  webhook-url: ''
+  username: HMCWraps
+  avatar-url: ''
+  # Prepended to the default messages; leave empty to disable the prefix.
+  server-name: ''
+  # Turn individual notifications on or off.
+  events:
+    purchase: true
+    bundle-purchase: true
+    gift: true
+    collection-complete: true
+    collection-reward: false
+    coupon: false
+    shop-refresh: false
+    event-start: true
+    event-end: true
+  # Override any message. Placeholders: %player%, %uuid%, %target%, %bundle%, %sender%, %recipient%,
+  # %amount%, %collection%, %milestone%, %owned%, %total%, %code%, %discount%, %shop%, %entries%, %event%.
+  messages: {}
+
+# Verbose debug logging (shop transactions, economy provider calls).
+debug: false
+
 # DON'T TOUCH THIS
 config: 2
 # DON'T TOUCH THIS

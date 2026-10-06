@@ -9,9 +9,17 @@ import de.skyslycer.hmcwraps.commands.CommandRegister;
 import de.skyslycer.hmcwraps.converter.FileConverter;
 import de.skyslycer.hmcwraps.integration.AllIntegrationsHandler;
 import de.skyslycer.hmcwraps.integration.IntegrationHandler;
+import de.skyslycer.hmcwraps.compat.Scheduler;
+import de.skyslycer.hmcwraps.compat.paper.PaperScheduler;
+import de.skyslycer.hmcwraps.database.Database;
+import de.skyslycer.hmcwraps.database.SqlDatabase;
+import de.skyslycer.hmcwraps.discord.DiscordWebhook;
 import de.skyslycer.hmcwraps.economy.EconomyManager;
+import de.skyslycer.hmcwraps.economy.EconomyServiceImpl;
 import de.skyslycer.hmcwraps.economy.ExcellentEconomyProvider;
+import de.skyslycer.hmcwraps.economy.PurchaseTransactionService;
 import de.skyslycer.hmcwraps.economy.VaultEconomyProvider;
+import de.skyslycer.hmcwraps.economy.EconomyService;
 import de.skyslycer.hmcwraps.itemhook.*;
 import de.skyslycer.hmcwraps.listener.*;
 import de.skyslycer.hmcwraps.messages.MessageHandler;
@@ -35,6 +43,33 @@ import de.skyslycer.hmcwraps.skin.ItemSkinManagerImpl;
 import de.skyslycer.hmcwraps.skin.SkinCatalog;
 import de.skyslycer.hmcwraps.skin.SkinOwnershipService;
 import de.skyslycer.hmcwraps.skin.SkinTradeManager;
+import de.skyslycer.hmcwraps.repository.CollectionRewardRepository;
+import de.skyslycer.hmcwraps.repository.CouponRepository;
+import de.skyslycer.hmcwraps.repository.FavoriteRepository;
+import de.skyslycer.hmcwraps.repository.GiftRepository;
+import de.skyslycer.hmcwraps.repository.OwnershipRepository;
+import de.skyslycer.hmcwraps.repository.PlayerRepository;
+import de.skyslycer.hmcwraps.repository.PurchaseRepository;
+import de.skyslycer.hmcwraps.repository.ShopStateRepository;
+import de.skyslycer.hmcwraps.repository.sql.SqlCollectionRewardRepository;
+import de.skyslycer.hmcwraps.repository.sql.SqlCouponRepository;
+import de.skyslycer.hmcwraps.repository.sql.SqlFavoriteRepository;
+import de.skyslycer.hmcwraps.repository.sql.SqlGiftRepository;
+import de.skyslycer.hmcwraps.repository.sql.SqlOwnershipRepository;
+import de.skyslycer.hmcwraps.repository.sql.SqlPlayerRepository;
+import de.skyslycer.hmcwraps.repository.sql.SqlPurchaseRepository;
+import de.skyslycer.hmcwraps.repository.sql.SqlShopStateRepository;
+import de.skyslycer.hmcwraps.shop.CollectionServiceImpl;
+import de.skyslycer.hmcwraps.shop.CouponServiceImpl;
+import de.skyslycer.hmcwraps.shop.DailyShopService;
+import de.skyslycer.hmcwraps.shop.GiftServiceImpl;
+import de.skyslycer.hmcwraps.shop.ProfileServiceImpl;
+import de.skyslycer.hmcwraps.shop.ShopListener;
+import de.skyslycer.hmcwraps.shop.ShopRegistry;
+import de.skyslycer.hmcwraps.shop.ShopServiceImpl;
+import de.skyslycer.hmcwraps.shop.menu.ShopEditorManager;
+import de.skyslycer.hmcwraps.shop.menu.ShopMenuManager;
+import de.skyslycer.hmcwraps.storage.SqlStorageProvider;
 import de.skyslycer.hmcwraps.transformation.ConfigFileTransformations;
 import de.skyslycer.hmcwraps.updater.ContinuousUpdateChecker;
 import de.skyslycer.hmcwraps.updater.version.PluginVersion;
@@ -53,6 +88,7 @@ import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Clock;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -93,6 +129,30 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
     private FoliaLib foliaLib;
     private final Map<UUID, String> wrapGui = new HashMap<>();
 
+    private Scheduler scheduler;
+    private DiscordWebhook discordWebhook;
+    private Database database;
+    private SqlStorageProvider shopStorage;
+    private ShopRegistry shopRegistry;
+    private DailyShopService dailyShopService;
+    private CouponServiceImpl couponService;
+    private CollectionServiceImpl collectionService;
+    private ProfileServiceImpl profileService;
+    private ShopServiceImpl shopService;
+    private ShopMenuManager shopMenuManager;
+    private ShopEditorManager shopEditorManager;
+    private GiftServiceImpl giftService;
+    private EconomyService economyService;
+    private PurchaseTransactionService transactionService;
+    private PurchaseRepository purchaseRepository;
+    private GiftRepository giftRepository;
+    private CouponRepository couponRepository;
+    private PlayerRepository playerRepository;
+    private ShopStateRepository shopStateRepository;
+    private CollectionRewardRepository collectionRewardRepository;
+    private Scheduler.Cancellable shopRefreshTask;
+    private Scheduler.Cancellable eventWatchTask;
+
     @Override
     public void onLoad() {
         MinecraftVersion.replaceLogger(new NoInfoLogger("HMCWraps-NBT", null));
@@ -103,6 +163,8 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
     @Override
     public void onEnable() {
         foliaLib = new FoliaLib(this);
+        scheduler = new PaperScheduler(foliaLib);
+        discordWebhook = new DiscordWebhook(this);
         checkDependency("PlaceholderAPI", false);
         if (checkDependency("ItemsAdder", false)) {
             hooks.add(new ItemsAdderItemHook());
@@ -179,6 +241,12 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
     @Override
     public void onDisable() {
         unload();
+        if (discordWebhook != null) {
+            discordWebhook.close();
+        }
+        if (database != null) {
+            database.close();
+        }
         skinStorage.close();
         hooks.clear();
     }
@@ -209,6 +277,7 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
         if (!itemSkinManager.load()) {
             getLogger().warning("The v2 skin GUI configuration could not be loaded; legacy wraps remain available.");
         }
+        initializeShop();
         integrationHandler.load();
         getPreviewManager().removeAll(true);
         getUpdateChecker().check();
@@ -218,7 +287,21 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
 
     @Override
     public void unload() {
+        if (shopRefreshTask != null) {
+            shopRefreshTask.cancel();
+            shopRefreshTask = null;
+        }
+        if (eventWatchTask != null) {
+            eventWatchTask.cancel();
+            eventWatchTask = null;
+        }
         itemSkinManager.menuManager().closeAll();
+        if (shopMenuManager != null) {
+            shopMenuManager.closeAll();
+        }
+        if (shopEditorManager != null) {
+            shopEditorManager.closeAll();
+        }
         skinTradeManager.cancelAll();
         integrationHandler.unload();
         getWrapsLoader().unload();
@@ -416,6 +499,7 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
     @Override public LanguageManager getLanguageService() { return languageManager; }
     public ItemIconFactory getItemIconFactory() { return itemIconFactory; }
     public SkinCatalog getSkinCatalog() { return skinCatalog; }
+    public SkinOwnershipService getSkinOwnership() { return skinOwnership; }
     public CompatibilityRegistry getCompatibilityRegistry() { return compatibilityRegistry; }
     public EconomyManager getEconomyManager() { return economyManager; }
 
@@ -425,6 +509,201 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
 
     public ContinuousUpdateChecker getUpdateChecker() {
         return updateChecker;
+    }
+
+    /**
+     * Boots the shop system: database, repositories, storage, economy facade and every service that
+     * builds on them. A failure here only disables the shop; the classic wrap and menu systems keep
+     * working exactly as before.
+     */
+    private void initializeShop() {
+        if (scheduler == null) {
+            scheduler = new PaperScheduler(getFoliaLib());
+        }
+        if (shopService != null) {
+            // A reload must not rebuild the database or the services; it only re-reads the definition files.
+            shopService.reload();
+            return;
+        }
+        try {
+            database = new SqlDatabase(HMCWraps.PLUGIN_PATH.resolve("skins.db"), message -> getLogger().severe(message));
+            OwnershipRepository ownershipRepository = new SqlOwnershipRepository(database);
+            FavoriteRepository favoriteRepository = new SqlFavoriteRepository(database);
+            purchaseRepository = new SqlPurchaseRepository(database);
+            couponRepository = new SqlCouponRepository(database);
+            playerRepository = new SqlPlayerRepository(database);
+            shopStateRepository = new SqlShopStateRepository(database);
+            collectionRewardRepository = new SqlCollectionRewardRepository(database);
+            giftRepository = new SqlGiftRepository(database);
+            shopStorage = new SqlStorageProvider(database, ownershipRepository, favoriteRepository);
+            database.initialize().whenComplete((ready, error) -> {
+                if (error != null || !Boolean.TRUE.equals(ready)) {
+                    getLogger().severe("The shop database could not be initialized; paid shop operations are disabled.");
+                }
+            });
+            economyService = new EconomyServiceImpl(economyManager, () -> config == null ? null : config.getEconomy(),
+                    message -> getLogger().warning(message));
+            transactionService = new PurchaseTransactionService(shopStorage, purchaseRepository,
+                    message -> getLogger().warning(message));
+            shopRegistry = new ShopRegistry(this, skinCatalog);
+            shopRegistry.load();
+            dailyShopService = new DailyShopService(shopStateRepository, Clock.systemUTC(),
+                    message -> getLogger().warning(message));
+            couponService = new CouponServiceImpl(this, shopRegistry, couponRepository, playerRepository, Clock.systemUTC());
+            collectionService = new CollectionServiceImpl(this, skinCatalog, skinOwnership, shopStorage,
+                    collectionRewardRepository, shopRegistry, economyService, scheduler, playerRepository,
+                    playerId -> {
+                        if (profileService != null) {
+                            profileService.invalidate(playerId);
+                        }
+                    });
+            profileService = new ProfileServiceImpl(skinOwnership, purchaseRepository, giftRepository, couponRepository,
+                    playerRepository, collectionService, skinId -> skinCatalog.skinMap().containsKey(skinId),
+                    message -> getLogger().warning(message));
+            shopService = new ShopServiceImpl(this, shopRegistry, skinCatalog, skinOwnership, shopStorage,
+                    transactionService, couponService, economyService, dailyShopService, collectionService, scheduler);
+            giftService = new GiftServiceImpl(this, shopRegistry, skinCatalog, skinOwnership, economyService,
+                    transactionService, giftRepository, scheduler, () -> config == null ? null : config.getGifts(),
+                    message -> getLogger().warning(message));
+            shopMenuManager = new ShopMenuManager(this);
+            Bukkit.getPluginManager().registerEvents(shopMenuManager, this);
+            shopEditorManager = new ShopEditorManager(this);
+            Bukkit.getPluginManager().registerEvents(shopEditorManager, this);
+            Bukkit.getPluginManager().registerEvents(new ShopListener(this), this);
+            startShopTasks();
+            getLogger().info("The shop system is ready (" + shopRegistry.bundles().size() + " bundles, "
+                    + shopRegistry.dailyPool().size() + " daily pool candidates, " + shopRegistry.coupons().size()
+                    + " coupons).");
+        } catch (Throwable throwable) {
+            logSevere("Could not initialize the shop system; the classic skin menu remains available.", throwable);
+            shopService = null;
+        }
+    }
+
+    /** Keeps the daily rotation fresh and refreshes it immediately after startup. */
+    private void startShopTasks() {
+        if (shopService == null || scheduler == null) {
+            return;
+        }
+        refreshDailyShop(false);
+        shopRefreshTask = scheduler.runTimer(() -> refreshDailyShop(false), 20L * 60, 20L * 60 * 5);
+        eventWatchTask = scheduler.runTimer(this::checkEventShops, 20L * 30, 20L * 60);
+    }
+
+    /** Announces event shops that opened or closed since the last check. */
+    private void checkEventShops() {
+        if (shopService == null) {
+            return;
+        }
+        try {
+            shopService.checkEventShops();
+        } catch (Throwable throwable) {
+            getLogger().warning("Could not check the event shop windows: " + throwable.getMessage());
+        }
+    }
+
+    private void refreshDailyShop(boolean force) {
+        if (shopService == null) {
+            return;
+        }
+        shopService.refreshDailyShop(force).exceptionally(error -> {
+            getLogger().warning("Could not refresh the daily shop: " + de.skyslycer.hmcwraps.util.AsyncUtil.describe(error));
+            return false;
+        });
+    }
+
+    /** The scheduling boundary used by the shop services. */
+    public Scheduler getScheduler() {
+        if (scheduler == null) {
+            scheduler = new PaperScheduler(getFoliaLib());
+        }
+        return scheduler;
+    }
+
+    public DiscordWebhook getDiscordWebhook() {
+        return discordWebhook;
+    }
+
+    public Database getDatabase() {
+        return database;
+    }
+
+    public SqlStorageProvider getShopStorage() {
+        return shopStorage;
+    }
+
+    public ShopRegistry getShopRegistry() {
+        return shopRegistry;
+    }
+
+    public DailyShopService getDailyShopService() {
+        return dailyShopService;
+    }
+
+    public CouponServiceImpl getCouponService() {
+        return couponService;
+    }
+
+    public CollectionServiceImpl getCollectionService() {
+        return collectionService;
+    }
+
+    public ProfileServiceImpl getProfileService() {
+        return profileService;
+    }
+
+    public ShopServiceImpl getShopService() {
+        return shopService;
+    }
+
+    public ShopMenuManager getShopMenuManager() {
+        return shopMenuManager;
+    }
+
+    /** The chat driven shop definition editor, available to administrators. */
+    public ShopEditorManager getShopEditorManager() {
+        return shopEditorManager;
+    }
+
+    public GiftServiceImpl getGiftService() {
+        return giftService;
+    }
+
+    public PurchaseTransactionService getTransactionService() {
+        return transactionService;
+    }
+
+    public PurchaseRepository getPurchaseRepository() {
+        return purchaseRepository;
+    }
+
+    public GiftRepository getGiftRepository() {
+        return giftRepository;
+    }
+
+    public CouponRepository getCouponRepository() {
+        return couponRepository;
+    }
+
+    public PlayerRepository getPlayerRepository() {
+        return playerRepository;
+    }
+
+    public ShopStateRepository getShopStateRepository() {
+        return shopStateRepository;
+    }
+
+    public CollectionRewardRepository getCollectionRewardRepository() {
+        return collectionRewardRepository;
+    }
+
+    /** The economy facade; created lazily so it is always available for diagnostics and reloads. */
+    public synchronized EconomyService getEconomyService() {
+        if (economyService == null) {
+            economyService = new EconomyServiceImpl(economyManager, () -> config == null ? null : config.getEconomy(),
+                    message -> getLogger().warning(message));
+        }
+        return economyService;
     }
 
     public Map<UUID, String> getWrapGui() {

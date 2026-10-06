@@ -1,6 +1,10 @@
 package de.skyslycer.hmcwraps.serialization;
 
+import de.skyslycer.hmcwraps.serialization.discord.DiscordSettings;
+import de.skyslycer.hmcwraps.serialization.economy.EconomySettings;
 import de.skyslycer.hmcwraps.serialization.filter.FilterSettings;
+import de.skyslycer.hmcwraps.serialization.shop.GiftSettings;
+import de.skyslycer.hmcwraps.serialization.shop.ShopSettings;
 import de.skyslycer.hmcwraps.serialization.globaldisable.GlobalDisable;
 import de.skyslycer.hmcwraps.serialization.integration.PluginIntegrations;
 import de.skyslycer.hmcwraps.serialization.inventory.Inventory;
@@ -34,6 +38,11 @@ public class Config {
     private Map<String, List<String>> collections = new HashMap<>();
     private PluginIntegrations integrations;
     private LanguageSettings language = new LanguageSettings();
+    private EconomySettings economy = new EconomySettings();
+    private ShopSettings shop = new ShopSettings();
+    private GiftSettings gifts = new GiftSettings();
+    private DiscordSettings discord = new DiscordSettings();
+    private Boolean debug = false;
     private Integer config = 1;
 
     public Config(UpdaterSettings updater, PermissionSettings permissions, PreviewSettings preview, Toggleable favorites,
@@ -109,6 +118,27 @@ public class Config {
 
     public LanguageSettings getLanguage() {
         return language == null ? new LanguageSettings() : language;
+    }
+
+    public EconomySettings getEconomy() {
+        return economy == null ? new EconomySettings() : economy;
+    }
+
+    public ShopSettings getShop() {
+        return shop == null ? new ShopSettings() : shop;
+    }
+
+    public GiftSettings getGifts() {
+        return gifts == null ? new GiftSettings() : gifts;
+    }
+
+    public DiscordSettings getDiscord() {
+        return discord == null ? new DiscordSettings() : discord;
+    }
+
+    /** Whether verbose debug logging is enabled. */
+    public boolean isDebug() {
+        return debug != null && debug;
     }
 
 }

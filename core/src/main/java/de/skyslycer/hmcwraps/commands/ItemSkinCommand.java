@@ -10,6 +10,7 @@ import org.bukkit.inventory.ItemStack;
 import revxrsal.commands.annotation.Command;
 import revxrsal.commands.annotation.Description;
 import revxrsal.commands.annotation.Subcommand;
+import revxrsal.commands.bukkit.annotation.CommandPermission;
 
 /** Player-facing entry point for the independent v2 item-skin browser. */
 @Command("itemskin")
@@ -84,6 +85,132 @@ public final class ItemSkinCommand {
     @Description("Cancel your active skin trade offer.")
     public void onTradeCancel(Player player) {
         plugin.getSkinTradeManager().cancel(player);
+    }
+
+    @Subcommand("editor")
+    @Description("Edit the shop definition files (shops.yml and coupons.yml) in game.")
+    @CommandPermission("hmcwraps.commands.itemskin.editor")
+    public void onEditor(Player player) {
+        if (plugin.getShopEditorManager() == null) {
+            send(player, "shop.purchase.unavailable");
+            return;
+        }
+        plugin.getShopEditorManager().open(player);
+    }
+
+    @Subcommand("shop")
+    @Description("Open the skin shop with the daily offers, bundles and events.")
+    public void onShop(Player player) {
+        if (plugin.getShopMenuManager() == null) {
+            send(player, "shop.purchase.unavailable");
+            return;
+        }
+        plugin.getShopMenuManager().openHome(player);
+    }
+
+    @Subcommand("bundles")
+    @Description("Open the bundle overview of the skin shop.")
+    public void onBundles(Player player) {
+        if (plugin.getShopMenuManager() == null) {
+            send(player, "shop.purchase.unavailable");
+            return;
+        }
+        plugin.getShopMenuManager().openBundles(player);
+    }
+
+    @Subcommand("events")
+    @Description("Open the running and upcoming event shops.")
+    public void onEvents(Player player) {
+        if (plugin.getShopMenuManager() == null) {
+            send(player, "shop.purchase.unavailable");
+            return;
+        }
+        plugin.getShopMenuManager().openEvents(player);
+    }
+
+    @Subcommand("coupons")
+    @Description("Open the coupon overview and pick the coupon used for your next purchase.")
+    public void onCoupons(Player player) {
+        if (plugin.getCouponService() == null || plugin.getShopMenuManager() == null) {
+            send(player, "shop.purchase.unavailable");
+            return;
+        }
+        plugin.getShopMenuManager().openCoupons(player);
+    }
+
+    @Subcommand("profile")
+    @Description("Show your skin statistics, gifts and recent purchases.")
+    public void onProfile(Player player) {
+        if (plugin.getProfileService() == null || plugin.getShopMenuManager() == null) {
+            send(player, "shop.purchase.unavailable");
+            return;
+        }
+        plugin.getShopMenuManager().openProfile(player);
+    }
+
+    @Subcommand("gifts")
+    @Description("Show the gifts you have not been notified about yet.")
+    public void onGifts(Player player) {
+        if (plugin.getGiftService() == null || plugin.getShopMenuManager() == null) {
+            send(player, "shop.purchase.unavailable");
+            return;
+        }
+        plugin.getShopMenuManager().openGifts(player);
+    }
+
+    @Subcommand("gift")
+    @Description("Gift an owned or purchasable skin to another player; you pay the price.")
+    public void onGift(Player sender, String recipientName, @SkinIds String skinId) {
+        if (plugin.getGiftService() == null || plugin.getShopMenuManager() == null) {
+            send(sender, "shop.purchase.unavailable");
+            return;
+        }
+        if (!plugin.getGiftService().isEnabled()) {
+            send(sender, "shop.gift.disabled");
+            return;
+        }
+        if (plugin.getItemSkinManager().getSkin(skinId).isEmpty()) {
+            send(sender, "messages.unknown-skin", Placeholder.unparsed("skin", skinId));
+            return;
+        }
+        Player online = org.bukkit.Bukkit.getPlayerExact(recipientName);
+        if (online != null) {
+            if (online.getUniqueId().equals(sender.getUniqueId())) {
+                send(sender, "shop.gift.self");
+                return;
+            }
+            plugin.getShopMenuManager().openGiftConfirm(sender, de.skyslycer.hmcwraps.shop.PurchaseKind.SKIN, skinId,
+                    online.getUniqueId(), online.getName());
+            return;
+        }
+        if (!plugin.getGiftService().allowsOffline()) {
+            send(sender, "shop.gift.offline");
+            return;
+        }
+        org.bukkit.OfflinePlayer offline;
+        try {
+            offline = org.bukkit.Bukkit.getOfflinePlayer(recipientName);
+        } catch (RuntimeException exception) {
+            send(sender, "shop.gift.offline");
+            return;
+        }
+        if (offline == null || !offline.hasPlayedBefore()) {
+            send(sender, "shop.gift.offline");
+            return;
+        }
+        plugin.getShopMenuManager().openGiftConfirm(sender, de.skyslycer.hmcwraps.shop.PurchaseKind.SKIN, skinId,
+                offline.getUniqueId(), recipientName);
+    }
+
+    @Subcommand("coupon")
+    @Description("Apply a coupon code to your next purchase.")
+    public void onCoupon(Player player, String code) {
+        if (plugin.getCouponService() == null) {
+            send(player, "shop.purchase.unavailable");
+            return;
+        }
+        plugin.getCouponService().setSelectedCoupon(player.getUniqueId(), code);
+        send(player, "shop.coupon.selected", Placeholder.unparsed("code", code.toUpperCase(java.util.Locale.ROOT)));
     }
 
     private void open(Player player) {

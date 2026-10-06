@@ -28,6 +28,31 @@ public final class ItemIconFactory {
         return create(config, fallbackName, null);
     }
 
+    /**
+     * Resolves a textual reference such as {@code DIAMOND}, {@code material:DIAMOND} or {@code nexo:item_id}
+     * into an item. Used by collection rewards and the shop editor.
+     */
+    public ItemStack createFromReference(@Nullable String reference, @Nullable String name) {
+        if (reference == null || reference.isBlank()) {
+            return new ItemStack(Material.PAPER);
+        }
+        String value = reference.trim();
+        String type = "material";
+        if (value.contains(":")) {
+            String[] parts = value.split(":", 2);
+            String candidate = parts[0].toLowerCase(Locale.ROOT);
+            if (candidate.equals("material") || candidate.equals("vanilla") || candidate.equals("head")
+                    || candidate.equals("nexo") || candidate.equals("itemsadder") || candidate.equals("oraxen")
+                    || candidate.equals("craftengine") || candidate.equals("mythic")
+                    || candidate.equals("executableitems") || candidate.equals("mmoitems")
+                    || candidate.equals("custom")) {
+                type = candidate;
+                value = parts[1];
+            }
+        }
+        return create(new SkinIconConfiguration(type, value, name, List.of()), name, null);
+    }
+
     public ItemStack create(SkinIconConfiguration config, @Nullable String fallbackName, @Nullable Player player) {
         if (config == null) return new ItemStack(Material.PAPER);
         String type = config.getType().toLowerCase(Locale.ROOT);

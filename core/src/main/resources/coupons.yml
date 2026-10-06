@@ -1,0 +1,51 @@
+# ============================================================================
+#  HMCWraps coupons
+# ============================================================================
+#
+#  A coupon is a code a player can type in the shop (or pass to a purchase) to
+#  get a discount. Codes are case-insensitive.
+#
+#  Every coupon can be limited to specific skins, bundles, categories and shop
+#  channels. Empty lists mean "everything":
+#    skins:      [pumpkin_knight, ghost_blade]
+#    bundles:    [halloween]
+#    categories: [swords, armor]
+#    channels:   [daily, featured, event:halloween_2026, bundle, direct, all]
+#
+#  Usage limits are enforced in the database before the discount is applied, so
+#  a coupon can never be used more often than configured - not even by two
+#  players buying at the same moment.
+#
+#  Limits:
+#    max-uses: -1            unlimited total redemptions
+#    max-uses-per-player: 1  the same player may redeem it once
+#    expires: "2026-12-31T23:59:59Z"   an ISO instant, zoned date time or date
+# ============================================================================
+
+# Master switch; false hides the coupon menu and rejects every code.
+enabled: true
+
+coupons: {}
+  # WELCOME10:
+  #   type: percentage            # percentage | fixed
+  #   value: 10
+  #   max-uses: 500
+  #   max-uses-per-player: 1
+  #   min-spend: 1000
+  #   active: true
+  #   display-name: "<green><bold>Welcome discount</bold></green>"
+  #   channels: [all]
+  #
+  # HALLOWEEN25:
+  #   type: percentage
+  #   value: 25
+  #   expires: "2026-11-05T23:59:59Z"
+  #   channels: [event:halloween_2026, bundle]
+  #   bundles: [halloween]
+  #
+  # FLAT500:
+  #   type: fixed
+  #   value: 500
+  #   max-uses-per-player: 3
+  #   min-spend: 5000
+  #   skins: [golden_knight]

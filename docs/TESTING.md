@@ -20,6 +20,8 @@ Current unit coverage is intended to check:
 - Custom economy provider registration/replacement.
 - Purchase success, custom currency forwarding, insufficient balance, failed withdrawal, persistence failure/refund compensation and repeated-click rejection.
 - Read-only configuration validation for duplicate skin IDs, invalid compatibility materials, malformed YAML and out-of-range GUI slots.
+- Shop definition validation: bundle contents/discounts/purchase modes, the daily pool, reset time, event windows, featured/event entries, and coupon types, values, limits, expiries and references.
+- English/Italian locale key parity, including the shop menu, event and editor texts.
 
 These tests do not replace a Paper server regression run. The implementation environment may lack Java 21 and a downloadable JDK; in that case record the task as not run rather than treating it as a pass.
 
@@ -71,6 +73,24 @@ For each case, compare a saved pre-operation item and test both applying a skin 
 - [ ] Vault accepts only the documented default-currency aliases; unsupported currency IDs remain locked.
 - [ ] Startup and `/wraps reload` both succeed without ExcellentEconomy, Vault, Nexo or any custom-item plugin installed.
 
+### Shop, bundles, coupons, gifts and collections
+
+- [ ] `shops.yml`/`coupons.yml` are copied on first start; `/wraps validate` reports every broken reference (unknown skin/bundle/category, bad event window, invalid coupon value) without rewriting the files.
+- [ ] Daily rotation persists in `shop_state`, rerolls at the configured reset time, does not reroll on restart, and `force` (admin refresh) always replaces it.
+- [ ] Featured entries render in the shop home; automatic selection and `automatic-rotate` pick from the configured pool only.
+- [ ] Event shops appear as upcoming, running and closed; a shop opening/closing is announced to chat and Discord exactly once, and a restart while an event runs does not re-announce it.
+- [ ] Buy a bundle fully, then repeat with some skins already owned: full purchase charges the bundle price once, missing-only charges the dynamic price capped at the bundle price, and no ownership is granted twice.
+- [ ] Apply a valid coupon: percentage and fixed discounts, minimum spend, per-player and global limits, expiry; verify the discounted amount is charged once and the redemption is recorded.
+- [ ] Apply the same limited coupon twice in parallel (two accounts or two clicks): the usage limit is never exceeded and the failing purchase is not charged.
+- [ ] An invalid/expired/exhausted/not-applicable coupon is refused with the matching message before anything is charged.
+- [ ] Gift a skin and a bundle to an online and an offline player: the recipient receives the ownership, the sender is charged once, the cooldown is enforced, and the join notification arrives.
+- [ ] Interrupt a purchase (kill the server between withdraw and grant): after restart the journal row is reconciled, ownership is either complete or refunded, and nothing is charged twice.
+- [ ] Collection progress follows live ownership; claiming a milestone grants its reward once, survives a restart, and a claim cancelled by another plugin grants nothing.
+- [ ] `/itemskin shop|bundles|events|coupons|profile|gifts` open the matching screens; every GUI element is unclickable/unduplicable except the intentional buttons.
+- [ ] `/itemskin gift <player> <skin>` works for online and (when allowed) offline recipients, and the shop screen shift-right-click prompt resolves a typed name (`cancel` aborts).
+- [ ] `/itemskin editor` (permission `hmcwraps.commands.itemskin.editor`) toggles booleans, edits numbers/texts, writes the file atomically and reloads the shop; an aborted edit (`cancel`) and an invalid value change nothing.
+- [ ] Discord webhooks fire for purchases, gifts, collection completions, coupon redemptions, shop refreshes and event starts/ends when enabled, and are silent when disabled or without a webhook URL.
+
 ## Release gate
 
-Do not mark the preservation round-trip, optional-provider integration, full compatibility matrix or release as verified until the matching automated/server tests have been run and their results recorded. Publish `v2.0.0` only after merge to `master`.
+Do not mark the preservation round-trip, optional-provider integration, full compatibility matrix or release as verified until the matching automated/server tests have been run and their results recorded. Publish `v2.1.0` only after merge to `master`.

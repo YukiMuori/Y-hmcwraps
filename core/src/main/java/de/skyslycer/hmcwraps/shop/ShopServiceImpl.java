@@ -17,6 +17,10 @@ import de.skyslycer.hmcwraps.skin.SkinOwnershipService;
 import de.skyslycer.hmcwraps.skin.SkinPrice;
 import de.skyslycer.hmcwraps.skin.TransactionalStorage;
 import de.skyslycer.hmcwraps.util.AsyncUtil;
+import de.skyslycer.hmcwraps.util.StringUtil;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -59,6 +63,8 @@ public final class ShopServiceImpl implements ShopService {
     private final CollectionService collections;
     private final Scheduler scheduler;
     private final java.util.function.Consumer<String> debug;
+    private final java.util.Set<String> activeEventShops = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private volatile boolean eventShopsSeeded;
     private volatile String activeCycleKey;
 
     public ShopServiceImpl(@NotNull HMCWrapsPlugin plugin, @NotNull ShopRegistry registry, @NotNull SkinCatalog catalog,
@@ -87,6 +93,67 @@ public final class ShopServiceImpl implements ShopService {
     /** The transaction engine, so gifts and other paid flows reuse the very same path. */
     public @NotNull PurchaseTransactionService transactions() {
         return transactions;
+    }
+
+    /**
+     * Detects event shop openings and closings and announces them exactly once.
+     *
+     * <p>The first call only seeds the state: events that were already running before the plugin
+     * started are not announced again after a restart. Called by the shop scheduler every minute.</p>
+     */
+    public void checkEventShops() {
+        Instant now = Instant.now();
+        Set<String> current = new LinkedHashSet<>();
+        List<EventShop> started = new ArrayList<>();
+        List<EventShop> ended = new ArrayList<>();
+        for (EventShop event : registry.events()) {
+            if (event.activeAt(now)) {
+                current.add(event.id());
+                if (eventShopsSeeded && !activeEventShops.contains(event.id())) {
+                    started.add(event);
+                }
+            } else if (eventShopsSeeded && activeEventShops.contains(event.id()) && event.endedAt(now)) {
+                ended.add(event);
+            }
+        }
+        activeEventShops.clear();
+        activeEventShops.addAll(current);
+        if (!eventShopsSeeded) {
+            eventShopsSeeded = true;
+            return;
+        }
+        for (EventShop event : started) {
+            announce(event, "started", plugin.getDiscordWebhook());
+        }
+        for (EventShop event : ended) {
+            announce(event, "ended", plugin.getDiscordWebhook());
+        }
+    }
+
+    private void announce(EventShop event, String phase, @Nullable de.skyslycer.hmcwraps.discord.DiscordWebhook webhook) {
+        String key = "shop.event." + phase;
+        if (webhook != null && phase.equals("started")) {
+            webhook.eventStart(event);
+        } else if (webhook != null) {
+            webhook.eventEnd(event);
+        }
+        String message = plugin.getLanguageManager().get(null, key);
+        if (message == null || message.equals(key)) {
+            debug("Event shop '" + event.id() + "' " + phase + " but the message " + key + " is missing.");
+            return;
+        }
+        TagResolver values = TagResolver.resolver(
+                Placeholder.unparsed("event", event.displayName()),
+                Placeholder.unparsed("id", event.id()));
+        Component component = plugin.getLanguageManager().parse(null, message, values);
+        scheduler.runGlobal(() -> {
+            for (Player online : Bukkit.getOnlinePlayers()) {
+                if (online.isOnline()) {
+                    StringUtil.sendComponent(online, component);
+                }
+            }
+        });
+        debug("Event shop '" + event.id() + "' " + phase + "; announced to the server.");
     }
 
     /** The daily rotation service, used by the countdown placeholder and the scheduler. */

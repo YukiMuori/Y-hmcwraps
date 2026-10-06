@@ -149,6 +149,7 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
     private ShopStateRepository shopStateRepository;
     private CollectionRewardRepository collectionRewardRepository;
     private Scheduler.Cancellable shopRefreshTask;
+    private Scheduler.Cancellable eventWatchTask;
 
     @Override
     public void onLoad() {
@@ -287,6 +288,10 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
         if (shopRefreshTask != null) {
             shopRefreshTask.cancel();
             shopRefreshTask = null;
+        }
+        if (eventWatchTask != null) {
+            eventWatchTask.cancel();
+            eventWatchTask = null;
         }
         itemSkinManager.menuManager().closeAll();
         if (shopMenuManager != null) {
@@ -575,6 +580,19 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
         }
         refreshDailyShop(false);
         shopRefreshTask = scheduler.runTimer(() -> refreshDailyShop(false), 20L * 60, 20L * 60 * 5);
+        eventWatchTask = scheduler.runTimer(this::checkEventShops, 20L * 30, 20L * 60);
+    }
+
+    /** Announces event shops that opened or closed since the last check. */
+    private void checkEventShops() {
+        if (shopService == null) {
+            return;
+        }
+        try {
+            shopService.checkEventShops();
+        } catch (Throwable throwable) {
+            getLogger().warning("Could not check the event shop windows: " + throwable.getMessage());
+        }
     }
 
     private void refreshDailyShop(boolean force) {

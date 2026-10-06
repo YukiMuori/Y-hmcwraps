@@ -401,6 +401,9 @@ shop:
     claim-storage-error: '<red>Non è stato possibile salvare la ricompensa; non è stato assegnato nulla. Riprova.'
     claim-all: '<green>Hai riscattato <count> ricompense.'
     claimable: '<gold><count> ricompense sono pronte da riscattare!'
+  event:
+    started: '<gold>Il negozio evento <event> è ora aperto!'
+    ended: '<gray>Il negozio evento <event> è stato chiuso.'
   menu:
     title: '<dark_gray>Negozio'
     daily: '<gold>Offerte giornaliere'

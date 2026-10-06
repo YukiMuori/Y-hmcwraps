@@ -401,6 +401,9 @@ shop:
     claim-storage-error: '<red>The reward could not be saved; nothing was granted. Please try again.'
     claim-all: '<green>Claimed <count> rewards.'
     claimable: '<gold><count> rewards are ready to claim!'
+  event:
+    started: '<gold>The event shop <event> is now open!'
+    ended: '<gray>The event shop <event> has closed.'
   menu:
     title: '<dark_gray>Shop'
     daily: '<gold>Daily offers'

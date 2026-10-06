@@ -39,6 +39,7 @@
 - Economy provider IDs now treat hyphens and underscores as aliases, so both `excellent_economy` and the previously documented `excellent-economy` resolve correctly in skin prices and automatic priority selection.
 - Nexo skins now always apply their canonical `minecraft:item_model` (`nexo:<id>`) while leaving the target item's CustomModelData untouched; transitions to and from legacy model-data wraps preserve the original component.
 - Floating preview cancellation is idempotent and safe when reload, timeout, and sneak cancellation happen concurrently.
+- Item-display sword previews now rotate the model plane vertically, with the blade pointing upward instead of lying horizontally.
 
 ### Added
 - Compact Nexo/DeluxeMenus-style skin files using top-level `material`, `item-model`, `lore`, `compatible-materials` and `compatible-items`, while retaining the advanced schema.

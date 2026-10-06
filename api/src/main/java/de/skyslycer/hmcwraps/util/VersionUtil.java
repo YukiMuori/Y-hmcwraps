@@ -595,12 +595,30 @@ public class VersionUtil {
             var displayedItem = dataValueConstructor.newInstance(23, itemSerializer, nmsItem);
             // FIXED is the raw protocol value 8; it follows entity yaw and renders like a normal item.
             var displayTransform = dataValueConstructor.newInstance(24, byteSerializer, (byte) 8);
+            var metadata = new java.util.ArrayList<>(List.of(displayedItem, displayTransform));
+
+            // Sword models are commonly authored horizontally for the FIXED display context. Rotate
+            // the display plane by 90 degrees so floating sword previews stand upright, with the
+            // blade pointing upwards, while every other item keeps its normal model orientation.
+            if (usesVerticalItemDisplayTransform(item.getType().name())) {
+                var quaternionClass = Class.forName("org.joml.Quaternionf");
+                var quaternion = quaternionClass.getConstructor().newInstance();
+                quaternionClass.getMethod("rotateZ", float.class)
+                        .invoke(quaternion, (float) (Math.PI / 2D));
+                var quaternionSerializer = serializersClass.getField("QUATERNION").get(null);
+                metadata.add(dataValueConstructor.newInstance(13, quaternionSerializer, quaternion));
+            }
+
             var packet = packetClass.getConstructor(int.class, List.class)
-                    .newInstance(entityId, List.of(displayedItem, displayTransform));
+                    .newInstance(entityId, metadata);
             sendPacket(player, packet);
         } catch (Exception exception) {
             throw new RuntimeException("Failed to send item display metadata packet", exception);
         }
+    }
+
+    static boolean usesVerticalItemDisplayTransform(String materialName) {
+        return materialName != null && materialName.endsWith("_SWORD");
     }
 
     /**

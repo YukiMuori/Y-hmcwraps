@@ -4,14 +4,15 @@
 // checks API always is. Workflow commands written to the console become annotations, so this script
 // reports two things:
 //
-//   * every Java compile error (the JDK compiler runs once before the real compile task), and
+//   * every Java compile error (the JDK compiler runs once, right before the real compile task), and
 //   * any project whose configuration failed, with the failure message.
 //
 // Applied from the root build script to every subproject and only in CI. Everything is wrapped in
-// try/catch: diagnostics must never be able to break a build.
+// try/catch: diagnostics must never be able to break a build. Remove this script together with the
+// subprojects block in the root build script once the build is green again.
 
 try {
-    // A single hook reports configuration failures of every project (including the root).
+    // One hook reports configuration failures of every project (including the root).
     if (!gradle.ext.has('ciAnnotationHookRegistered')) {
         gradle.ext.ciAnnotationHookRegistered = true
         gradle.afterProject { failedProject, state ->
@@ -25,9 +26,7 @@ try {
     def javaExtension = project.extensions.getByType(org.gradle.api.plugins.JavaPluginExtension)
     def mainSourceSet = javaExtension.sourceSets.getByName('main')
     def compileTask = project.tasks.named('compileJava', org.gradle.api.tasks.compile.JavaCompile)
-
-    // Resolved eagerly so the task action only closes over plain data.
-    def sources = mainSourceSet.allJava.files.toList()
+    def compileClasspath = project.configurations.getByName('compileClasspath')
     def release = compileTask.get().options.release.orNull ?: 21
     def moduleName = project.name
 
@@ -36,6 +35,8 @@ try {
         description = 'Re-reports compile errors as GitHub check annotations (CI only).'
         doLast {
             try {
+                // Resolved here so the project dependencies are already built and on the classpath.
+                def classpath = compileClasspath.files.collect { it.absolutePath }.join(java.io.File.pathSeparator)
                 def compiler = javax.tools.ToolProvider.systemJavaCompiler
                 if (compiler == null) {
                     println "::error::${moduleName}: no system java compiler available"
@@ -44,13 +45,14 @@ try {
                 def diagnostics = new javax.tools.DiagnosticCollector()
                 def errorLogger = new java.io.StringWriter()
                 compiler.getStandardFileManager(diagnostics, null, java.nio.charset.StandardCharsets.UTF_8).withCloseable { fileManager ->
-                    def units = fileManager.getJavaFileObjectsFromFiles(sources)
-                    def options = ['--release', release.toString(), '-parameters', '-encoding', 'UTF-8', '-proc:none']
+                    def units = fileManager.getJavaFileObjectsFromFiles(mainSourceSet.allJava.files)
+                    def options = ['--release', release.toString(), '-classpath', classpath,
+                                   '-parameters', '-encoding', 'UTF-8', '-proc:none']
                     compiler.getTask(errorLogger, fileManager, diagnostics, options, null, units).call()
                 }
                 def errors = diagnostics.diagnostics.findAll { it.kind == javax.tools.Diagnostic.Kind.ERROR }
                 if (errors.isEmpty()) {
-                    println "::notice::${moduleName}: no compile errors found by the preflight compiler"
+                    println "::notice::${moduleName}: preflight compiler found no errors"
                     return
                 }
                 // One annotation with everything, because a check run only keeps a few annotations.
@@ -78,9 +80,7 @@ try {
         }
     }
 
-    // Attached to clean as well, so the diagnostics always run before anything can fail the build.
     compileTask.configure { dependsOn(preflight) }
-    project.tasks.matching { it.name == 'clean' }.configureEach { dependsOn(preflight) }
 } catch (Throwable throwable) {
     println "::error::Could not register the CI compile diagnostics for ${project.name}: ${throwable}"
 }

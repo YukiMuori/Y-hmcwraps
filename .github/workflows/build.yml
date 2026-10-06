@@ -33,7 +33,15 @@ jobs:
         run: ./gradlew clean build --no-daemon --stacktrace
 
       - name: Verify distributable JAR
-        run: test -s build/libs/HMCWraps-2.0.0.jar
+        run: |
+          shopt -s nullglob
+          jars=(build/libs/HMCWraps-*.jar)
+          if [[ ${#jars[@]} -ne 1 ]]; then
+            echo "Expected exactly one build/libs/HMCWraps-*.jar, found ${#jars[@]}." >&2
+            exit 1
+          fi
+          test -s "${jars[0]}"
+          echo "Verified ${jars[0]}"
 
       - name: Upload plugin JAR
         uses: actions/upload-artifact@v4

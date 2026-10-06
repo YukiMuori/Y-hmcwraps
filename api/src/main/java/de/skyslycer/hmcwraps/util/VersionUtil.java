@@ -1,5 +1,6 @@
 package de.skyslycer.hmcwraps.util;
 
+import de.skyslycer.hmcwraps.preview.floating.PreviewOrientation;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
@@ -600,7 +601,7 @@ public class VersionUtil {
             // Sword models are commonly authored horizontally for the FIXED display context. Rotate
             // the display plane by 90 degrees so floating sword previews stand upright, with the
             // blade pointing upwards, while every other item keeps its normal model orientation.
-            if (usesVerticalItemDisplayTransform(item.getType().name())) {
+            if (PreviewOrientation.isVerticalItemDisplay(item.getType().name())) {
                 var quaternionClass = Class.forName("org.joml.Quaternionf");
                 var quaternion = quaternionClass.getConstructor().newInstance();
                 quaternionClass.getMethod("rotateZ", float.class)
@@ -615,10 +616,6 @@ public class VersionUtil {
         } catch (Exception exception) {
             throw new RuntimeException("Failed to send item display metadata packet", exception);
         }
-    }
-
-    static boolean usesVerticalItemDisplayTransform(String materialName) {
-        return materialName != null && materialName.endsWith("_SWORD");
     }
 
     /**

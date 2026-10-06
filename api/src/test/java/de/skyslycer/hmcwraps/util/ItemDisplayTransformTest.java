@@ -1,5 +1,6 @@
 package de.skyslycer.hmcwraps.util;
 
+import de.skyslycer.hmcwraps.preview.floating.PreviewOrientation;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -9,9 +10,9 @@ class ItemDisplayTransformTest {
 
     @Test
     void swordsUseTheVerticalFloatingPreviewTransform() {
-        assertTrue(VersionUtil.usesVerticalItemDisplayTransform("DIAMOND_SWORD"));
-        assertTrue(VersionUtil.usesVerticalItemDisplayTransform("NETHERITE_SWORD"));
-        assertFalse(VersionUtil.usesVerticalItemDisplayTransform("DIAMOND_PICKAXE"));
-        assertFalse(VersionUtil.usesVerticalItemDisplayTransform("PAPER"));
+        assertTrue(PreviewOrientation.isVerticalItemDisplay("DIAMOND_SWORD"));
+        assertTrue(PreviewOrientation.isVerticalItemDisplay("NETHERITE_SWORD"));
+        assertFalse(PreviewOrientation.isVerticalItemDisplay("DIAMOND_PICKAXE"));
+        assertFalse(PreviewOrientation.isVerticalItemDisplay("PAPER"));
     }
 }

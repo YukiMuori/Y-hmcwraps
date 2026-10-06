@@ -177,7 +177,7 @@ When PlaceholderAPI is installed, HMCWraps exposes these skin statistics using t
 - Existing `config.yml`, wrap files, collections, permissions, `/wraps`, wrap APIs and item PDC identifiers are not renamed or replaced.
 - New skins are registered as legacy `Wrap` payloads, so the current modifier system continues to apply/remove them and already wrapped items remain readable.
 - Ownership is new in 2.0 and is stored in `plugins/HMCWraps/skins.db` using SQLite. It is not inferred from old wrap permissions: legacy wraps remain governed by their existing rules.
-- The shop adds tables for transactions, coupon redemptions, the shop rotation, collection rewards, gifts and player settings (schema v6). They are created automatically through dialect-neutral migrations; `shop.reconcile-interrupted-transactions` only controls whether interrupted rows are reported at startup.
+- The shop adds tables for transactions, coupon redemptions, the shop rotation, collection rewards, gifts and player settings (schema v7). They are created automatically through dialect-neutral migrations; `shop.reconcile-interrupted-transactions` only controls whether interrupted rows are reported at startup.
 - Optional providers are discovered at runtime. Missing integrations do not disable the plugin or prevent free/legacy wraps from loading.
 - Back up the complete `plugins/HMCWraps/` folder before upgrading or rolling back. See [Migration notes](docs/MIGRATION-2.0.md).
 

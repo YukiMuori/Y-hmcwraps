@@ -62,6 +62,7 @@ public final class SqliteOwnershipStorage implements StorageProvider {
                     statement.execute("CREATE TABLE IF NOT EXISTS skin_ownership ("
                             + "player_uuid TEXT NOT NULL, skin_id TEXT NOT NULL, unlocked_at INTEGER NOT NULL, source TEXT NOT NULL, "
                             + "PRIMARY KEY(player_uuid, skin_id))");
+                    statement.execute("DROP TABLE IF EXISTS skin_favorites");
                 }
                 ready.set(true);
                 return true;

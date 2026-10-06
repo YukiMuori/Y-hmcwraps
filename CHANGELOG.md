@@ -61,7 +61,7 @@
 - MiniMessage output throughout the plugin inherits an explicit gray base color whenever no more specific color is configured.
 
 ### Removed
-- The favorites feature, including legacy wrap actions/configuration, skin GUI controls, persistence repositories, public favorite APIs, profile statistics and PlaceholderAPI expansions.
+- The favorites feature, including legacy wrap actions/configuration, skin GUI controls, persistence repositories, public favorite APIs, profile statistics and PlaceholderAPI expansions. Schema migration 7 removes the obsolete `skin_favorites` table and its stored data.
 - `/wraps validate` now checks themed skin collection definitions/references and the expanded GUI controls.
 
 ## 2.0.1 — 2026-10-05

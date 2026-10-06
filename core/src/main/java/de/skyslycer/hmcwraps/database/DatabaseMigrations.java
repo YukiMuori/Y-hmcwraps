@@ -14,14 +14,17 @@ public final class DatabaseMigrations {
     }
 
     /** The latest schema version shipped with this build. */
-    public static final int LATEST_VERSION = 6;
+    public static final int LATEST_VERSION = 7;
 
     private static final List<DatabaseMigration> MIGRATIONS = List.of(
             new DatabaseMigration(1, List.of(
                     "CREATE TABLE IF NOT EXISTS skin_ownership ("
                             + "player_uuid TEXT NOT NULL, skin_id TEXT NOT NULL, unlocked_at INTEGER NOT NULL, "
-                            + "source TEXT NOT NULL, PRIMARY KEY(player_uuid, skin_id))"
-            ), "baseline ownership table"),
+                            + "source TEXT NOT NULL, PRIMARY KEY(player_uuid, skin_id))",
+                    "CREATE TABLE IF NOT EXISTS skin_favorites ("
+                            + "player_uuid TEXT NOT NULL, skin_id TEXT NOT NULL, created_at INTEGER NOT NULL, "
+                            + "PRIMARY KEY(player_uuid, skin_id))"
+            ), "baseline ownership and favorites tables"),
             new DatabaseMigration(2, List.of(
                     "CREATE TABLE IF NOT EXISTS transactions ("
                             + "transaction_id TEXT PRIMARY KEY, player_uuid TEXT NOT NULL, kind TEXT NOT NULL, "
@@ -61,7 +64,10 @@ public final class DatabaseMigrations {
                             + "player_uuid TEXT PRIMARY KEY, selected_coupon TEXT, updated_at INTEGER NOT NULL)",
                     "CREATE TABLE IF NOT EXISTS profile_stats ("
                             + "player_uuid TEXT PRIMARY KEY, collection_xp REAL NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL)"
-            ), "player shop preferences and profile counters")
+            ), "player shop preferences and profile counters"),
+            new DatabaseMigration(7, List.of(
+                    "DROP TABLE IF EXISTS skin_favorites"
+            ), "remove the discontinued favorites feature")
     );
 
     /** All migrations in ascending order. */

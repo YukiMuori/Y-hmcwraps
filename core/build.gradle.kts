@@ -199,3 +199,6 @@ bukkit {
         }
     }
 }
+
+// end of core build script
+println("::notice::core build script finished")

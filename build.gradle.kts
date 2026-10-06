@@ -40,6 +40,7 @@ allprojects {
 subprojects {
     val subproject = this
     pluginManager.withPlugin("java") {
+        println("::notice::java plugin applied in " + subproject.name)
         val diagnosticsScript = rootProject.file("gradle/ci-annotations.gradle")
         if (System.getenv("GITHUB_ACTIONS") == "true" && diagnosticsScript.exists()) {
             try {

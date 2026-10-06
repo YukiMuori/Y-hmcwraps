@@ -113,3 +113,6 @@ class PublishData(private val project: Project) {
             name.plus(append).plus(if (appendCommit && addCommit) "-".plus(commitHash) else "")
     }
 }
+
+// end of api build script
+println("::notice::api build script finished")

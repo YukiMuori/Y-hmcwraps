@@ -2,6 +2,8 @@ package de.skyslycer.hmcwraps.skin;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 /** Pluggable persistence boundary for v2 player skin ownership. */

@@ -438,7 +438,7 @@ public final class ConfigurationValidator {
                             bundleIds);
                     validatePrice(context, shopsPath, "daily-shop", shops.getDailyShop().getPrice());
                     String resetTime = shops.getDailyShop().getResetTime();
-                    if (resetTime != null && !resetTime.isBlank() && !resetTime.trim().matches("\d{1,2}:\d{2}")) {
+                    if (resetTime != null && !resetTime.isBlank() && !resetTime.trim().matches("\\d{1,2}:\\d{2}")) {
                         context.warning(shopsPath, "invalid-reset-time", Map.of("value", resetTime));
                     }
                 }

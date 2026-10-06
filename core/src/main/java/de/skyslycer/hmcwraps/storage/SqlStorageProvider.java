@@ -9,14 +9,11 @@ import de.skyslycer.hmcwraps.util.AsyncUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.stream.Collectors;
 
 /**
  * The bundled storage provider. It exposes the repository backed SQL database through the public
@@ -98,22 +95,8 @@ public final class SqlStorageProvider implements TransactionalStorage, StoragePr
         if (requested.isEmpty()) {
             return AsyncUtil.completed(Set.of());
         }
-        return AsyncUtil.safe(() -> ownership.owned(playerId)).thenCompose(owned -> {
-            Set<String> known = owned == null ? Set.of() : owned;
-            Set<String> missing = requested.stream().filter(skinId -> !known.contains(skinId))
-                    .collect(Collectors.toCollection(LinkedHashSet::new));
-            if (missing.isEmpty()) {
-                return AsyncUtil.completed(Set.<String>of());
-            }
-            return AsyncUtil.safe(() -> ownership.grantAll(playerId, missing, source)).thenCompose(granted -> {
-                if (!Boolean.TRUE.equals(granted)) {
-                    // Fail closed: the caller must not treat a stored-less grant as a success.
-                    return CompletableFuture.failedFuture(
-                            new IllegalStateException("Ownership could not be stored"));
-                }
-                return AsyncUtil.completed(Set.copyOf(missing));
-            });
-        });
+        return AsyncUtil.safe(() -> ownership.grantAll(playerId, requested, source))
+                .thenApply(granted -> granted == null ? Set.<String>of() : Set.copyOf(granted));
     }
 
     @Override

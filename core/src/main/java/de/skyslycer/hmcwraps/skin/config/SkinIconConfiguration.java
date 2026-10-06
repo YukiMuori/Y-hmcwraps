@@ -20,6 +20,10 @@ public class SkinIconConfiguration {
     private Boolean glintOverride;
     private Boolean hideTooltip;
 
+    /** Required by the configuration mapper; defaults to a plain paper icon. */
+    public SkinIconConfiguration() {
+    }
+
     /** Builds an icon description programmatically, for example for collection item rewards. */
     public SkinIconConfiguration(String type, String id, String name, List<String> lore) {
         this.type = type;

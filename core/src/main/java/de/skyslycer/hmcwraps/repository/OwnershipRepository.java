@@ -24,8 +24,13 @@ public interface OwnershipRepository {
      */
     @NotNull CompletionStage<Boolean> grant(@NotNull UUID playerId, @NotNull String skinId, @NotNull String source);
 
-    /** Grants several skins as one atomic operation; either all or none are stored. */
-    @NotNull CompletionStage<Boolean> grantAll(@NotNull UUID playerId, @NotNull Collection<String> skinIds, @NotNull String source);
+    /**
+     * Grants several skins as one atomic operation; either all or none are stored.
+     *
+     * @return the ids that were stored by this call; already owned ids are not repeated. The stage
+     *         completes exceptionally when nothing could be stored.
+     */
+    @NotNull CompletionStage<Set<String>> grantAll(@NotNull UUID playerId, @NotNull Collection<String> skinIds, @NotNull String source);
 
     /** Removes ownership; used to compensate a failed transaction. */
     @NotNull CompletionStage<Boolean> revoke(@NotNull UUID playerId, @NotNull String skinId);

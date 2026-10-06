@@ -4,12 +4,14 @@
 // checks API always is. Workflow commands written to the console become annotations, so this script
 // reports two things:
 //
-//   * every Java compile error (the JDK compiler runs once, right before the real compile task), and
+//   * every Java compile error of the main and the test source set (the JDK compiler runs once, right
+//     before the real compile task), and
 //   * any project whose configuration failed, with the failure message.
 //
-// Applied from the root build script to every subproject and only in CI. Everything is wrapped in
-// try/catch: diagnostics must never be able to break a build. Remove this script together with the
-// subprojects block in the root build script once the build is green again.
+// A single annotation is capped at 4096 characters, so the errors are compacted into one line each and
+// split over several annotations. Applied from the root build script to every subproject and only in CI.
+// Everything is wrapped in try/catch: diagnostics must never be able to break a build. Remove this
+// script together with the subprojects block in the root build script once the build is green again.
 
 try {
     // One hook reports configuration failures of every project (including the root).
@@ -25,10 +27,63 @@ try {
 
     def javaExtension = project.extensions.getByType(org.gradle.api.plugins.JavaPluginExtension)
     def mainSourceSet = javaExtension.sourceSets.getByName('main')
+    def testSourceSet = javaExtension.sourceSets.findByName('test')
     def compileTask = project.tasks.named('compileJava', org.gradle.api.tasks.compile.JavaCompile)
     def compileClasspath = project.configurations.getByName('compileClasspath')
+    def testCompileClasspath = project.configurations.findByName('testCompileClasspath')
     def release = compileTask.get().options.release.orNull ?: 21
     def moduleName = project.name
+    def moduleDir = project.projectDir.toPath()
+    def compiler = javax.tools.ToolProvider.systemJavaCompiler
+
+    def format = { diagnostics ->
+        def lines = []
+        for (diagnostic in diagnostics) {
+            def absolute = diagnostic.source?.toUri()?.path ?: '<unknown>'
+            def shown = absolute
+            try {
+                shown = moduleDir.relativize(java.nio.file.Path.of(absolute)).toString()
+            } catch (Throwable ignored) {
+                // Keep the absolute path when it is outside the module.
+            }
+            def raw = diagnostic.getMessage(null) ?: 'compile error'
+            def message = raw.replace('\r', '').split('\n')[0].trim()
+            def symbol = (raw =~ /(?s)symbol:\s*([^\n]+)/)
+            if (symbol.find()) {
+                message = message + ' [' + symbol.group(1).trim().replaceAll(/\s+/, ' ') + ']'
+            }
+            def line = diagnostic.lineNumber > 0 ? diagnostic.lineNumber : 1
+            lines.add(shown + ':' + line + ': ' + message)
+        }
+        return lines
+    }
+
+    def report = { label, lines ->
+        if (lines.isEmpty()) {
+            return
+        }
+        def chunks = []
+        def current = new StringBuilder()
+        for (line in lines) {
+            if (current.length() > 0 && current.length() + line.length() > 3400) {
+                chunks.add(current.toString())
+                current = new StringBuilder()
+            }
+            current.append(line).append('\n')
+        }
+        if (current.length() > 0) {
+            chunks.add(current.toString())
+        }
+        def total = lines.size() + ' compile error(s)'
+        def shown = Math.min(chunks.size(), 2)
+        for (def index = 0; index < shown; index++) {
+            def text = chunks.get(index).replace('%', '%25').replace('\n', '%0A')
+            println "::error::${label}: ${total} [${index + 1}/${chunks.size()}]:%0A${text}"
+        }
+        if (chunks.size() > shown) {
+            println "::error::${label}: " + (chunks.size() - shown) + ' further error block(s) are hidden; fix the shown ones and re-run'
+        }
+    }
 
     def preflight = project.tasks.register('preflightCompile') {
         group = 'verification'
@@ -37,43 +92,47 @@ try {
             try {
                 // Resolved here so the project dependencies are already built and on the classpath.
                 def classpath = compileClasspath.files.collect { it.absolutePath }.join(java.io.File.pathSeparator)
-                def compiler = javax.tools.ToolProvider.systemJavaCompiler
                 if (compiler == null) {
                     println "::error::${moduleName}: no system java compiler available"
                     return
                 }
-                def diagnostics = new javax.tools.DiagnosticCollector()
-                def errorLogger = new java.io.StringWriter()
-                compiler.getStandardFileManager(diagnostics, null, java.nio.charset.StandardCharsets.UTF_8).withCloseable { fileManager ->
+                def mainDiagnostics = new javax.tools.DiagnosticCollector()
+                compiler.getStandardFileManager(mainDiagnostics, null, java.nio.charset.StandardCharsets.UTF_8).withCloseable { fileManager ->
                     def units = fileManager.getJavaFileObjectsFromFiles(mainSourceSet.allJava.files)
                     def options = ['--release', release.toString(), '-classpath', classpath,
                                    '-parameters', '-encoding', 'UTF-8', '-proc:none']
-                    compiler.getTask(errorLogger, fileManager, diagnostics, options, null, units).call()
+                    compiler.getTask(new java.io.StringWriter(), fileManager, mainDiagnostics, options, null, units).call()
                 }
-                def errors = diagnostics.diagnostics.findAll { it.kind == javax.tools.Diagnostic.Kind.ERROR }
-                if (errors.isEmpty()) {
-                    println "::notice::${moduleName}: preflight compiler found no errors"
+                report(moduleName, format(mainDiagnostics.diagnostics.findAll {
+                    it.kind == javax.tools.Diagnostic.Kind.ERROR
+                }))
+
+                if (testSourceSet == null || testSourceSet.allJava.files.isEmpty() || testCompileClasspath == null) {
                     return
                 }
-                // One annotation with everything, because a check run only keeps a few annotations.
-                def digest = new StringBuilder()
-                errors.take(60).each { diagnostic ->
-                    def absolute = diagnostic.source?.toUri()?.path ?: '<unknown>'
-                    def relative = absolute
-                    try {
-                        relative = project.rootDir.toPath().relativize(java.nio.file.Path.of(absolute)).toString()
-                    } catch (Throwable ignored) {
-                        // Keep the absolute path when it is outside the repository.
-                    }
-                    def line = diagnostic.lineNumber > 0 ? diagnostic.lineNumber : 1
-                    digest.append(relative).append(':').append(line).append(': ')
-                            .append(diagnostic.getMessage(null) ?: 'compile error').append('\n')
+                // Compiling the main sources again as well keeps the test sources resolvable; only the
+                // errors inside the test source set are reported, the main ones were reported above.
+                def testRoot = testSourceSet.allJava.srcDirs.collect { it.toPath() }
+                def testDiagnostics = new javax.tools.DiagnosticCollector()
+                def testSources = testSourceSet.allJava.files.findAll { file ->
+                    testRoot.any { root -> file.toPath().startsWith(root) }
                 }
-                def text = digest.toString().replace('%', '%25').replace('\r', '').replace('\n', '%0A')
-                if (text.length() > 20000) {
-                    text = text.substring(0, 20000) + '%0A(truncated)'
+                def testClasspath = testCompileClasspath.files.collect { it.absolutePath }.join(java.io.File.pathSeparator)
+                def testUnits = []
+                testUnits.addAll(testSources)
+                testUnits.addAll(mainSourceSet.allJava.files)
+                compiler.getStandardFileManager(testDiagnostics, null, java.nio.charset.StandardCharsets.UTF_8).withCloseable { fileManager ->
+                    def units = fileManager.getJavaFileObjectsFromFiles(testUnits)
+                    def options = ['--release', release.toString(), '-classpath', testClasspath,
+                                   '-parameters', '-encoding', 'UTF-8', '-proc:none']
+                    compiler.getTask(new java.io.StringWriter(), fileManager, testDiagnostics, options, null, units).call()
                 }
-                println "::error::${moduleName}: ${errors.size()} compile error(s):%0A${text}"
+                def testErrors = testDiagnostics.diagnostics.findAll { diagnostic ->
+                    diagnostic.kind == javax.tools.Diagnostic.Kind.ERROR && diagnostic.source != null
+                            && testRoot.any { root -> diagnostic.source.toUri().path != null
+                                    && java.nio.file.Path.of(diagnostic.source.toUri().path).startsWith(root) }
+                }
+                report(moduleName + ':test', format(testErrors))
             } catch (Throwable throwable) {
                 println "::error::preflight compile diagnostics failed for ${moduleName}: ${throwable}"
             }

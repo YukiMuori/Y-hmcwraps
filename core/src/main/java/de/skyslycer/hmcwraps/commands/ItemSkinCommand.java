@@ -2,8 +2,10 @@ package de.skyslycer.hmcwraps.commands;
 
 import de.skyslycer.hmcwraps.HMCWrapsPlugin;
 import de.skyslycer.hmcwraps.commands.annotation.SkinIds;
+import de.skyslycer.hmcwraps.inventory.BaseGui;
 import de.skyslycer.hmcwraps.skin.ItemSkin;
 import de.skyslycer.hmcwraps.util.StringUtil;
+import de.skyslycer.hmcwraps.util.VersionUtil;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -239,6 +241,32 @@ public final class ItemSkinCommand {
         }
         plugin.getShopMenuManager().openGiftConfirm(sender, de.skyslycer.hmcwraps.shop.PurchaseKind.SKIN, skinId,
                 offline.getUniqueId(), recipientName);
+    }
+
+    @Subcommand("reload")
+    @CommandPermission("hmcwraps.commands.reload")
+    @Description("Reload HMCWraps configuration, skins, GUI, language, and shop files.")
+    public void onReload(CommandSender sender) {
+        long started = System.nanoTime();
+        for (Player player : plugin.getServer().getOnlinePlayers()) {
+            plugin.getFoliaLib().getScheduler().runAtEntity(player, ignored -> {
+                var topInventory = VersionUtil.getTopInventory(player);
+                if (topInventory != null && topInventory.getHolder() instanceof BaseGui) {
+                    player.closeInventory();
+                }
+            });
+        }
+        plugin.getFoliaLib().getScheduler().runNextTick(ignored -> {
+            plugin.unload();
+            boolean loaded = plugin.load();
+            String elapsed = String.format(java.util.Locale.ROOT, "%.2f",
+                    (System.nanoTime() - started) / 1_000_000.0);
+            if (loaded) {
+                send(sender, "messages.reload-success", Placeholder.unparsed("time", elapsed));
+            } else {
+                send(sender, "messages.reload-failed", Placeholder.unparsed("time", elapsed));
+            }
+        });
     }
 
     @Subcommand("coupon")

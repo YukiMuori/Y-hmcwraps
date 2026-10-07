@@ -8,6 +8,8 @@
 
 ### Added
 - Configurable floating preview entities: armor stand, item display, mannequin, or automatic selection. Mannequins equip armor in the matching slot and hold other items in their main hand.
+- Item Display previews now expose local XYZ translation plus separate XYZ Euler rotations for swords and other items, with documented upright, opposite-face, and edge-facing presets.
+- `/itemskin reload` safely reloads the plugin with the existing admin permission even when legacy Wraps are disabled.
 
 ### Changed
 - Nexo `nexo:<id>` references use the modern `item_model` component on supported servers without also applying legacy CustomModelData.

@@ -11,6 +11,7 @@ public class PreviewSettings {
     private int rotation;
     private SneakCancel sneakCancel;
     private Bobbing bobbing;
+    private ItemDisplayTransform itemDisplayTransform = new ItemDisplayTransform();
 
     public PreviewType getType() {
         return type;
@@ -36,6 +37,10 @@ public class PreviewSettings {
 
     public Bobbing getBobbing() {
         return bobbing;
+    }
+
+    public ItemDisplayTransform getItemDisplayTransform() {
+        return itemDisplayTransform == null ? new ItemDisplayTransform() : itemDisplayTransform;
     }
 
 }

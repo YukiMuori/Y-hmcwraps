@@ -44,7 +44,8 @@ public class FloatingPreview implements Preview {
             VersionUtil.sendMetadataPacket(player, entityId, upsideDown);
             VersionUtil.sendEquipPacket(player, entityId, item);
         } else if (entityType == PreviewEntityType.ITEM_DISPLAY) {
-            VersionUtil.sendItemDisplayMetadataPacket(player, entityId, item);
+            VersionUtil.sendItemDisplayMetadataPacket(player, entityId, item,
+                    plugin.getConfiguration().getPreview().getItemDisplayTransform());
         } else {
             VersionUtil.sendEquipPacket(player, entityId, item, equipmentSlot(item));
         }

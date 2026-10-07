@@ -40,6 +40,28 @@ preview:
   # AUTO preserves minecraft:item_model by using an item display; wearable armor uses a mannequin
   # when the server supports it. MANNEQUIN equips armor and holds other items in its main hand.
   entity-type: 'AUTO'
+  # Local transform used only by ITEM_DISPLAY/AUTO floating previews.
+  # Translation uses display-space blocks: X = right, Y = up, Z = toward the viewer.
+  # Rotation is in degrees and is applied in X, then Y, then Z order:
+  # X tilts the top toward/away from you; Y turns the front left/right; Z rotates in the screen plane.
+  # Useful sword presets (x/y/z): upright = 0/0/-90, horizontal = 0/0/0,
+  # upright opposite face = 0/180/-90, edge/side face = 0/90/-90.
+  # Models can define their own FIXED orientation, so adjust these values for your resource pack.
+  item-display-transform:
+    translation:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    # Applied to non-sword items.
+    item-rotation:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+    # Keeps standard sword models vertical with the blade pointing upward.
+    sword-rotation:
+      x: 0.0
+      y: 0.0
+      z: -90.0
   # Duration of the preview in seconds
   duration: 5
   # Rotation per tick (50ms)

@@ -1,6 +1,7 @@
 package de.skyslycer.hmcwraps.util;
 
 import de.skyslycer.hmcwraps.preview.floating.PreviewOrientation;
+import de.skyslycer.hmcwraps.serialization.preview.ItemDisplayTransform;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,5 +17,16 @@ class ItemDisplayTransformTest {
         assertFalse(PreviewOrientation.isVerticalItemDisplay("DIAMOND_PICKAXE"));
         assertFalse(PreviewOrientation.isVerticalItemDisplay("PAPER"));
         assertEquals(-Math.PI / 2D, PreviewOrientation.verticalRotationRadians(), 0.0001D);
+    }
+
+    @Test
+    void defaultTransformPreservesUprightSwordAndNeutralItems() {
+        ItemDisplayTransform transform = new ItemDisplayTransform();
+
+        assertTrue(transform.getTranslation().isZero());
+        assertTrue(transform.getItemRotation().isZero());
+        assertEquals(0.0, transform.getSwordRotation().getX());
+        assertEquals(0.0, transform.getSwordRotation().getY());
+        assertEquals(-90.0, transform.getSwordRotation().getZ());
     }
 }

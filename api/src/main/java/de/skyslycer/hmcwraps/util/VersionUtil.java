@@ -1,6 +1,8 @@
 package de.skyslycer.hmcwraps.util;
 
 import de.skyslycer.hmcwraps.preview.floating.PreviewOrientation;
+import de.skyslycer.hmcwraps.serialization.preview.ItemDisplayTransform;
+import de.skyslycer.hmcwraps.serialization.preview.TransformVector;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
@@ -578,6 +580,15 @@ public class VersionUtil {
      * @param item The displayed item
      */
     public static void sendItemDisplayMetadataPacket(Player player, int entityId, ItemStack item) {
+        sendItemDisplayMetadataPacket(player, entityId, item, new ItemDisplayTransform());
+    }
+
+    /**
+     * Send item display metadata with configurable local translation and XYZ Euler rotation.
+     * Rotations are applied in X, then Y, then Z order and are expressed in degrees.
+     */
+    public static void sendItemDisplayMetadataPacket(Player player, int entityId, ItemStack item,
+                                                     ItemDisplayTransform transform) {
         if (!VersionUtil.hasDataComponents()) {
             throw new IllegalStateException("Item display previews need a data-component server version");
         }
@@ -598,14 +609,25 @@ public class VersionUtil {
             var displayTransform = dataValueConstructor.newInstance(24, byteSerializer, (byte) 8);
             var metadata = new java.util.ArrayList<>(List.of(displayedItem, displayTransform));
 
-            // Sword models are commonly authored horizontally for the FIXED display context. Rotate
-            // the display plane by 90 degrees so floating sword previews stand upright, with the
-            // blade pointing upwards, while every other item keeps its normal model orientation.
-            if (PreviewOrientation.isVerticalItemDisplay(item.getType().name())) {
+            ItemDisplayTransform safeTransform = transform == null ? new ItemDisplayTransform() : transform;
+            TransformVector translation = safeTransform.getTranslation();
+            if (!translation.isZero()) {
+                var vectorClass = Class.forName("org.joml.Vector3f");
+                var vector = vectorClass.getConstructor(float.class, float.class, float.class).newInstance(
+                        (float) translation.getX(), (float) translation.getY(), (float) translation.getZ());
+                var vectorSerializer = serializersClass.getField("VECTOR3").get(null);
+                metadata.add(dataValueConstructor.newInstance(11, vectorSerializer, vector));
+            }
+
+            TransformVector rotation = PreviewOrientation.isVerticalItemDisplay(item.getType().name())
+                    ? safeTransform.getSwordRotation() : safeTransform.getItemRotation();
+            if (!rotation.isZero()) {
                 var quaternionClass = Class.forName("org.joml.Quaternionf");
                 var quaternion = quaternionClass.getConstructor().newInstance();
-                quaternionClass.getMethod("rotateZ", float.class)
-                        .invoke(quaternion, PreviewOrientation.verticalRotationRadians());
+                quaternionClass.getMethod("rotateXYZ", float.class, float.class, float.class).invoke(quaternion,
+                        (float) Math.toRadians(rotation.getX()),
+                        (float) Math.toRadians(rotation.getY()),
+                        (float) Math.toRadians(rotation.getZ()));
                 var quaternionSerializer = serializersClass.getField("QUATERNION").get(null);
                 metadata.add(dataValueConstructor.newInstance(13, quaternionSerializer, quaternion));
             }

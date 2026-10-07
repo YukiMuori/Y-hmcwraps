@@ -3,6 +3,7 @@ package de.skyslycer.hmcwraps.lang;
 import com.bgsoftware.common.config.CommentedConfiguration;
 import de.skyslycer.hmcwraps.HMCWraps;
 import de.skyslycer.hmcwraps.HMCWrapsPlugin;
+import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -146,7 +147,7 @@ public final class LanguageManager implements LanguageService {
         Set<String> resolving = new HashSet<>();
         TagResolver languageTags = TagResolver.builder()
                 .resolver(TagResolver.resolver("lang", (queue, context) -> referenceTag(player, queue, resolving, "")))
-                .resolver(TagResolver.resolver("glyph", (queue, context) -> referenceTag(player, queue, resolving, "glyphs.")))
+                .resolver(TagResolver.resolver("glyph", (queue, context) -> glyphTag(player, queue, resolving)))
                 .build();
         TagResolver[] combined = new TagResolver[extraResolvers.length + 1];
         combined[0] = languageTags;
@@ -166,9 +167,74 @@ public final class LanguageManager implements LanguageService {
             // Resolve references one level at a time, with a recursion guard for bad translations.
             return Tag.inserting(MINI_MESSAGE.deserialize(value, TagResolver.resolver(
                     "lang", (arguments, context) -> referenceTag(player, arguments, resolving, "")),
-                    TagResolver.resolver("glyph", (arguments, context) -> referenceTag(player, arguments, resolving, "glyphs."))));
+                    TagResolver.resolver("glyph", (arguments, context) -> glyphTag(player, arguments, resolving))));
         } finally {
             resolving.remove(key);
+        }
+    }
+
+    private Tag glyphTag(Player player, ArgumentQueue queue, Set<String> resolving) {
+        String id = queue.popOr("A glyph tag requires a Nexo glyph ID").value();
+        java.util.List<String> options = new java.util.ArrayList<>();
+        while (queue.hasNext()) options.add(queue.pop().value());
+
+        Component nexoGlyph = resolveNexoGlyph(player, id, options);
+        if (nexoGlyph != null) return Tag.inserting(nexoGlyph);
+
+        // Backwards-compatible fallback when Nexo is absent or the requested glyph does not exist.
+        String key = "glyphs." + id;
+        if (!resolving.add(key)) return Tag.inserting(Component.text(key));
+        try {
+            String value = get(player, key);
+            if (value.equals(key)) return Tag.inserting(Component.text("<glyph:" + id + ">"));
+            return Tag.inserting(MINI_MESSAGE.deserialize(value));
+        } finally {
+            resolving.remove(key);
+        }
+    }
+
+    /** Resolves Nexo's real glyph registry without linking HMCWraps' shaded Adventure classes to Nexo. */
+    private Component resolveNexoGlyph(Player player, String id, java.util.List<String> options) {
+        if (!plugin.getServer().getPluginManager().isPluginEnabled("Nexo")) return null;
+        try {
+            Class<?> nexoClass = Class.forName("com.nexomc.nexo.NexoPlugin");
+            Object nexo = nexoClass.getMethod("instance").invoke(null);
+            Object fontManager = nexoClass.getMethod("fontManager").invoke(nexo);
+            Object glyph = fontManager.getClass().getMethod("glyphFromID", String.class).invoke(fontManager, id);
+            if (glyph == null) return null;
+
+            if (player != null) {
+                Object allowed = glyph.getClass().getMethod("hasPermission", Player.class).invoke(glyph, player);
+                if (allowed instanceof Boolean permission && !permission) return Component.empty();
+            }
+
+            Object rawUnicodes = glyph.getClass().getMethod("getUnicodes").invoke(glyph);
+            if (!(rawUnicodes instanceof java.util.List<?> values) || values.isEmpty()) return Component.empty();
+            int first = 1;
+            int last = values.size();
+            boolean colorable = false;
+            for (String option : options) {
+                if (option.equalsIgnoreCase("c") || option.equalsIgnoreCase("colorable")) {
+                    colorable = true;
+                } else if (option.matches("\\d+")) {
+                    first = last = Integer.parseInt(option);
+                } else if (option.matches("\\d+\\.\\.\\d+")) {
+                    String[] range = option.split("\\.\\.");
+                    first = Integer.parseInt(range[0]);
+                    last = Integer.parseInt(range[1]);
+                }
+            }
+            first = Math.max(1, Math.min(first, values.size()));
+            last = Math.max(first, Math.min(last, values.size()));
+            StringBuilder unicode = new StringBuilder();
+            for (int index = first - 1; index < last; index++) unicode.append(values.get(index));
+
+            Object rawFont = glyph.getClass().getMethod("getFont").invoke(glyph);
+            Component component = Component.text(unicode.toString()).decoration(TextDecoration.ITALIC, false);
+            if (rawFont != null) component = component.font(Key.key(rawFont.toString()));
+            return colorable ? component : component.color(NamedTextColor.WHITE);
+        } catch (ReflectiveOperationException | LinkageError | IllegalArgumentException exception) {
+            return null;
         }
     }
 

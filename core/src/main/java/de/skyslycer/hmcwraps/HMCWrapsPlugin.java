@@ -529,8 +529,9 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
             scheduler = new PaperScheduler(getFoliaLib());
         }
         if (shopService != null) {
-            // A reload must not rebuild the database or the services; it only re-reads the definition files.
+            // A reload must not rebuild the database or the services; it only re-reads definition and GUI files.
             shopService.reload();
+            if (shopMenuManager != null) shopMenuManager.reloadConfiguration();
             return;
         }
         try {

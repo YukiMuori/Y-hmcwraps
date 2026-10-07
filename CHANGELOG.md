@@ -12,6 +12,8 @@
 - `/itemskin reload` safely reloads the plugin with the existing admin permission even when legacy Wraps are disabled.
 
 ### Changed
+- Static ItemSkin, shop and editor GUI titles/names/lore now live directly in Italian GUI configuration files; language files remain for messages and translated dynamic values.
+- Native Nexo `<glyph:id>` tags (including bitmap ranges and `colorable`) resolve from Nexo’s glyph registry throughout GUI MiniMessage text, with the old language glyph aliases retained only as a fallback.
 - The selected-item control in the ItemSkin GUI now introduces the browser with a configurable “choose your favorite skin” name, description, selected-item label, sorting and filtering instructions.
 - Nexo `nexo:<id>` references use the modern `item_model` component on supported servers without also applying legacy CustomModelData.
 

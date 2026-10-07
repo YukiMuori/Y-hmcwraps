@@ -1,4 +1,5 @@
-# Componenti MiniMessage riutilizzabili. Usa <glyph:raro>, <lang:rarities.rare>, ecc.
+# Messaggi chat/errori e valori dinamici tradotti. I testi statici delle GUI sono nei file delle GUI.
+# <glyph:id> usa i glyph di Nexo; la sezione glyphs qui sotto è solo un fallback se l’ID non esiste in Nexo.
 components:
   locked: '<red>🔒 Bloccata'
   owned: '<green>✓ Posseduta'

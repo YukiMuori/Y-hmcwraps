@@ -941,8 +941,10 @@ public final class ConfigurationValidator {
             while (matcher.find()) {
                 String kind = matcher.group(1).toLowerCase(Locale.ROOT);
                 String key = matcher.group(2).trim();
-                if (kind.equals("glyph")) key = "glyphs." + key;
-                if (!key.isBlank()) context.tagReferences.add(new TranslationReference(path, key, localeForPath(path)));
+                // <glyph:id> belongs to Nexo's external glyph registry, not the language catalog.
+                if (kind.equals("lang") && !key.isBlank()) {
+                    context.tagReferences.add(new TranslationReference(path, key, localeForPath(path)));
+                }
             }
         }
         for (Map.Entry<Object, ? extends ConfigurationNode> entry : node.childrenMap().entrySet()) {

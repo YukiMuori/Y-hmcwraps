@@ -1,4 +1,5 @@
-# Shared MiniMessage components and text. Use <glyph:raro>, <lang:rarities.rare>, etc.
+# Chat/error messages and translated dynamic values. Static GUI presentation lives in the GUI files.
+# <glyph:id> resolves Nexo glyphs; this file's glyphs section is only a fallback when Nexo has no matching ID.
 components:
   locked: '<red>🔒 Locked'
   owned: '<green>✓ Owned'

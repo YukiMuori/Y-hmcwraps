@@ -413,7 +413,9 @@ public final class ShopEditorManager implements Listener {
 
     private net.kyori.adventure.text.Component component(Player player, String key, Map<String, String> values) {
         LanguageManager language = plugin.getLanguageManager();
-        return language.parse(player, language.get(player, key), placeholders(values));
+        ShopMenuManager menus = plugin.getShopMenuManager();
+        String configured = menus == null ? language.get(player, key) : menus.configuredText(player, key);
+        return language.parse(player, configured, placeholders(values));
     }
 
     private void send(Player player, String key) {

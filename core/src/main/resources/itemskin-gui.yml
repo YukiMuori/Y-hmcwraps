@@ -1,5 +1,6 @@
 # Every visible control can be disabled, moved and given a custom material or hooked item.
-# All titles, names and lore use MiniMessage. Skin icons and controls also accept item-model and tooltip-style.
+# All titles, names and lore are configured here and use MiniMessage. Nexo <glyph:id> tags are supported.
+# Dynamic placeholders remain available without moving static GUI text into lang/*.yml.
 gui:
   title: '<gradient:#8FEAF9:#CDA4F9>ɪᴛᴇᴍ sᴋɪɴs</gradient>'
   size: 54
@@ -10,15 +11,15 @@ gui:
   item-slot: 4
   # Fully configurable display name for the selected-item control.
   # Supports <item_name>, <sort>, <filter>, MiniMessage, and language tags.
-  item-name: '<gradient:#8FEAF9:#CDA4F9><lang:gui.item-control-title></gradient>'
+  item-name: '<gradient:#8FEAF9:#CDA4F9>sᴄᴇɢʟɪ ʟᴀ ᴛᴜᴀ sᴋɪɴ ᴘʀᴇғᴇʀɪᴛᴀ</gradient>'
   # <item_lore> expands the item's original lore when included. Every line may be changed or removed.
   item-lore:
-    - '<gray><lang:gui.item-control-description></gray>'
+    - '<gray>Sfoglia le skin compatibili e scegli il look perfetto.</gray>'
     - ''
-    - '<gray><lang:gui.item-control-selected> <item_name></gray>'
+    - '<gray>Oggetto selezionato: <white><item_name></white></gray>'
     - ''
-    - '<#FFE89A><lang:gui.item-control-sort></#FFE89A> <gray><sort></gray>'
-    - '<#8FEAF9><lang:gui.item-control-filter></#8FEAF9> <gray><filter></gray>'
+    - '<#FFE89A>Click sinistro · Ordine:</#FFE89A> <gray><sort></gray>'
+    - '<#8FEAF9>Click destro · Filtro:</#8FEAF9> <gray><filter></gray>'
   default-sort: rarity
   default-sort-order: descending
   show-locked: true
@@ -40,106 +41,106 @@ gui:
     item:
       type: material
       id: EMERALD
-      name: '<gradient:#8FEAF9:#CDA4F9><lang:gui.shop></gradient>'
+      name: '<gradient:#8FEAF9:#CDA4F9>ɴᴇɢᴏᴢɪᴏ sᴋɪɴ</gradient>'
       lore:
         - ''
-        - '<#F0FAFF><lang:gui.shop-description></#F0FAFF>'
+        - '<#F0FAFF>Apri offerte, bundle, eventi e coupon.</#F0FAFF>'
         - ''
-        - '<#FFE89A>➜ <lang:gui.click-shop></#FFE89A>'
+        - '<#FFE89A>➜ ᴄʟɪᴄᴄᴀ ᴘᴇʀ ᴀᴘʀɪʀᴇ</#FFE89A>'
   previous:
     enabled: true
     slot: 45
     item:
       type: material
       id: ARROW
-      name: '<gray>← <lang:gui.previous></gray>'
+      name: '<gray>← ᴘᴀɢɪɴᴀ ᴘʀᴇᴄᴇᴅᴇɴᴛᴇ</gray>'
       lore:
         - ''
-        - '<#F0FAFF><lang:gui.previous-description></#F0FAFF>'
+        - '<#F0FAFF>Torna alla pagina precedente.</#F0FAFF>'
         - ''
-        - '<#FFE89A>➜ <lang:gui.click-navigate></#FFE89A>'
+        - '<#FFE89A>➜ ᴄʟɪᴄᴄᴀ ᴘᴇʀ ɴᴀᴠɪɢᴀʀᴇ</#FFE89A>'
   search:
     enabled: false
     slot: 46
     item:
       type: material
       id: SPYGLASS
-      name: '<gradient:#8FEAF9:#CDA4F9><lang:gui.search></gradient>'
+      name: '<gradient:#8FEAF9:#CDA4F9>ʀɪᴄᴇʀᴄᴀ</gradient>'
       lore:
         - ''
-        - '<#F0FAFF><lang:gui.search-description></#F0FAFF>'
+        - '<#F0FAFF>Cerca una skin per nome.</#F0FAFF>'
         - ''
-        - '<#FFE89A>➜ <lang:gui.click-search></#FFE89A>'
+        - '<#FFE89A>➜ ᴄʟɪᴄᴄᴀ ᴘᴇʀ ᴄᴇʀᴄᴀʀᴇ</#FFE89A>'
   collection:
     enabled: false
     slot: 48
     item:
       type: material
       id: BOOK
-      name: '<#CDA4F9><lang:gui.collection></#CDA4F9>'
+      name: '<#CDA4F9>ᴄᴏʟʟᴇᴢɪᴏɴᴇ</#CDA4F9>'
       lore:
         - ''
-        - '<#F0FAFF><lang:gui.collection-description></#F0FAFF>'
+        - '<#F0FAFF>Sfoglia le collezioni disponibili.</#F0FAFF>'
         - ''
-        - '<#FFE89A>➜ <lang:gui.click-change></#FFE89A>'
+        - '<#FFE89A>➜ ᴄʟɪᴄᴄᴀ ᴘᴇʀ ᴄᴀᴍʙɪᴀʀᴇ</#FFE89A>'
   unskin:
     enabled: true
     slot: 49
     item:
       type: material
       id: SHEARS
-      name: '<#FF6B6B>✕ <lang:gui.unskin></#FF6B6B>'
+      name: '<#FF6B6B>✕ ʀɪᴍᴜᴏᴠɪ sᴋɪɴ</#FF6B6B>'
       lore:
         - ''
-        - '<#F0FAFF><lang:gui.unskin-description></#F0FAFF>'
+        - '<#F0FAFF>Ripristina l’aspetto originale dell’oggetto.</#F0FAFF>'
         - ''
-        - '<#FFE89A>➜ <lang:gui.click-unskin></#FFE89A>'
+        - '<#FFE89A>➜ ᴄʟɪᴄᴄᴀ ᴘᴇʀ ʀɪᴍᴜᴏᴠᴇʀᴇ</#FFE89A>'
   close:
     enabled: false
     slot: 49
     item:
       type: material
       id: BARRIER
-      name: '<#FF6B6B>✕ <lang:gui.close></#FF6B6B>'
+      name: '<#FF6B6B>✕ ᴄʜɪᴜᴅɪ</#FF6B6B>'
       lore:
         - ''
-        - '<gray><lang:gui.close-description></gray>'
+        - '<gray>Chiudi questo menu.</gray>'
   sort:
     enabled: false
     slot: 51
     item:
       type: material
       id: COMPARATOR
-      name: '<#FFE89A><lang:gui.sort></#FFE89A>'
+      name: '<#FFE89A>ᴏʀᴅɪɴᴀ</#FFE89A>'
       lore:
         - ''
-        - '<#F0FAFF><lang:gui.sort-description></#F0FAFF>'
+        - '<#F0FAFF>Cambia l’ordine delle skin.</#F0FAFF>'
         - ''
-        - '<#FFE89A>➜ <lang:gui.click-change></#FFE89A>'
+        - '<#FFE89A>➜ ᴄʟɪᴄᴄᴀ ᴘᴇʀ ᴄᴀᴍʙɪᴀʀᴇ</#FFE89A>'
   filter:
     enabled: false
     slot: 52
     item:
       type: material
       id: HOPPER
-      name: '<#8FEAF9><lang:gui.filter></#8FEAF9>'
+      name: '<#8FEAF9>ғɪʟᴛʀᴏ</#8FEAF9>'
       lore:
         - ''
-        - '<#F0FAFF><lang:gui.filter-description></#F0FAFF>'
+        - '<#F0FAFF>Scegli quali skin visualizzare.</#F0FAFF>'
         - ''
-        - '<#FFE89A>➜ <lang:gui.click-change></#FFE89A>'
+        - '<#FFE89A>➜ ᴄʟɪᴄᴄᴀ ᴘᴇʀ ᴄᴀᴍʙɪᴀʀᴇ</#FFE89A>'
   next:
     enabled: true
     slot: 53
     item:
       type: material
       id: ARROW
-      name: '<#8FEAF9><lang:gui.next> →</#8FEAF9>'
+      name: '<#8FEAF9>ᴘᴀɢɪɴᴀ sᴜᴄᴄᴇssɪᴠᴀ →</#8FEAF9>'
       lore:
         - ''
-        - '<#F0FAFF><lang:gui.next-description></#F0FAFF>'
+        - '<#F0FAFF>Vai alla pagina successiva.</#F0FAFF>'
         - ''
-        - '<#FFE89A>➜ <lang:gui.click-navigate></#FFE89A>'
+        - '<#FFE89A>➜ ᴄʟɪᴄᴄᴀ ᴘᴇʀ ɴᴀᴠɪɢᴀʀᴇ</#FFE89A>'
   # DeluxeMenus-style category controls. Every category has its own state, slot and complete item.
   categories:
     swords:
@@ -148,40 +149,40 @@ gui:
       item:
         type: material
         id: DIAMOND_SWORD
-        name: '<gray><lang:categories.swords></gray>'
-        lore: ['<gray><lang:gui.category-description></gray>']
+        name: '<gray>Spade</gray>'
+        lore: ['<gray>Clicca per mostrare questa categoria.</gray>']
     pickaxes:
       enabled: true
       slot: 39
       item:
         type: material
         id: DIAMOND_PICKAXE
-        name: '<gray><lang:categories.pickaxes></gray>'
-        lore: ['<gray><lang:gui.category-description></gray>']
+        name: '<gray>Picconi</gray>'
+        lore: ['<gray>Clicca per mostrare questa categoria.</gray>']
     axes:
       enabled: true
       slot: 40
       item:
         type: material
         id: DIAMOND_AXE
-        name: '<gray><lang:categories.axes></gray>'
-        lore: ['<gray><lang:gui.category-description></gray>']
+        name: '<gray>Asce</gray>'
+        lore: ['<gray>Clicca per mostrare questa categoria.</gray>']
     armor:
       enabled: true
       slot: 41
       item:
         type: material
         id: DIAMOND_CHESTPLATE
-        name: '<gray><lang:categories.armor></gray>'
-        lore: ['<gray><lang:gui.category-description></gray>']
+        name: '<gray>Armature</gray>'
+        lore: ['<gray>Clicca per mostrare questa categoria.</gray>']
     tools:
       enabled: true
       slot: 42
       item:
         type: material
         id: COMPASS
-        name: '<gray><lang:categories.tools></gray>'
-        lore: ['<gray><lang:gui.category-description></gray>']
+        name: '<gray>Strumenti</gray>'
+        lore: ['<gray>Clicca per mostrare questa categoria.</gray>']
   click-actions:
     left: apply
     right: preview

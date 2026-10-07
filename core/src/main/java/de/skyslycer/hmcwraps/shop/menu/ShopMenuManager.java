@@ -81,11 +81,23 @@ public final class ShopMenuManager implements Listener {
             .withZone(ZoneId.systemDefault());
 
     private final HMCWrapsPlugin plugin;
+    private final ShopGuiConfiguration guiConfiguration;
     private final Map<UUID, ShopSession> sessions = new ConcurrentHashMap<>();
     private final Map<UUID, String> giftPrompts = new ConcurrentHashMap<>();
 
     public ShopMenuManager(@NotNull HMCWrapsPlugin plugin) {
         this.plugin = plugin;
+        this.guiConfiguration = new ShopGuiConfiguration(plugin);
+        this.guiConfiguration.load();
+    }
+
+    /** Reloads titles, names and lore from shop-gui.yml without rebuilding shop services. */
+    public void reloadConfiguration() {
+        guiConfiguration.load();
+    }
+
+    String configuredText(Player player, String key) {
+        return guiConfiguration.text(key, plugin.getLanguageManager().get(player, key));
     }
 
     /** The shop home screen with the featured entries and the section buttons. */
@@ -229,12 +241,12 @@ public final class ShopMenuManager implements Listener {
     }
 
     private Component title(Player player, ShopSession session) {
-        Component base = localized(player, "shop.menu.title");
+        Component base = display(player, "shop.menu.title", baseResolvers());
         if (session.screen == Screen.HOME) {
             return base;
         }
         return base.append(StringUtil.MINI_MESSAGE.deserialize(" <dark_gray>\u00bb "))
-                .append(localized(player, "shop.menu." + session.screen.key()));
+                .append(display(player, "shop.menu." + session.screen.key(), baseResolvers()));
     }
 
     // ------------------------------------------------------------------ screens
@@ -918,9 +930,14 @@ public final class ShopMenuManager implements Listener {
         return language.parse(player, language.get(player, key), merge(resolvers));
     }
 
-    private String localizedText(Player player, String key, TagResolver resolvers) {
+    private Component display(Player player, String key, TagResolver resolvers) {
         LanguageManager language = plugin.getLanguageManager();
-        return StringUtil.MINI_MESSAGE.serialize(language.parse(player, language.get(player, key), merge(resolvers)));
+        String configured = guiConfiguration.text(key, language.get(player, key));
+        return language.parse(player, configured, merge(resolvers));
+    }
+
+    private String localizedText(Player player, String key, TagResolver resolvers) {
+        return StringUtil.MINI_MESSAGE.serialize(display(player, key, resolvers));
     }
 
     private static TagResolver baseResolvers() {

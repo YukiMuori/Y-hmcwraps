@@ -117,6 +117,7 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
     private final SkinOwnershipService skinOwnership = new SkinOwnershipService(skinStorage);
     private final ItemSkinManagerImpl itemSkinManager = new ItemSkinManagerImpl(this, skinCatalog, compatibilityRegistry, skinOwnership, economyManager);
     private final SkinTradeManager skinTradeManager = new SkinTradeManager(this, itemSkinManager);
+    private final de.skyslycer.hmcwraps.skin.SkinDisplayManager skinDisplayManager = new de.skyslycer.hmcwraps.skin.SkinDisplayManager(this);
     private volatile java.util.concurrent.CompletableFuture<Boolean> skinStorageInitialization;
     private HookAccessor hookAccessor;
     private Config config;
@@ -139,6 +140,8 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
     private ShopEditorManager shopEditorManager;
     private GiftServiceImpl giftService;
     private EconomyService economyService;
+    private de.skyslycer.hmcwraps.market.SkinMarketService skinMarketService;
+    private de.skyslycer.hmcwraps.market.SkinMarketMenu skinMarketMenu;
     private PurchaseTransactionService transactionService;
     private PurchaseRepository purchaseRepository;
     private GiftRepository giftRepository;
@@ -214,6 +217,9 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
         Bukkit.getPluginManager().registerEvents(new DispenserArmorListener(this), this);
         Bukkit.getPluginManager().registerEvents(itemSkinManager.menuManager(), this);
         Bukkit.getPluginManager().registerEvents(skinTradeManager, this);
+        Bukkit.getPluginManager().registerEvents(new de.skyslycer.hmcwraps.listener.SkinnedItemProtectionListener(this), this);
+        Bukkit.getPluginManager().registerEvents(skinDisplayManager, this);
+        getFoliaLib().getScheduler().runNextTick(ignored -> skinDisplayManager.load());
         if (config.getLegacyWraps().isEnabled()) {
             Bukkit.getPluginManager().registerEvents(new PlayerPickupListener(this), this);
             Bukkit.getPluginManager().registerEvents(new PlayerDropListener(this), this);
@@ -502,6 +508,9 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
     }
 
     public SkinTradeManager getSkinTradeManager() { return skinTradeManager; }
+    public de.skyslycer.hmcwraps.skin.SkinDisplayManager getSkinDisplayManager() { return skinDisplayManager; }
+    public de.skyslycer.hmcwraps.market.SkinMarketService getSkinMarketService() { return skinMarketService; }
+    public de.skyslycer.hmcwraps.market.SkinMarketMenu getSkinMarketMenu() { return skinMarketMenu; }
 
     public LanguageManager getLanguageManager() { return languageManager; }
     @Override public LanguageManager getLanguageService() { return languageManager; }
@@ -573,6 +582,9 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
             giftService = new GiftServiceImpl(this, shopRegistry, skinCatalog, skinOwnership, economyService,
                     transactionService, giftRepository, scheduler, () -> config == null ? null : config.getGifts(),
                     message -> getLogger().warning(message));
+            skinMarketService = new de.skyslycer.hmcwraps.market.SkinMarketService(this);
+            skinMarketMenu = new de.skyslycer.hmcwraps.market.SkinMarketMenu(this, skinMarketService);
+            Bukkit.getPluginManager().registerEvents(skinMarketMenu, this);
             shopMenuManager = new ShopMenuManager(this);
             Bukkit.getPluginManager().registerEvents(shopMenuManager, this);
             shopEditorManager = new ShopEditorManager(this);

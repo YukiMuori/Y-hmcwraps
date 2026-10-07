@@ -20,16 +20,22 @@ public class HandPreview implements Preview {
     private final ItemStack item;
     private final Consumer<Player> onClose;
     private final HMCWraps plugin;
+    private final int durationSeconds;
     private WrappedTask task;
     private WrappedTask cancelTask;
     private ItemStack oldItem;
     private ItemStack oldOffHandItem;
 
     public HandPreview(Player player, ItemStack item, Consumer<Player> onClose, HMCWraps plugin) {
+        this(player, item, onClose, plugin, plugin.getConfiguration().getPreview().getDuration());
+    }
+
+    public HandPreview(Player player, ItemStack item, Consumer<Player> onClose, HMCWraps plugin, int durationSeconds) {
         this.player = player;
         this.item = item;
         this.onClose = onClose;
         this.plugin = plugin;
+        this.durationSeconds = Math.max(1, durationSeconds);
     }
 
     public void preview() {
@@ -50,7 +56,7 @@ public class HandPreview implements Preview {
             }
         }, 3, 1);
         cancelTask = plugin.getFoliaLib().getScheduler().runAtEntityLater(player, () -> plugin.getPreviewManager().remove(player.getUniqueId(), true),
-                        plugin.getConfiguration().getPreview().getDuration() * 20L);
+                        durationSeconds * 20L);
     }
 
     public void cancel(boolean open) {

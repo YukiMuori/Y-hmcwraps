@@ -14,7 +14,7 @@ public final class DatabaseMigrations {
     }
 
     /** The latest schema version shipped with this build. */
-    public static final int LATEST_VERSION = 7;
+    public static final int LATEST_VERSION = 8;
 
     private static final List<DatabaseMigration> MIGRATIONS = List.of(
             new DatabaseMigration(1, List.of(
@@ -67,7 +67,15 @@ public final class DatabaseMigrations {
             ), "player shop preferences and profile counters"),
             new DatabaseMigration(7, List.of(
                     "DROP TABLE IF EXISTS skin_favorites"
-            ), "remove the discontinued favorites feature")
+            ), "remove the discontinued favorites feature"),
+            new DatabaseMigration(8, List.of(
+                    "CREATE TABLE IF NOT EXISTS skin_market_listings ("
+                            + "listing_id TEXT PRIMARY KEY, seller_uuid TEXT NOT NULL, seller_name TEXT NOT NULL, "
+                            + "skin_id TEXT NOT NULL, amount REAL NOT NULL, currency TEXT NOT NULL, provider TEXT NOT NULL, "
+                            + "status TEXT NOT NULL, created_at INTEGER NOT NULL, buyer_uuid TEXT, completed_at INTEGER)",
+                    "CREATE INDEX IF NOT EXISTS idx_skin_market_status ON skin_market_listings(status, created_at DESC)",
+                    "CREATE UNIQUE INDEX IF NOT EXISTS idx_skin_market_seller_skin_active ON skin_market_listings(seller_uuid, skin_id) WHERE status = 'ACTIVE'"
+            ), "persistent player skin market listings")
     );
 
     /** All migrations in ascending order. */

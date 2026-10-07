@@ -20,6 +20,9 @@ import revxrsal.commands.bukkit.annotation.CommandPermission;
 /** Player-facing entry point for the independent v2 item-skin browser. */
 @Command("itemskin")
 public final class ItemSkinCommand {
+    private static final long TRIAL_COOLDOWN_MILLIS = 60_000L;
+    private static final int TRIAL_DURATION_SECONDS = 15;
+    private final java.util.Map<java.util.UUID, Long> trialCooldowns = new java.util.concurrent.ConcurrentHashMap<>();
     private final HMCWrapsPlugin plugin;
 
     public ItemSkinCommand(HMCWrapsPlugin plugin) { this.plugin = plugin; }
@@ -67,6 +70,35 @@ public final class ItemSkinCommand {
             return;
         }
         plugin.getItemSkinManager().preview(player, item, skin);
+    }
+
+    @Subcommand("trial")
+    @Description("Try any compatible skin in your hand for 15 seconds.")
+    public void onTrial(Player player, @SkinIds String skinId) {
+        ItemSkin skin = plugin.getItemSkinManager().getSkin(skinId).orElse(null);
+        if (skin == null) {
+            send(player, "messages.unknown-skin", Placeholder.unparsed("skin", skinId));
+            return;
+        }
+        ItemStack item = player.getInventory().getItemInMainHand();
+        if (item == null || item.getType().isAir()) {
+            send(player, "messages.no-item");
+            return;
+        }
+        if (!skin.previewEnabled() || plugin.getItemSkinManager().getCompatibleSkins(item).stream()
+                .noneMatch(candidate -> candidate.id().equals(skin.id()))) {
+            send(player, "messages.compatibility-error");
+            return;
+        }
+        long remaining = trialCooldowns.getOrDefault(player.getUniqueId(), 0L) - System.currentTimeMillis();
+        if (remaining > 0) {
+            send(player, "messages.trial-cooldown", Placeholder.unparsed("seconds", String.valueOf((remaining + 999) / 1000)));
+            return;
+        }
+        trialCooldowns.put(player.getUniqueId(), System.currentTimeMillis() + TRIAL_COOLDOWN_MILLIS);
+        plugin.getPreviewManager().createHandTrial(player, skin.cosmetic(), item, TRIAL_DURATION_SECONDS);
+        send(player, "messages.trial-started", Placeholder.unparsed("seconds", String.valueOf(TRIAL_DURATION_SECONDS)),
+                Placeholder.component("skin", plugin.getLanguageManager().parse(player, skin.displayName())));
     }
 
     @Subcommand("trade")
@@ -241,6 +273,69 @@ public final class ItemSkinCommand {
         }
         plugin.getShopMenuManager().openGiftConfirm(sender, de.skyslycer.hmcwraps.shop.PurchaseKind.SKIN, skinId,
                 offline.getUniqueId(), recipientName);
+    }
+
+    @Subcommand("market")
+    @Description("Open the persistent player skin market.")
+    public void onMarket(Player player) {
+        if (plugin.getSkinMarketMenu() == null) { send(player, "shop.purchase.unavailable"); return; }
+        plugin.getSkinMarketMenu().open(player);
+    }
+
+    @Subcommand("market sell")
+    @Description("List an owned skin on the market; ownership moves into escrow.")
+    public void onMarketSell(Player player, @SkinIds String skinId, double amount) {
+        if (plugin.getSkinMarketService() == null) { send(player, "shop.purchase.unavailable"); return; }
+        plugin.getSkinMarketService().sell(player.getUniqueId(), player.getName(), skinId, amount)
+                .whenComplete((result, error) -> sync(player, () -> send(player,
+                        result == de.skyslycer.hmcwraps.market.SkinMarketService.Result.SUCCESS
+                                ? "messages.market-listed" : "messages.market-failed")));
+    }
+
+    @Subcommand("market buy")
+    public void onMarketBuy(Player player, java.util.UUID listingId) {
+        if (plugin.getSkinMarketService() == null) { send(player, "shop.purchase.unavailable"); return; }
+        plugin.getSkinMarketService().buy(player.getUniqueId(), listingId)
+                .whenComplete((result, error) -> sync(player, () -> send(player,
+                        result == de.skyslycer.hmcwraps.market.SkinMarketService.Result.SUCCESS
+                                ? "messages.market-bought" : "messages.market-failed")));
+    }
+
+    @Subcommand("market cancel")
+    public void onMarketCancel(Player player, java.util.UUID listingId) {
+        if (plugin.getSkinMarketService() == null) { send(player, "shop.purchase.unavailable"); return; }
+        plugin.getSkinMarketService().cancel(player.getUniqueId(), listingId)
+                .whenComplete((result, error) -> sync(player, () -> send(player,
+                        result == de.skyslycer.hmcwraps.market.SkinMarketService.Result.SUCCESS
+                                ? "messages.market-cancelled" : "messages.market-failed")));
+    }
+
+    @Subcommand("display create")
+    @CommandPermission("hmcwraps.commands.itemskin.display")
+    @Description("Create a persistent physical showcase for a skin.")
+    public void onDisplayCreate(Player player, @SkinIds String skinId) {
+        ItemSkin skin = plugin.getItemSkinManager().getSkin(skinId).orElse(null);
+        if (skin == null) {
+            send(player, "messages.unknown-skin", Placeholder.unparsed("skin", skinId));
+            return;
+        }
+        java.util.UUID id = plugin.getSkinDisplayManager().create(player, skin);
+        send(player, "messages.display-created", Placeholder.unparsed("id", id.toString()),
+                Placeholder.component("skin", plugin.getLanguageManager().parse(player, skin.displayName())));
+    }
+
+    @Subcommand("display remove")
+    @CommandPermission("hmcwraps.commands.itemskin.display")
+    @Description("Remove the nearest skin showcase within five blocks.")
+    public void onDisplayRemove(Player player) {
+        send(player, plugin.getSkinDisplayManager().removeNearest(player, 5.0)
+                ? "messages.display-removed" : "messages.display-not-found");
+    }
+
+    @Subcommand("display list")
+    @CommandPermission("hmcwraps.commands.itemskin.display")
+    public void onDisplayList(CommandSender sender) {
+        send(sender, "messages.display-count", Placeholder.unparsed("count", String.valueOf(plugin.getSkinDisplayManager().count())));
     }
 
     @Subcommand("reload")

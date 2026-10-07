@@ -91,6 +91,21 @@ public class PreviewManager {
         createPrivate(event.getPlayer(), event.getItem(), wrap, event.getOnClose());
     }
 
+    /** Starts a forced client-side hand trial independently of the configured floating preview type. */
+    public void createHandTrial(Player player, Wrap wrap, ItemStack baseItem, int durationSeconds) {
+        if (baseItem == null || baseItem.getType().isAir()) return;
+        var item = plugin.getWrapper().setWrap(wrap, baseItem.clone(), false, player);
+        var applied = plugin.getWrapper().getWrap(item);
+        if (applied == null || !applied.getUuid().equals(wrap.getUuid())) return;
+        var event = new ItemPreviewEvent(player, item, null, wrap);
+        Bukkit.getPluginManager().callEvent(event);
+        if (event.isCancelled()) return;
+        remove(player.getUniqueId(), false);
+        Preview preview = new HandPreview(event.getPlayer(), event.getItem(), null, plugin, durationSeconds);
+        preview.preview();
+        previews.put(player.getUniqueId(), preview);
+    }
+
     private void createPrivate(Player player, ItemStack item, Wrap wrap, Consumer<Player> onClose) {
         this.remove(player.getUniqueId(), false);
         Preview preview;

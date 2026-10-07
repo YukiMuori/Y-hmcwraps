@@ -91,18 +91,19 @@ public final class ConfigurationValidator {
 
         if (config != null) {
             validateMainConfig(context, config);
-            addCollections(context, dataFolder.resolve("config.yml"), config.getCollections(), collections, collectionSources);
-            if (config.getItems() == null) {
-                context.error(dataFolder.resolve("config.yml"), "invalid-section", Map.of("section", "items"));
-            } else {
-                wrapSources.add(new WrapSource(dataFolder.resolve("config.yml"), config.getItems()));
+            if (config.getLegacyWraps().isEnabled()) {
+                addCollections(context, dataFolder.resolve("config.yml"), config.getCollections(), collections, collectionSources);
+                if (config.getItems() == null) {
+                    context.error(dataFolder.resolve("config.yml"), "invalid-section", Map.of("section", "items"));
+                } else {
+                    wrapSources.add(new WrapSource(dataFolder.resolve("config.yml"), config.getItems()));
+                }
+                loadCollectionFiles(context, collections, collectionSources);
+                loadWrapFiles(context, wrapSources);
+                for (WrapSource source : wrapSources) {
+                    validateWrapSource(context, source, collections, wrapIds);
+                }
             }
-        }
-
-        loadCollectionFiles(context, collections, collectionSources);
-        loadWrapFiles(context, wrapSources);
-        for (WrapSource source : wrapSources) {
-            validateWrapSource(context, source, collections, wrapIds);
         }
 
         Set<String> rarityIds = loadRarities(context);
@@ -129,8 +130,10 @@ public final class ConfigurationValidator {
 
     private void validateMainConfig(Context context, Config config) {
         Path path = dataFolder.resolve("config.yml");
-        if (config.getCollections() == null) context.error(path, "invalid-section", Map.of("section", "collections"));
-        if (config.getItems() == null) context.error(path, "invalid-section", Map.of("section", "items"));
+        if (config.getLegacyWraps().isEnabled()) {
+            if (config.getCollections() == null) context.error(path, "invalid-section", Map.of("section", "collections"));
+            if (config.getItems() == null) context.error(path, "invalid-section", Map.of("section", "items"));
+        }
         if (config.getLanguage() == null || normalizeLocale(config.getLanguage().getDefaultLanguage()).isBlank()) {
             context.warning(path, "invalid-default-language", Map.of());
         }

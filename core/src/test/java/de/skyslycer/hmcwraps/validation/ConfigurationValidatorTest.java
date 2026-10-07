@@ -27,6 +27,8 @@ class ConfigurationValidatorTest {
         write("config.yml", """
                 language:
                   default: en
+                legacy-wraps:
+                  enabled: true
                 items: {}
                 collections: {}
                 """);
@@ -202,6 +204,21 @@ class ConfigurationValidatorTest {
 
         assertTrue(report.issues().stream().anyMatch(issue -> issue.key().equals("invalid-yaml")
                 && issue.path().equals("wraps/broken.yml")));
+    }
+
+    @Test
+    void skipsLegacyFilesWhenClassicWrapsAreDisabled() throws IOException {
+        write("config.yml", """
+                language:
+                  default: en
+                legacy-wraps:
+                  enabled: false
+                """);
+        write("wraps/broken.yml", "items: [this is not valid YAML\n");
+
+        ConfigurationValidator.Report report = new ConfigurationValidator(dataFolder).validate();
+
+        assertFalse(report.issues().stream().anyMatch(issue -> issue.path().equals("wraps/broken.yml")));
     }
 
     private void write(String relativePath, String content) throws IOException {

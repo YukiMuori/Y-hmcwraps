@@ -54,6 +54,9 @@ public class InventoryClickListener implements Listener {
             event.setCancelled(true);
             return;
         }
+        if (!plugin.getConfiguration().getLegacyWraps().isEnabled()) {
+            return;
+        }
         switch (event.getAction()) {
             case PLACE_ALL, PLACE_SOME, PLACE_ONE, SWAP_WITH_CURSOR -> {
                 var slot = event.getRawSlot();

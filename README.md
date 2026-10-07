@@ -39,7 +39,9 @@ The repository's build artifact is produced by `./gradlew clean build`; the dist
 | `/itemskin coupon <code>` | Apply a coupon code to your next purchase. |
 | `/itemskin editor` | *(Permission `hmcwraps.commands.itemskin.editor`)* edit `shops.yml`/`coupons.yml` in game. |
 | `/itemskin give <skin-id> <player>` | *(Permission `hmcwraps.commands.itemskin.give`)* permanently grant a skin for giveaways without charging the player. |
-| `/wraps` | Existing legacy wrap inventory. |
+| `/wraps` | Legacy wrap inventory; registered only when `legacy-wraps.enabled: true`. |
+
+The bundled configuration runs in ItemSkin-only mode. Set `legacy-wraps.enabled: true` and restart the server only if you need the classic wrap files, collections, `/wraps` commands, GUI, physical wrappers and legacy actions. When disabled, the internal cosmetic payload engine remains active exclusively so `/itemskin` can apply and remove skins safely; legacy files are not loaded or copied into the data folder.
 
 In the browser, left click applies a free/owned skin, right click previews it, and Shift-click buys a configured paid skin. The selected item in slot 4 is the compact browser control: left click changes sorting and right click changes filters. Its name and lore are configurable with `item-name` and `item-lore`. The Shop control opens the integrated `shops.yml`/`coupons.yml` menus, while Unskin restores the selected item. Search opens chat input (`clear` resets it; `cancel` returns without changing the search), and the collection button cycles through themed series. Previous and next arrows appear only when their destination page exists. Every control and category has independent `enabled`, `slot`, and complete `item` settings in `itemskin-gui.yml`.
 

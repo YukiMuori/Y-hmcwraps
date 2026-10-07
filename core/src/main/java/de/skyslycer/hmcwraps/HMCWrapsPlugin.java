@@ -200,27 +200,35 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
-        getLogger().info("Loaded all configuration files and wraps. (" + wrapsLoader.getWraps().size() + " wraps)");
+        if (config.getLegacyWraps().isEnabled()) {
+            getLogger().info("Loaded all configuration files and wraps. (" + wrapsLoader.getWraps().size() + " wraps)");
+        } else {
+            getLogger().info("Legacy wraps are disabled; running the ItemSkin system only.");
+        }
 
         Bukkit.getPluginManager().registerEvents(new PlayerInteractListener(this), this);
         Bukkit.getPluginManager().registerEvents(new InventoryClickListener(this), this);
         Bukkit.getPluginManager().registerEvents(new PlayerShiftListener(this), this);
-        Bukkit.getPluginManager().registerEvents(new PlayerPickupListener(this), this);
         Bukkit.getPluginManager().registerEvents(new PlayerJoinListener(this), this);
-        Bukkit.getPluginManager().registerEvents(new PlayerDropListener(this), this);
-        Bukkit.getPluginManager().registerEvents(new PlayerHitEntityListener(this), this);
         Bukkit.getPluginManager().registerEvents(new DurabilityChangeListener(this), this);
-        Bukkit.getPluginManager().registerEvents(new ItemBurnListener(this), this);
-        Bukkit.getPluginManager().registerEvents(new PlayerOffHandSwitchListener(this), this);
         Bukkit.getPluginManager().registerEvents(new DispenserArmorListener(this), this);
         Bukkit.getPluginManager().registerEvents(itemSkinManager.menuManager(), this);
         Bukkit.getPluginManager().registerEvents(skinTradeManager, this);
-        Bukkit.getPluginManager().registerEvents(new PlayerItemBreakListener(this), this);
-        Bukkit.getPluginManager().registerEvents(new PlayerDeathListener(this), this);
+        if (config.getLegacyWraps().isEnabled()) {
+            Bukkit.getPluginManager().registerEvents(new PlayerPickupListener(this), this);
+            Bukkit.getPluginManager().registerEvents(new PlayerDropListener(this), this);
+            Bukkit.getPluginManager().registerEvents(new PlayerHitEntityListener(this), this);
+            Bukkit.getPluginManager().registerEvents(new ItemBurnListener(this), this);
+            Bukkit.getPluginManager().registerEvents(new PlayerOffHandSwitchListener(this), this);
+            Bukkit.getPluginManager().registerEvents(new PlayerItemBreakListener(this), this);
+            Bukkit.getPluginManager().registerEvents(new PlayerDeathListener(this), this);
+        }
 
         CommandRegister.registerCommands(this);
 
-        new DefaultActionRegister(this).register();
+        if (config.getLegacyWraps().isEnabled()) {
+            new DefaultActionRegister(this).register();
+        }
         if (!this.getDescription().getVersion().contains("-b")) { // Don't send metrics for beta versions
             new PluginMetrics(this).init();
         }
@@ -262,16 +270,19 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
             return false;
         }
         if (!languageManager.load()) {
-            getLogger().warning("The v2 language catalog could not be loaded; legacy messages and wraps will remain available.");
+            if (!config.getLegacyWraps().isEnabled()) return false;
+            getLogger().warning("The ItemSkin language catalog could not be loaded; legacy wraps remain available.");
         }
         if (!loadMessages()) {
             return false;
         }
         if (!skinCatalog.load()) {
-            getLogger().warning("The v2 skin catalog could not be loaded; legacy wraps remain available.");
+            if (!config.getLegacyWraps().isEnabled()) return false;
+            getLogger().warning("The ItemSkin catalog could not be loaded; legacy wraps remain available.");
         }
         if (!itemSkinManager.load()) {
-            getLogger().warning("The v2 skin GUI configuration could not be loaded; legacy wraps remain available.");
+            if (!config.getLegacyWraps().isEnabled()) return false;
+            getLogger().warning("The ItemSkin GUI configuration could not be loaded; legacy wraps remain available.");
         }
         initializeShop();
         integrationHandler.load();
@@ -335,15 +346,6 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
 
     private boolean loadConfig() {
         try {
-            if (Files.notExists(WRAP_FILES_PATH)) {
-                Files.createDirectory(WRAP_FILES_PATH);
-                Files.copy(getResource("silver_wraps.yml"), WRAP_FILES_PATH.resolve("silver_wraps.yml"));
-                Files.copy(getResource("emerald_wraps.yml"), WRAP_FILES_PATH.resolve("emerald_wraps.yml"));
-            }
-            if (Files.notExists(COLLECTION_FILES_PATH)) {
-                Files.createDirectory(COLLECTION_FILES_PATH);
-                Files.copy(getResource("some_collections.yml"), COLLECTION_FILES_PATH.resolve("some_collections.yml"));
-            }
             if (Files.notExists(CONFIG_PATH)) {
                 Files.copy(getResource("config.yml"), CONFIG_PATH);
             }
@@ -351,6 +353,20 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
             CommentedConfiguration.loadConfiguration(CONFIG_PATH.toFile()).syncWithConfig(CONFIG_PATH.toFile(), getResource("config.yml"),
                    "items", "inventory.items", "collections", "unwrapper", "inventory.actions");
             config = LOADER.load().get(Config.class);
+            if (config == null) {
+                throw new IOException("config.yml could not be deserialized");
+            }
+            if (config.getLegacyWraps().isEnabled()) {
+                if (Files.notExists(WRAP_FILES_PATH)) {
+                    Files.createDirectory(WRAP_FILES_PATH);
+                    Files.copy(getResource("silver_wraps.yml"), WRAP_FILES_PATH.resolve("silver_wraps.yml"));
+                    Files.copy(getResource("emerald_wraps.yml"), WRAP_FILES_PATH.resolve("emerald_wraps.yml"));
+                }
+                if (Files.notExists(COLLECTION_FILES_PATH)) {
+                    Files.createDirectory(COLLECTION_FILES_PATH);
+                    Files.copy(getResource("some_collections.yml"), COLLECTION_FILES_PATH.resolve("some_collections.yml"));
+                }
+            }
             getWrapsLoader().load();
         } catch (IOException exception) {
             logSevere("Could not load the configuration (please report this to the developers)! The plugin will shut down now.", exception);
@@ -377,7 +393,8 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
     }
 
     private void startCheckTask() {
-        if (config.getPermissions().getInventoryCheckInterval() == -1) {
+        if (!config.getLegacyWraps().isEnabled()
+                || config.getPermissions().getInventoryCheckInterval() == -1) {
             return;
         }
         if (foliaLib.isFolia()) {

@@ -5,6 +5,12 @@ language:
   default: 'en'
   player-locale: false
 
+# Classic /wraps system. A restart is required after changing this option.
+# When disabled, legacy wrap files, collections, commands, GUI, physical wrappers and actions are not loaded.
+# The internal cosmetic engine remains available exclusively for /itemskin.
+legacy-wraps:
+  enabled: false
+
 # Settings on how permissions should be handled
 permissions:
   # If the wrap inventory open permission should be checked on wraps inventory open

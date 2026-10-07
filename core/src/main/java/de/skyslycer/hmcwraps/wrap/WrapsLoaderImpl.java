@@ -37,6 +37,10 @@ public class WrapsLoaderImpl implements WrapsLoader {
 
     @Override
     public void load() {
+        unload();
+        if (!plugin.getConfiguration().getLegacyWraps().isEnabled()) {
+            return;
+        }
         loadCollectionFiles();
         loadWrapFiles();
         combineFiles();

@@ -37,6 +37,9 @@ public class PlayerInteractListener implements Listener {
         if (event.getAction() == Action.LEFT_CLICK_BLOCK && plugin.getPreviewManager().isPreviewing(player)) {
             plugin.getPreviewManager().remove(player.getUniqueId(), false);
         }
+        if (!plugin.getConfiguration().getLegacyWraps().isEnabled()) {
+            return;
+        }
         if (player.getInventory().getItemInMainHand().getType().isAir()) {
             return;
         }

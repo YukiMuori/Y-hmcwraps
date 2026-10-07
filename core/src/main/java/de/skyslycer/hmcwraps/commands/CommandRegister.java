@@ -42,9 +42,12 @@ public class CommandRegister {
                 .permissionFactory(new AnyPermissionFactory())
                 .exceptionHandler(new CustomExceptionHandler(plugin))
                 .build();
-        commandHandler.register(new WrapCommand(plugin), new WrapCreateCommand(plugin), new DebugCommand(plugin), new ItemSkinCommand(plugin));
-        if (isTestModeEnabled()) {
-            commandHandler.register(new TestCommand(plugin));
+        commandHandler.register(new ItemSkinCommand(plugin));
+        if (plugin.getConfiguration().getLegacyWraps().isEnabled()) {
+            commandHandler.register(new WrapCommand(plugin), new WrapCreateCommand(plugin), new DebugCommand(plugin));
+            if (isTestModeEnabled()) {
+                commandHandler.register(new TestCommand(plugin));
+            }
         }
     }
 

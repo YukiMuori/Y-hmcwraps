@@ -62,6 +62,9 @@
 
 ### Removed
 - The favorites feature, including legacy wrap actions/configuration, skin GUI controls, persistence repositories, public favorite APIs, profile statistics and PlaceholderAPI expansions. Schema migration 7 removes the obsolete `skin_favorites` table and its stored data.
+
+### Added
+- `legacy-wraps.enabled` completely gates the classic wrap subsystem. It defaults to `false`, so legacy files, collections, `/wraps` commands, GUI shortcuts, physical wrappers, actions, permission scans and legacy placeholders stay inactive while `/itemskin` retains the shared cosmetic engine.
 - `/wraps validate` now checks themed skin collection definitions/references and the expanded GUI controls.
 
 ## 2.0.1 — 2026-10-05

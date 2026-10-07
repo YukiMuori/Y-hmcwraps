@@ -28,6 +28,7 @@ public class Config {
     private WrappingSettings wrapping;
     private PermissionSettings permissions;
     private PreviewSettings preview;
+    private Toggleable legacyWraps = new Toggleable(false);
     private FilterSettings filter;
     private Inventory inventory;
     private PhysicalUnwrapper unwrapper;
@@ -44,12 +45,13 @@ public class Config {
     private Boolean debug = false;
     private Integer config = 1;
 
-    public Config(UpdaterSettings updater, PermissionSettings permissions, PreviewSettings preview,
+    public Config(UpdaterSettings updater, PermissionSettings permissions, PreviewSettings preview, Toggleable legacyWraps,
                   Inventory inventory, PhysicalUnwrapper unwrapper, PreservationSettings preservation, Map<String, WrappableItem> items,
                   Map<String, List<String>> collections, FilterSettings filter, WrappingSettings wrapping) {
         this.updater = updater;
         this.permissions = permissions;
         this.preview = preview;
+        this.legacyWraps = legacyWraps;
         this.inventory = inventory;
         this.unwrapper = unwrapper;
         this.preservation = preservation;
@@ -80,6 +82,11 @@ public class Config {
 
     public PreviewSettings getPreview() {
         return preview;
+    }
+
+    /** Whether the classic /wraps system and legacy wrap files are enabled. */
+    public Toggleable getLegacyWraps() {
+        return legacyWraps == null ? new Toggleable(false) : legacyWraps;
     }
 
     public UpdaterSettings getUpdater() {

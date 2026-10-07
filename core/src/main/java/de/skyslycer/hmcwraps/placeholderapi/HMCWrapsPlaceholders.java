@@ -67,16 +67,20 @@ public class HMCWrapsPlaceholders extends PlaceholderExpansion {
         if (player != null && normalizedIdentifier.equals("mainhand_compatible")) {
             return String.valueOf(skinManager.getCompatibleSkins(player.getInventory().getItemInMainHand()).size());
         }
+        if (identifier.equals("mainhand_itemmodel") && player != null) {
+            var meta = player.getInventory().getItemInMainHand().getItemMeta();
+            if (meta == null || !meta.hasItemModel()) return null;
+            return meta.getItemModel().toString();
+        }
+        if (!plugin.getConfiguration().getLegacyWraps().isEnabled()) {
+            return null;
+        }
         if (identifier.equals("mainhand") && player != null) {
             var wrap = plugin.getWrapper().getWrap(player.getInventory().getItemInMainHand());
             if (wrap == null) {
                 return null;
             }
             return wrap.getUuid();
-        } else if (identifier.equals("mainhand_itemmodel") && player != null) {
-            var meta = player.getInventory().getItemInMainHand().getItemMeta();
-            if (meta == null || !meta.hasItemModel()) return null;
-            return meta.getItemModel().toString();
         } else if (identifier.equals("filter") && player != null) {
             if (plugin.getFilterStorage().get(player)) {
                 return StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, plugin.getMessageHandler().get(player, Messages.INVENTORY_FILTER_ACTIVE)));

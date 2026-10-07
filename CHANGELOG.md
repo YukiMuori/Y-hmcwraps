@@ -8,7 +8,7 @@
 
 ### Added
 - Configurable floating preview entities: armor stand, item display, mannequin, or automatic selection. Mannequins equip armor in the matching slot and hold other items in their main hand.
-- Item Display previews now expose local XYZ translation plus separate XYZ Euler rotations for swords and other items, with documented upright, opposite-face, and edge-facing presets.
+- Item Display previews now expose local XYZ translation plus separate XYZ Euler rotations for swords and other items. The bundled sword preset uses `90/0/-90` and a two-block upward offset.
 - `/itemskin reload` safely reloads the plugin with the existing admin permission even when legacy Wraps are disabled.
 
 ### Changed

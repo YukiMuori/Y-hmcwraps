@@ -5,12 +5,12 @@ import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 @ConfigSerializable
 public class ItemDisplayTransform {
 
-    private TransformVector translation = new TransformVector(0.0, 0.0, 0.0);
+    private TransformVector translation = new TransformVector(0.0, 2.0, 0.0);
     private TransformVector itemRotation = new TransformVector(0.0, 0.0, 0.0);
-    private TransformVector swordRotation = new TransformVector(0.0, 0.0, -90.0);
+    private TransformVector swordRotation = new TransformVector(90.0, 0.0, -90.0);
 
     public TransformVector getTranslation() {
-        return translation == null ? new TransformVector() : translation;
+        return translation == null ? new TransformVector(0.0, 2.0, 0.0) : translation;
     }
 
     public TransformVector getItemRotation() {
@@ -18,6 +18,6 @@ public class ItemDisplayTransform {
     }
 
     public TransformVector getSwordRotation() {
-        return swordRotation == null ? new TransformVector(0.0, 0.0, -90.0) : swordRotation;
+        return swordRotation == null ? new TransformVector(90.0, 0.0, -90.0) : swordRotation;
     }
 }

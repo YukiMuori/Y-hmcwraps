@@ -23,9 +23,11 @@ class ItemDisplayTransformTest {
     void defaultTransformPreservesUprightSwordAndNeutralItems() {
         ItemDisplayTransform transform = new ItemDisplayTransform();
 
-        assertTrue(transform.getTranslation().isZero());
+        assertEquals(0.0, transform.getTranslation().getX());
+        assertEquals(2.0, transform.getTranslation().getY());
+        assertEquals(0.0, transform.getTranslation().getZ());
         assertTrue(transform.getItemRotation().isZero());
-        assertEquals(0.0, transform.getSwordRotation().getX());
+        assertEquals(90.0, transform.getSwordRotation().getX());
         assertEquals(0.0, transform.getSwordRotation().getY());
         assertEquals(-90.0, transform.getSwordRotation().getZ());
     }

@@ -12,6 +12,7 @@
 - `/itemskin reload` safely reloads the plugin with the existing admin permission even when legacy Wraps are disabled.
 
 ### Changed
+- The selected-item control in the ItemSkin GUI now introduces the browser with a configurable “choose your favorite skin” name, description, selected-item label, sorting and filtering instructions.
 - Nexo `nexo:<id>` references use the modern `item_model` component on supported servers without also applying legacy CustomModelData.
 
 ## 2.1.0 — 2026-10-06

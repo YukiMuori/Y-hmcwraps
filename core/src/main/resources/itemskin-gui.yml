@@ -8,14 +8,17 @@ gui:
   # left click cycles sorting and right click cycles filters.
   item-enabled: true
   item-slot: 4
+  # Fully configurable display name for the selected-item control.
   # Supports <item_name>, <sort>, <filter>, MiniMessage, and language tags.
-  item-name: '<gray><item_name></gray>'
-  # <item_lore> expands the item's original lore. The remaining placeholders are dynamic.
+  item-name: '<gradient:#8FEAF9:#CDA4F9><lang:gui.item-control-title></gradient>'
+  # <item_lore> expands the item's original lore when included. Every line may be changed or removed.
   item-lore:
-    - '<item_lore>'
+    - '<gray><lang:gui.item-control-description></gray>'
     - ''
-    - '<#FFE89A><lang:gui.item-control-sort></#FFE89A> <sort>'
-    - '<#8FEAF9><lang:gui.item-control-filter></#8FEAF9> <filter>'
+    - '<gray><lang:gui.item-control-selected> <item_name></gray>'
+    - ''
+    - '<#FFE89A><lang:gui.item-control-sort></#FFE89A> <gray><sort></gray>'
+    - '<#8FEAF9><lang:gui.item-control-filter></#8FEAF9> <gray><filter></gray>'
   default-sort: rarity
   default-sort-order: descending
   show-locked: true

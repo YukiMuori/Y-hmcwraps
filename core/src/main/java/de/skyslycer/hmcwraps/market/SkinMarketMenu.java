@@ -43,11 +43,11 @@ public final class SkinMarketMenu implements Listener {
                     ItemStack icon = skin.icon() == null ? new ItemStack(Material.PAPER) : skin.icon().clone();
                     ItemMeta meta = icon.getItemMeta();
                     if (meta != null) {
-                        meta.displayName(plugin.getLanguageManager().parse(player, skin.displayName()));
-                        meta.lore(java.util.List.of(
-                                StringUtil.parseComponent(player, "<gray>Venditore: <white>" + listing.sellerName() + "</white></gray>"),
-                                StringUtil.parseComponent(player, "<gray>Prezzo: <#FFE89A>" + listing.amount() + " " + listing.currency() + "</#FFE89A></gray>"),
-                                ComponentUtil("<#FFE89A>➜ ᴄʟɪᴄᴄᴀ ᴘᴇʀ ᴀᴄǫᴜɪsᴛᴀʀᴇ</#FFE89A>")));
+                        meta.setDisplayName(StringUtil.LEGACY_SERIALIZER.serialize(plugin.getLanguageManager().parse(player, skin.displayName())));
+                        meta.setLore(java.util.List.of(
+                                legacy(player, "<gray>Venditore: <white>" + listing.sellerName() + "</white></gray>"),
+                                legacy(player, "<gray>Prezzo: <#FFE89A>" + listing.amount() + " " + listing.currency() + "</#FFE89A></gray>"),
+                                legacy(player, "<#FFE89A>➜ ᴄʟɪᴄᴄᴀ ᴘᴇʀ ᴀᴄǫᴜɪsᴛᴀʀᴇ</#FFE89A>")));
                         icon.setItemMeta(meta);
                     }
                     session.actions.put(slot, listing.id());
@@ -59,7 +59,9 @@ public final class SkinMarketMenu implements Listener {
         }));
     }
 
-    private net.kyori.adventure.text.Component ComponentUtil(String text) { return StringUtil.parseComponent(text); }
+    private String legacy(Player player, String text) {
+        return StringUtil.LEGACY_SERIALIZER.serialize(StringUtil.parseComponent(player, text));
+    }
 
     @EventHandler(ignoreCancelled = true)
     public void onClick(InventoryClickEvent event) {

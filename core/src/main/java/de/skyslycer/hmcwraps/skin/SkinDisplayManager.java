@@ -46,7 +46,8 @@ public final class SkinDisplayManager implements Listener {
     }
 
     public boolean removeNearest(Player player, double radius) {
-        Interaction nearest = player.getWorld().getNearbyEntitiesByType(Interaction.class, player.getLocation(), radius).stream()
+        Interaction nearest = player.getWorld().getNearbyEntities(player.getLocation(), radius, radius, radius).stream()
+                .filter(Interaction.class::isInstance).map(Interaction.class::cast)
                 .filter(entity -> entity.getPersistentDataContainer().has(displayKey, PersistentDataType.STRING))
                 .min(java.util.Comparator.comparingDouble(entity -> entity.getLocation().distanceSquared(player.getLocation())))
                 .orElse(null);

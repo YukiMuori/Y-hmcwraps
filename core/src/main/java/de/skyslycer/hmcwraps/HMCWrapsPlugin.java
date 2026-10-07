@@ -118,6 +118,7 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
     private final ItemSkinManagerImpl itemSkinManager = new ItemSkinManagerImpl(this, skinCatalog, compatibilityRegistry, skinOwnership, economyManager);
     private final SkinTradeManager skinTradeManager = new SkinTradeManager(this, itemSkinManager);
     private final de.skyslycer.hmcwraps.skin.SkinDisplayManager skinDisplayManager = new de.skyslycer.hmcwraps.skin.SkinDisplayManager(this);
+    private final de.skyslycer.hmcwraps.skin.SkinEditorManager skinEditorManager = new de.skyslycer.hmcwraps.skin.SkinEditorManager(this);
     private volatile java.util.concurrent.CompletableFuture<Boolean> skinStorageInitialization;
     private HookAccessor hookAccessor;
     private Config config;
@@ -219,6 +220,7 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
         Bukkit.getPluginManager().registerEvents(skinTradeManager, this);
         Bukkit.getPluginManager().registerEvents(new de.skyslycer.hmcwraps.listener.SkinnedItemProtectionListener(this), this);
         Bukkit.getPluginManager().registerEvents(skinDisplayManager, this);
+        Bukkit.getPluginManager().registerEvents(skinEditorManager, this);
         getFoliaLib().getScheduler().runNextTick(ignored -> skinDisplayManager.load());
         if (config.getLegacyWraps().isEnabled()) {
             Bukkit.getPluginManager().registerEvents(new PlayerPickupListener(this), this);
@@ -509,6 +511,7 @@ public class HMCWrapsPlugin extends JavaPlugin implements HMCWraps {
 
     public SkinTradeManager getSkinTradeManager() { return skinTradeManager; }
     public de.skyslycer.hmcwraps.skin.SkinDisplayManager getSkinDisplayManager() { return skinDisplayManager; }
+    public de.skyslycer.hmcwraps.skin.SkinEditorManager getSkinEditorManager() { return skinEditorManager; }
     public de.skyslycer.hmcwraps.market.SkinMarketService getSkinMarketService() { return skinMarketService; }
     public de.skyslycer.hmcwraps.market.SkinMarketMenu getSkinMarketMenu() { return skinMarketMenu; }
 

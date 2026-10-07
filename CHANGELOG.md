@@ -7,6 +7,7 @@
 - Floating preview entity types are resolved through CraftBukkit, avoiding removed static entity fields on current Paper/Leaf builds.
 
 ### Added
+- Fifteen-second client-side skin trials with a one-minute cooldown, destructive-operation protection for skinned items, persistent physical Item Display showcases, a SQLite-backed player skin market with escrow, and in-game editors for skin files, the ItemSkin GUI, and preview transforms.
 - Configurable floating preview entities: armor stand, item display, mannequin, or automatic selection. Mannequins equip armor in the matching slot and hold other items in their main hand.
 - Item Display previews now expose local XYZ translation plus separate XYZ Euler rotations for swords and other items. The bundled sword preset uses `90/0/-90` and a two-block upward offset.
 - `/itemskin reload` safely reloads the plugin with the existing admin permission even when legacy Wraps are disabled.

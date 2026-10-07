@@ -26,6 +26,10 @@ The repository's build artifact is produced by `./gradlew clean build`; the dist
 |---|---|
 | `/itemskin` or `/itemskin open` | Open the v2 skin browser for the item in your main hand. It lists every compatible skin, including skins the player does not own. |
 | `/itemskin preview <skin-id>` | Preview a configured skin on the held item. Preview does not require ownership. |
+| `/itemskin trial <skin-id>` | Try any compatible skin client-side for 15 seconds; the real item remains unchanged (60-second cooldown). |
+| `/itemskin market` | Open the persistent player market. Use `market sell <skin> <price>`, `market buy <listing-uuid>`, or `market cancel <listing-uuid>`. |
+| `/itemskin display create <skin-id>` | *(Admin)* create a persistent physical showcase; `display remove` removes the nearest one and `display list` reports the total. |
+| `/itemskin editor skin <id>` | *(Admin)* edit a skin in game; `editor gui` edits ItemSkin presentation and `editor preview` edits Item Display transforms. |
 | `/itemskin remove` | Remove a v2 skin from the held item. It does not unwrap a legacy wrap. |
 | `/itemskin trade <player> <skin-id>` | Offer an owned skin to an online player. Both players must confirm with `/itemskin trade confirm`; either can cancel with `/itemskin trade cancel`. Offers expire after five minutes. |
 | `/itemskin trade confirm` | Confirm your side of the active trade. Ownership transfers only after both confirmations. |

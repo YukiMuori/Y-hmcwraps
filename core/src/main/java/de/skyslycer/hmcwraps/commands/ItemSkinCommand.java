@@ -171,6 +171,18 @@ public final class ItemSkinCommand {
         plugin.getShopEditorManager().open(player);
     }
 
+    @Subcommand("editor skin")
+    @CommandPermission("hmcwraps.commands.itemskin.editor")
+    public void onSkinEditor(Player player, @SkinIds String skinId) { plugin.getSkinEditorManager().openSkin(player, skinId); }
+
+    @Subcommand("editor gui")
+    @CommandPermission("hmcwraps.commands.itemskin.editor")
+    public void onGuiEditor(Player player) { plugin.getSkinEditorManager().openGui(player); }
+
+    @Subcommand("editor preview")
+    @CommandPermission("hmcwraps.commands.itemskin.editor")
+    public void onPreviewEditor(Player player) { plugin.getSkinEditorManager().openPreview(player); }
+
     @Subcommand("shop")
     @Description("Open the skin shop with the daily offers, bundles and events.")
     public void onShop(Player player) {

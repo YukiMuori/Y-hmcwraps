@@ -2,8 +2,8 @@ package de.skyslycer.hmcwraps.commands;
 
 import de.skyslycer.hmcwraps.HMCWrapsPlugin;
 import de.skyslycer.hmcwraps.commands.annotation.SkinIds;
-import de.skyslycer.hmcwraps.inventory.BaseGui;
 import de.skyslycer.hmcwraps.skin.ItemSkin;
+import dev.triumphteam.gui.guis.BaseGui;
 import de.skyslycer.hmcwraps.util.StringUtil;
 import de.skyslycer.hmcwraps.util.VersionUtil;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
